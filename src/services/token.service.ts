@@ -5,7 +5,7 @@ import config from '../config/config';
 import userService from './user.service';
 import ApiError from '../utils/ApiError';
 import { Token, TokenType } from '@prisma/client';
-import prisma from '../client';
+import prisma from '../prisma';
 import { AuthTokensResponse } from '../types/response';
 
 /**

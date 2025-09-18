@@ -13,7 +13,7 @@ import setupTestDB from '../utils/setupTestDb';
 import { describe, beforeEach, test, expect, jest } from '@jest/globals';
 import { userOne, admin, insertUsers } from '../fixtures/user.fixture';
 import { Role, TokenType, User } from '@prisma/client';
-import prisma from '../../src/client';
+import prisma from '../../src/prisma';
 import { roleRights } from '../../src/config/roles';
 
 setupTestDB();

@@ -1,6 +1,6 @@
 import { Server } from 'http';
 import app from './app';
-import prisma from './client';
+import prisma from './prisma';
 import config from './config/config';
 import logger from './config/logger';
 

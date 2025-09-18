@@ -1,6 +1,6 @@
 import bcrypt from 'bcryptjs';
 import { faker } from '@faker-js/faker';
-import prisma from '../../src/client';
+import prisma from '../../src/prisma';
 import { Prisma, Role } from '@prisma/client';
 
 const password = 'password1';

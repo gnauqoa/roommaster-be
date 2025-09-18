@@ -1,4 +1,4 @@
-import prisma from '../client';
+import prisma from '../prisma';
 import { Strategy as JwtStrategy, ExtractJwt, VerifyCallback } from 'passport-jwt';
 import config from './config';
 import { TokenType } from '@prisma/client';
