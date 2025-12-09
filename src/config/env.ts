@@ -7,6 +7,7 @@ dotenv.config({ path: path.join(process.cwd(), '.env') });
 const envVarsSchema = Joi.object()
   .keys({
     NODE_ENV: Joi.string().valid('production', 'development', 'test').required(),
+    DATABASE_URL: Joi.string().required().description('Database connection URL'),
     PORT: Joi.number().default(3000),
     JWT_SECRET: Joi.string().required().description('JWT secret key'),
     JWT_ACCESS_EXPIRATION_MINUTES: Joi.number()

@@ -33,7 +33,12 @@ app.use(express.urlencoded({ extended: true }));
 app.use(xss());
 
 // gzip compression
-app.use(compression());
+// Cast to express.RequestHandler to work around type mismatches between
+// transitive @types packages (some depend on @types/express v5 while project
+// uses v4). Prefer upgrading TypeScript and/or aligning @types packages in
+// package.json/resolutions to fully fix; for now, use a narrow cast to keep
+// the middleware typing compatible with app.use.
+app.use(compression() as unknown as express.RequestHandler);
 
 // enable cors
 app.use(cors());

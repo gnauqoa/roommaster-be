@@ -1,9 +1,35 @@
 import passport from 'passport';
 import httpStatus from 'http-status';
-import { roleRights } from 'config/roles';
 import { NextFunction, Request, Response } from 'express';
-import { User } from '@prisma/client';
+import { Employee } from '@prisma/client';
+import prisma from 'prisma';
 import ApiError from 'utils/ApiError';
+
+/**
+ * Get employee permissions from database via their UserGroup
+ */
+const getEmployeePermissions = async (employeeId: number): Promise<string[]> => {
+  const employee = await prisma.employee.findUnique({
+    where: { id: employeeId },
+    include: {
+      userGroup: {
+        include: {
+          permissions: {
+            include: {
+              function: true
+            }
+          }
+        }
+      }
+    }
+  });
+
+  if (!employee?.userGroup) {
+    return [];
+  }
+
+  return employee.userGroup.permissions.map((p) => p.function.functionKey);
+};
 
 const verifyCallback =
   (
@@ -12,18 +38,18 @@ const verifyCallback =
     reject: (reason?: unknown) => void,
     requiredRights: string[]
   ) =>
-  async (err: unknown, user: User | false, info: unknown) => {
-    if (err || info || !user) {
+  async (err: unknown, employee: Employee | false, info: unknown) => {
+    if (err || info || !employee) {
       return reject(new ApiError(httpStatus.UNAUTHORIZED, 'Please authenticate'));
     }
-    req.user = user;
+    req.user = employee;
 
     if (requiredRights.length) {
-      const userRights = roleRights.get(user.role) ?? [];
+      const employeeRights = await getEmployeePermissions(employee.id);
       const hasRequiredRights = requiredRights.every((requiredRight) =>
-        userRights.includes(requiredRight)
+        employeeRights.includes(requiredRight)
       );
-      if (!hasRequiredRights && req.params.userId !== user.id) {
+      if (!hasRequiredRights && req.params.employeeId !== String(employee.id)) {
         return reject(new ApiError(httpStatus.FORBIDDEN, 'Forbidden'));
       }
     }

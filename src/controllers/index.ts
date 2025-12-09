@@ -1,3 +1,15 @@
 export { default as authController } from './auth.controller';
-export { default as userController } from './user.controller';
-export { default as quizController } from './quiz.controller';
+export { default as employeeController } from './employee.controller';
+export { default as roomController } from './room.controller';
+export { default as customerController } from './customer.controller';
+export { default as reservationController } from './reservation.controller';
+export { default as stayRecordController } from './stay-record.controller';
+export { default as folioController } from './folio.controller';
+export { default as serviceController } from './service.controller';
+export { default as housekeepingController } from './housekeeping.controller';
+export { default as invoiceController } from './invoice.controller';
+export { default as inspectionController } from './inspection.controller';
+export { default as customerTierController } from './customer-tier.controller';
+export { default as shiftController } from './shift.controller';
+export { default as nightlyController } from './nightly.controller';
+export { default as reportController } from './report.controller';

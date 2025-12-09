@@ -1,5 +1,9 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
 generator client {
   provider = "prisma-client-js"
+  binaryTargets = ["native", "debian-openssl-1.1.x", "debian-openssl-3.0.x"]
 }
 
 datasource db {
@@ -7,95 +11,791 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-model User {
-  id              Int          @id @default(autoincrement())
-  email           String       @unique
-  name            String?
-  password        String
-  role            Role         @default(USER)
-  isEmailVerified Boolean      @default(false)
-  gender          String?
-  birthYear       Int?
-  createdAt       DateTime     @default(now())
-  updatedAt       DateTime     @updatedAt
-  tokens          Token[]
-  results         UserResult[]
-}
-
-model Token {
-  id          Int       @id @default(autoincrement())
-  token       String
-  userId      Int
-  type        TokenType
-  expires     DateTime
-  blacklisted Boolean   @default(false)
-  createdAt   DateTime  @default(now())
-  updatedAt   DateTime  @updatedAt
-  user        User      @relation(fields: [userId], references: [id])
-}
-
-model Quiz {
-  id          Int          @id @default(autoincrement())
-  code        String       @unique
-  name        String
-  description String?
-  category    String?
-  createdAt   DateTime     @default(now())
-  updatedAt   DateTime     @updatedAt
-  questions   Question[]
-  results     UserResult[]
-}
-
-model Question {
-  id        Int          @id @default(autoincrement())
-  quizId    Int
-  order     Int
-  text      String
-  type      QuestionType @default(SINGLE_CHOICE)
-  createdAt DateTime     @default(now())
-  updatedAt DateTime     @updatedAt
-  options   Option[]
-  quiz      Quiz         @relation(fields: [quizId], references: [id])
-}
-
-model Option {
-  id         Int      @id @default(autoincrement())
-  questionId Int
-  text       String
-  score      Int
-  createdAt  DateTime @default(now())
-  updatedAt  DateTime @updatedAt
-  question   Question @relation(fields: [questionId], references: [id])
-}
-
-model UserResult {
-  id         Int      @id @default(autoincrement())
-  userId     Int
-  quizId     Int
-  totalScore Float
-  level      String?
-  resultJson Json
-  createdAt  DateTime @default(now())
-  updatedAt  DateTime @updatedAt
-
-  user User @relation(fields: [userId], references: [id])
-  quiz Quiz @relation(fields: [quizId], references: [id])
-}
-
-enum QuestionType {
-  SINGLE_CHOICE
-  MULTIPLE_CHOICE
-  SCALE
-}
+// ==========================================
+// ENUMS
+// ==========================================
 
 enum Role {
-  USER
   ADMIN
+  RECEPTIONIST
+  CASHIER
+  HOUSEKEEPER
+  WAITER
 }
 
-enum TokenType {
-  ACCESS
-  REFRESH
-  RESET_PASSWORD
-  VERIFY_EMAIL
+enum RoomStatus {
+  AVAILABLE
+  RESERVED
+  OCCUPIED
+  CLEANING
+  MAINTENANCE
+  OUT_OF_ORDER
+}
+
+enum DateType {
+  WEEKDAY
+  WEEKEND
+  HOLIDAY
+  HIGH_SEASON
+}
+
+enum CustomerType {
+  INDIVIDUAL
+  CORPORATE
+  TRAVEL_AGENT
+}
+
+enum ReservationStatus {
+  PENDING
+  CONFIRMED
+  CANCELLED
+  CHECKED_IN
+  CHECKED_OUT
+  NO_SHOW
+}
+
+enum StayRecordStatus {
+  OPEN
+  CLOSED
+  CANCELLED
+}
+
+enum StayDetailStatus {
+  OCCUPIED
+  CHECKED_OUT
+}
+
+enum ReservationDetailStatus {
+  PENDING
+  CONFIRMED
+  CHECKED_IN
+  CHECKED_OUT
+  CANCELLED
+  NO_SHOW
+}
+
+enum FolioType {
+  MASTER
+  GUEST
+  NON_RESIDENT
+}
+
+enum FolioStatus {
+  OPEN
+  CLOSED
+  VOID
+}
+
+enum TransactionType {
+  DEBIT
+  CREDIT
+}
+
+enum PromotionType {
+  PERCENTAGE
+  FIXED_AMOUNT
+}
+
+enum PromotionStatus {
+  ACTIVE
+  INACTIVE
+}
+
+enum TransactionCategory {
+  ROOM_CHARGE
+  SERVICE_CHARGE
+  SURCHARGE
+  PENALTY
+  DEPOSIT
+  PAYMENT
+  REFUND
+  ADJUSTMENT
+  DISCOUNT
+}
+
+enum ServiceGroup {
+  SURCHARGE
+  PENALTY
+  MINIBAR
+  SPA
+  LAUNDRY
+  F_AND_B
+  ROOM_SERVICE
+  OTHER
+}
+
+enum HousekeepingStatus {
+  PENDING
+  ASSIGNED
+  IN_PROGRESS
+  COMPLETED
+  INSPECTING
+  PASSED
+  FAILED
+}
+
+enum ShiftSessionStatus {
+  OPEN
+  CLOSED
+  APPROVED
+}
+
+// ==========================================
+// 1. CONFIGURATION & MASTER DATA
+// ==========================================
+
+model SystemParameter {
+  id          Int      @id @default(autoincrement())
+  name        String   @unique @db.VarChar(100)
+  value       String   @db.Text
+  description String?  @db.Text
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@map("system_parameters")
+}
+
+model RoomType {
+  id             Int      @id @default(autoincrement())
+  code           String   @unique @db.VarChar(20)
+  name           String   @db.VarChar(100)
+  baseCapacity   Int // Số người chuẩn
+  maxCapacity    Int // Số người tối đa
+  amenities      String?  @db.Text
+  rackRate       Decimal  @db.Decimal(15, 2)
+  extraPersonFee Decimal  @default(0) @db.Decimal(15, 2) // Phí người thêm/đêm
+  description    String?  @db.Text
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  rooms              Room[]
+  ratePolicies       RatePolicy[]
+  reservationDetails ReservationDetail[]
+
+  @@map("room_types")
+}
+
+model Room {
+  id         Int        @id @default(autoincrement())
+  code       String     @unique @db.VarChar(20)
+  name       String     @db.VarChar(100)
+  floor      Int? // Tầng
+  roomTypeId Int
+  status     RoomStatus @default(AVAILABLE)
+  notes      String?    @db.Text
+  createdAt  DateTime   @default(now())
+  updatedAt  DateTime   @updatedAt
+
+  roomType         RoomType          @relation(fields: [roomTypeId], references: [id])
+  stayDetails      StayDetail[]
+  housekeepingLogs HousekeepingLog[]
+  roomMoveLogsFrom RoomMoveLog[]     @relation("FromRoom")
+  roomMoveLogsTo   RoomMoveLog[]     @relation("ToRoom")
+
+  @@map("rooms")
+}
+
+model RatePolicy {
+  id         Int      @id @default(autoincrement())
+  code       String   @unique @db.VarChar(20)
+  name       String   @db.VarChar(100)
+  roomTypeId Int
+  fromDate   DateTime @db.Date
+  toDate     DateTime @db.Date
+  dateType   DateType
+  dayOfWeek  String?  @db.VarChar(20) // 2-8 where 2=Monday, 8=Sunday
+  rateFactor Decimal  @db.Decimal(5, 2) // Rate multiplier
+  priority   Int      @default(0)
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  roomType RoomType @relation(fields: [roomTypeId], references: [id])
+
+  @@map("rate_policies")
+}
+
+model Service {
+  id             Int          @id @default(autoincrement())
+  code           String       @unique @db.VarChar(20)
+  name           String       @db.VarChar(100)
+  unitPrice      Decimal      @db.Decimal(15, 2)
+  unit           String?      @db.VarChar(50)
+  serviceGroup   ServiceGroup @default(OTHER)
+  allowPromotion Boolean      @default(true)
+  allowDiscount  Boolean      @default(true)
+  isActive       Boolean      @default(true)
+  notes          String?      @db.Text
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+
+  folioTransactions FolioTransaction[]
+
+  @@map("services")
+}
+
+model PaymentMethod {
+  id             Int      @id @default(autoincrement())
+  code           String   @unique @db.VarChar(20)
+  name           String   @db.VarChar(100)
+  transactionFee Decimal? @db.Decimal(5, 2) // Fee percentage/amount
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  folioTransactions FolioTransaction[]
+
+  @@map("payment_methods")
+}
+
+// ==========================================
+// 2. HR & CRM
+// ==========================================
+
+model Employee {
+  id           Int      @id @default(autoincrement())
+  code         String   @unique @db.VarChar(20)
+  name         String   @db.VarChar(100)
+  email        String   @unique @db.VarChar(255)
+  phone        String?  @db.VarChar(20)
+  role         Role     @default(RECEPTIONIST)
+  userGroupId  Int?
+  passwordHash String   @db.VarChar(255)
+  isActive     Boolean  @default(true)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  userGroup               UserGroup?         @relation(fields: [userGroupId], references: [id])
+  workSchedules           WorkSchedule[]
+  stayRecords             StayRecord[]
+  folioTransactions       FolioTransaction[]
+  invoices                Invoice[]
+  housekeepingLogs        HousekeepingLog[]  @relation("HousekeepingEmployee")
+  housekeepingInspections HousekeepingLog[]  @relation("HousekeepingInspector")
+  roomMoveLogs            RoomMoveLog[]
+  shiftSessions           ShiftSession[]     @relation("ShiftEmployee")
+  shiftApprovals          ShiftSession[]     @relation("ShiftApprover")
+  roomInspections         RoomInspection[]
+
+  @@map("employees")
+}
+
+model WorkShift {
+  id        Int      @id @default(autoincrement())
+  code      String   @unique @db.VarChar(20)
+  name      String   @db.VarChar(100)
+  startTime DateTime @db.Time()
+  endTime   DateTime @db.Time()
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  workSchedules WorkSchedule[]
+  shiftSessions ShiftSession[]
+
+  @@map("work_shifts")
+}
+
+model WorkSchedule {
+  id         Int      @id @default(autoincrement())
+  employeeId Int
+  shiftId    Int
+  workDate   DateTime @db.Date
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  employee Employee  @relation(fields: [employeeId], references: [id])
+  shift    WorkShift @relation(fields: [shiftId], references: [id])
+
+  @@unique([employeeId, workDate])
+  @@map("work_schedules")
+}
+
+model CustomerTier {
+  id                    Int      @id @default(autoincrement())
+  code                  String   @unique @db.VarChar(20)
+  name                  String   @db.VarChar(100)
+  pointsRequired        Int      @default(0)
+  roomDiscountFactor    Decimal  @db.Decimal(5, 2) // Room discount percentage
+  serviceDiscountFactor Decimal  @db.Decimal(5, 2) // Service discount percentage
+  createdAt             DateTime @default(now())
+  updatedAt             DateTime @updatedAt
+
+  customers Customer[]
+
+  @@map("customer_tiers")
+}
+
+model Customer {
+  id            Int          @id @default(autoincrement())
+  code          String       @unique @db.VarChar(20)
+  tierId        Int?
+  fullName      String       @db.VarChar(200)
+  phone         String?      @db.VarChar(20)
+  email         String?      @db.VarChar(255)
+  idNumber      String?      @unique @db.VarChar(50) // CCCD unique
+  nationality   String?      @db.VarChar(100)
+  address       String?      @db.Text
+  customerType  CustomerType @default(INDIVIDUAL)
+  loyaltyPoints Int          @default(0)
+  totalSpending Decimal      @default(0) @db.Decimal(15, 2) // Tổng chi tiêu
+  totalNights   Int          @default(0) // Tổng số đêm
+  lastStayDate  DateTime?    @db.Date // Lần cuối lưu trú
+  createdAt     DateTime     @default(now())
+  updatedAt     DateTime     @updatedAt
+
+  tier              CustomerTier? @relation(fields: [tierId], references: [id])
+  reservations      Reservation[]
+  guestFoliosBillTo GuestFolio[]  @relation("BillToCustomer")
+  invoicesTo        Invoice[]     @relation("InvoiceToCustomer")
+
+  @@map("customers")
+}
+
+model Promotion {
+  id                Int             @id @default(autoincrement())
+  code              String          @unique @db.VarChar(20)
+  name              String          @db.VarChar(200)
+  voucherCode       String?         @unique @db.VarChar(50)
+  fromDate          DateTime        @db.Date
+  toDate            DateTime        @db.Date
+  promotionType     PromotionType
+  discountValue     Decimal         @db.Decimal(15, 2)
+  discountUnit      String?         @db.VarChar(10) // %, VND, etc.
+  maxDiscountAmount Decimal?        @db.Decimal(15, 2)
+  minimumNights     Int?
+  status            PromotionStatus @default(ACTIVE)
+  createdAt         DateTime        @default(now())
+  updatedAt         DateTime        @updatedAt
+
+  folioTransactions FolioTransaction[]
+
+  @@map("promotions")
+}
+
+// ==========================================
+// 3. FRONT OFFICE OPERATIONS
+// ==========================================
+
+model Reservation {
+  id                Int               @id @default(autoincrement())
+  code              String            @unique @db.VarChar(20)
+  customerId        Int
+  reservationDate   DateTime          @default(now())
+  expectedArrival   DateTime          @db.Date
+  expectedDeparture DateTime          @db.Date
+  numberOfGuests    Int               @default(1) // Tổng số khách
+  depositRequired   Decimal?          @db.Decimal(15, 2) // Tiền cọc yêu cầu
+  depositPaid       Decimal           @default(0) @db.Decimal(15, 2) // Tiền cọc đã trả
+  status            ReservationStatus @default(PENDING)
+  source            String?           @db.VarChar(50) // Direct/OTA/Phone...
+  notes             String?           @db.Text
+  createdAt         DateTime          @default(now())
+  updatedAt         DateTime          @updatedAt
+
+  customer           Customer            @relation(fields: [customerId], references: [id])
+  reservationDetails ReservationDetail[]
+  stayRecords        StayRecord[]
+  guestFolios        GuestFolio[] // Link Folio để thu cọc từ booking
+
+  @@map("reservations")
+}
+
+// Chi tiết đặt phòng - ĐẶT THEO LOẠI PHÒNG, không phải phòng cụ thể
+model ReservationDetail {
+  id             Int                     @id @default(autoincrement())
+  reservationId  Int
+  roomTypeId     Int
+  quantity       Int                     @default(1) // Số lượng phòng loại này
+  expectedRate   Decimal?                @db.Decimal(15, 2) // Giá dự kiến/phòng/đêm
+  numberOfGuests Int                     @default(1) // Số khách cho nhóm phòng này
+  status         ReservationDetailStatus @default(PENDING) // Trạng thái từng dòng
+  notes          String?                 @db.Text
+  createdAt      DateTime                @default(now())
+  updatedAt      DateTime                @updatedAt
+
+  reservation Reservation @relation(fields: [reservationId], references: [id], onDelete: Cascade)
+  roomType    RoomType    @relation(fields: [roomTypeId], references: [id])
+
+  @@map("reservation_details")
+}
+
+model StayRecord {
+  id            Int              @id @default(autoincrement())
+  code          String           @unique @db.VarChar(20)
+  reservationId Int?
+  customerId    Int? // Cho walk-in (không có reservation)
+  checkInTime   DateTime         @default(now())
+  checkOutTime  DateTime?
+  employeeId    Int
+  status        StayRecordStatus @default(OPEN)
+  notes         String?          @db.Text
+  createdAt     DateTime         @default(now())
+  updatedAt     DateTime         @updatedAt
+
+  reservation Reservation? @relation(fields: [reservationId], references: [id])
+  employee    Employee     @relation(fields: [employeeId], references: [id])
+  stayDetails StayDetail[]
+  guestFolios GuestFolio[]
+
+  @@map("stay_records")
+}
+
+// Chi tiết lưu trú - GÁN PHÒNG CỤ THỂ khi check-in
+model StayDetail {
+  id               Int              @id @default(autoincrement())
+  stayRecordId     Int
+  roomId           Int // Phòng cụ thể được gán
+  roomAssignedTime DateTime         @default(now())
+  expectedCheckOut DateTime         @db.Date
+  actualCheckOut   DateTime?
+  lockedRate       Decimal?         @db.Decimal(15, 2) // Giá đã khóa cho phòng này
+  numberOfGuests   Int              @default(1) // Số khách trong phòng này
+  status           StayDetailStatus @default(OCCUPIED) // Trạng thái thuê phòng
+  notes            String?          @db.Text
+  createdAt        DateTime         @default(now())
+  updatedAt        DateTime         @updatedAt
+
+  stayRecord        StayRecord         @relation(fields: [stayRecordId], references: [id], onDelete: Cascade)
+  room              Room               @relation(fields: [roomId], references: [id])
+  guestsInResidence GuestInResidence[]
+  folioTransactions FolioTransaction[]
+  roomMoveLogs      RoomMoveLog[]
+  roomInspection    RoomInspection?
+
+  @@map("stay_details")
+}
+
+// Thông tin người lưu trú trong phòng
+model GuestInResidence {
+  id           Int       @id @default(autoincrement())
+  stayDetailId Int
+  fullName     String    @db.VarChar(200)
+  idType       String?   @db.VarChar(20) // CCCD/CMND/Passport
+  idNumber     String?   @db.VarChar(50)
+  dateOfBirth  DateTime? @db.Date
+  nationality  String?   @db.VarChar(100)
+  address      String?   @db.Text
+  phone        String?   @db.VarChar(20)
+  isMainGuest  Boolean   @default(false) // Khách chính (đại diện)
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+
+  stayDetail StayDetail @relation(fields: [stayDetailId], references: [id], onDelete: Cascade)
+
+  @@map("guests_in_residence")
+}
+
+// ==========================================
+// 4. FINANCE & ACCOUNTING
+// ==========================================
+
+model GuestFolio {
+  id               Int         @id @default(autoincrement())
+  code             String      @unique @db.VarChar(20)
+  reservationId    Int? // Link với đặt phòng (để thu cọc)
+  stayRecordId     Int? // Link với phiếu thuê (gán khi check-in)
+  billToCustomerId Int
+  folioType        FolioType   @default(GUEST)
+  status           FolioStatus @default(OPEN)
+  totalCharges     Decimal     @default(0) @db.Decimal(15, 2) // Tổng nợ
+  totalPayments    Decimal     @default(0) @db.Decimal(15, 2) // Tổng có
+  balance          Decimal     @default(0) @db.Decimal(15, 2) // Còn lại (âm = đã trả trước)
+  notes            String?     @db.Text
+  createdAt        DateTime    @default(now())
+  updatedAt        DateTime    @updatedAt
+
+  reservation       Reservation?       @relation(fields: [reservationId], references: [id])
+  stayRecord        StayRecord?        @relation(fields: [stayRecordId], references: [id])
+  billToCustomer    Customer           @relation("BillToCustomer", fields: [billToCustomerId], references: [id])
+  folioTransactions FolioTransaction[]
+  invoices          Invoice[]
+
+  @@map("guest_folios")
+}
+
+model FolioTransaction {
+  id              Int                 @id @default(autoincrement())
+  code            String              @unique @db.VarChar(20)
+  guestFolioId    Int
+  transactionDate DateTime            @default(now())
+  postingDate     DateTime            @default(now()) @db.Date // Ngày tính tiền
+  description     String?             @db.Text
+  transactionType TransactionType // DEBIT (nợ) / CREDIT (có)
+  category        TransactionCategory // Loại giao dịch chi tiết
+  amount          Decimal             @db.Decimal(15, 2)
+  quantity        Int                 @default(1)
+  unitPrice       Decimal?            @db.Decimal(15, 2)
+  serviceId       Int?
+  promotionId     Int?
+  paymentMethodId Int?
+  employeeId      Int
+  stayDetailId    Int?
+  // Void/Adjust tracking
+  isVoid          Boolean             @default(false)
+  voidReason      String?             @db.Text
+  voidBy          Int?
+  voidAt          DateTime?
+  originalTxId    Int? // Link giao dịch gốc nếu là adjustment
+  createdAt       DateTime            @default(now())
+  updatedAt       DateTime            @updatedAt
+
+  guestFolio     GuestFolio      @relation(fields: [guestFolioId], references: [id])
+  service        Service?        @relation(fields: [serviceId], references: [id])
+  promotion      Promotion?      @relation(fields: [promotionId], references: [id])
+  paymentMethod  PaymentMethod?  @relation(fields: [paymentMethodId], references: [id])
+  employee       Employee        @relation(fields: [employeeId], references: [id])
+  stayDetail     StayDetail?     @relation(fields: [stayDetailId], references: [id])
+  invoiceDetails InvoiceDetail[]
+
+  @@index([guestFolioId, transactionDate])
+  @@index([category])
+  @@map("folio_transactions")
+}
+
+model Invoice {
+  id                  Int      @id @default(autoincrement())
+  code                String   @unique @db.VarChar(20)
+  guestFolioId        Int
+  invoiceToCustomerId Int
+  taxId               String?  @db.VarChar(50)
+  invoiceDate         DateTime @default(now())
+  totalAmount         Decimal  @db.Decimal(15, 2)
+  employeeId          Int
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
+
+  guestFolio        GuestFolio      @relation(fields: [guestFolioId], references: [id])
+  invoiceToCustomer Customer        @relation("InvoiceToCustomer", fields: [invoiceToCustomerId], references: [id])
+  employee          Employee        @relation(fields: [employeeId], references: [id])
+  invoiceDetails    InvoiceDetail[]
+
+  @@map("invoices")
+}
+
+model InvoiceDetail {
+  id            Int      @id @default(autoincrement())
+  invoiceId     Int
+  transactionId Int
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  invoice     Invoice          @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
+  transaction FolioTransaction @relation(fields: [transactionId], references: [id])
+
+  @@unique([invoiceId, transactionId])
+  @@map("invoice_details")
+}
+
+// ==========================================
+// 5. ACCESS CONTROL (RBAC)
+// ==========================================
+
+model UserGroup {
+  id          Int      @id @default(autoincrement())
+  code        String   @unique @db.VarChar(20)
+  name        String   @db.VarChar(100)
+  description String?  @db.Text
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  employees   Employee[]
+  permissions Permission[]
+
+  @@map("user_groups")
+}
+
+model SystemFunction {
+  id          Int      @id @default(autoincrement())
+  code        String   @unique @db.VarChar(50)
+  name        String   @db.VarChar(100)
+  functionKey String   @unique @db.VarChar(100)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  permissions Permission[]
+
+  @@map("system_functions")
+}
+
+model Permission {
+  id         Int      @id @default(autoincrement())
+  groupId    Int
+  functionId Int
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  group    UserGroup      @relation(fields: [groupId], references: [id], onDelete: Cascade)
+  function SystemFunction @relation(fields: [functionId], references: [id], onDelete: Cascade)
+
+  @@unique([groupId, functionId])
+  @@map("permissions")
+}
+
+// ==========================================
+// 6. TOKEN MANAGEMENT (For Authentication)
+// ==========================================
+
+model Token {
+  id          Int      @id @default(autoincrement())
+  token       String   @unique @db.VarChar(500)
+  type        String   @db.VarChar(20)
+  expires     DateTime
+  blacklisted Boolean  @default(false)
+  employeeId  Int
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([employeeId])
+  @@map("tokens")
+}
+
+// ==========================================
+// 7. HOUSEKEEPING
+// ==========================================
+
+model HousekeepingLog {
+  id          Int                @id @default(autoincrement())
+  roomId      Int
+  employeeId  Int // Nhân viên dọn phòng
+  status      HousekeepingStatus @default(PENDING)
+  assignedAt  DateTime           @default(now())
+  startedAt   DateTime?
+  completedAt DateTime?
+  inspectedBy Int? // Supervisor kiểm tra
+  inspectedAt DateTime?
+  priority    Int                @default(0) // 0=Normal, 1=High (checkout room)
+  notes       String?            @db.Text
+  createdAt   DateTime           @default(now())
+  updatedAt   DateTime           @updatedAt
+
+  room      Room      @relation(fields: [roomId], references: [id])
+  employee  Employee  @relation("HousekeepingEmployee", fields: [employeeId], references: [id])
+  inspector Employee? @relation("HousekeepingInspector", fields: [inspectedBy], references: [id])
+
+  @@index([roomId, status])
+  @@index([employeeId])
+  @@map("housekeeping_logs")
+}
+
+// ==========================================
+// 8. ROOM MOVE LOG
+// ==========================================
+
+model RoomMoveLog {
+  id           Int      @id @default(autoincrement())
+  stayDetailId Int
+  fromRoomId   Int
+  toRoomId     Int
+  moveTime     DateTime @default(now())
+  reason       String?  @db.Text
+  employeeId   Int
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  stayDetail StayDetail @relation(fields: [stayDetailId], references: [id])
+  fromRoom   Room       @relation("FromRoom", fields: [fromRoomId], references: [id])
+  toRoom     Room       @relation("ToRoom", fields: [toRoomId], references: [id])
+  employee   Employee   @relation(fields: [employeeId], references: [id])
+
+  @@index([stayDetailId])
+  @@map("room_move_logs")
+}
+
+// ==========================================
+// 9. SHIFT MANAGEMENT
+// ==========================================
+
+model ShiftSession {
+  id              Int                @id @default(autoincrement())
+  employeeId      Int
+  shiftId         Int
+  startTime       DateTime           @default(now())
+  endTime         DateTime?
+  openingBalance  Decimal            @db.Decimal(15, 2) // Tiền đầu ca
+  closingBalance  Decimal?           @db.Decimal(15, 2) // Tiền cuối ca
+  expectedBalance Decimal?           @db.Decimal(15, 2) // Tiền lý thuyết
+  variance        Decimal?           @db.Decimal(15, 2) // Chênh lệch
+  status          ShiftSessionStatus @default(OPEN)
+  approvedBy      Int?
+  approvedAt      DateTime?
+  notes           String?            @db.Text
+  createdAt       DateTime           @default(now())
+  updatedAt       DateTime           @updatedAt
+
+  employee Employee  @relation("ShiftEmployee", fields: [employeeId], references: [id])
+  shift    WorkShift @relation(fields: [shiftId], references: [id])
+  approver Employee? @relation("ShiftApprover", fields: [approvedBy], references: [id])
+
+  @@index([employeeId, startTime])
+  @@map("shift_sessions")
+}
+
+// ==========================================
+// 10. DAILY SNAPSHOT (For Reporting)
+// ==========================================
+
+model DailySnapshot {
+  id                    Int      @id @default(autoincrement())
+  snapshotDate          DateTime @unique @db.Date
+  // Occupancy metrics
+  totalRooms            Int
+  availableRooms        Int
+  occupiedRooms         Int
+  reservedRooms         Int
+  outOfOrderRooms       Int
+  occupancyRate         Decimal  @db.Decimal(5, 2)
+  // Revenue metrics
+  roomRevenue           Decimal  @db.Decimal(15, 2)
+  serviceRevenue        Decimal  @db.Decimal(15, 2)
+  surchargeRevenue      Decimal  @db.Decimal(15, 2)
+  penaltyRevenue        Decimal  @db.Decimal(15, 2)
+  totalRevenue          Decimal  @db.Decimal(15, 2)
+  // Booking metrics
+  newReservations       Int      @default(0)
+  cancelledReservations Int      @default(0)
+  checkIns              Int      @default(0)
+  checkOuts             Int      @default(0)
+  noShows               Int      @default(0)
+  // Guest metrics
+  totalGuests           Int      @default(0)
+  // ADR & RevPAR
+  averageDailyRate      Decimal  @db.Decimal(15, 2) // ADR = Room Revenue / Occupied Rooms
+  revPAR                Decimal  @db.Decimal(15, 2) // RevPAR = Room Revenue / Available Rooms
+  createdAt             DateTime @default(now())
+  updatedAt             DateTime @updatedAt
+
+  @@index([snapshotDate])
+  @@map("daily_snapshots")
+}
+
+// ==========================================
+// 11. ROOM INSPECTION (For Checkout)
+// ==========================================
+
+model RoomInspection {
+  id              Int      @id @default(autoincrement())
+  stayDetailId    Int      @unique
+  inspectedById   Int
+  inspectedAt     DateTime @default(now())
+  isApproved      Boolean  @default(false)
+  // Damage tracking
+  hasDamages      Boolean  @default(false)
+  damageNotes     String?  @db.Text
+  damageAmount    Decimal  @default(0) @db.Decimal(15, 2)
+  // Missing items tracking
+  hasMissingItems Boolean  @default(false)
+  missingItems    String?  @db.Text
+  missingAmount   Decimal  @default(0) @db.Decimal(15, 2)
+  // Policy violations
+  hasViolations   Boolean  @default(false)
+  violationNotes  String?  @db.Text
+  penaltyAmount   Decimal  @default(0) @db.Decimal(15, 2)
+  // Total
+  totalPenalty    Decimal  @default(0) @db.Decimal(15, 2)
+  notes           String?  @db.Text
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  stayDetail  StayDetail @relation(fields: [stayDetailId], references: [id])
+  inspectedBy Employee   @relation(fields: [inspectedById], references: [id])
+
+  @@map("room_inspections")
 }

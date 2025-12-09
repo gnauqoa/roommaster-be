@@ -1,22 +1,14 @@
 import httpStatus from 'http-status';
 import catchAsync from 'utils/catchAsync';
-import { authService, userService, tokenService, emailService } from 'services';
+import { authService, tokenService, emailService, employeeService } from 'services';
 import exclude from 'utils/exclude';
-import { User } from '@prisma/client';
-
-const register = catchAsync(async (req, res) => {
-  const { email, password } = req.body;
-  const user = await userService.createUser(email, password);
-  const userWithoutPassword = exclude(user, ['password', 'createdAt', 'updatedAt']);
-  const tokens = await tokenService.generateAuthTokens(user);
-  res.status(httpStatus.CREATED).send({ user: userWithoutPassword, tokens });
-});
+import { Employee } from '@prisma/client';
 
 const login = catchAsync(async (req, res) => {
   const { email, password } = req.body;
-  const user = await authService.loginUserWithEmailAndPassword(email, password);
-  const tokens = await tokenService.generateAuthTokens(user);
-  res.send({ user, tokens });
+  const employee = await authService.loginWithEmailAndPassword(email, password);
+  const tokens = await tokenService.generateAuthTokens(employee);
+  res.send({ employee, tokens });
 });
 
 const logout = catchAsync(async (req, res) => {
@@ -40,25 +32,35 @@ const resetPassword = catchAsync(async (req, res) => {
   res.status(httpStatus.NO_CONTENT).send();
 });
 
-const sendVerificationEmail = catchAsync(async (req, res) => {
-  const user = req.user as User;
-  const verifyEmailToken = await tokenService.generateVerifyEmailToken(user);
-  await emailService.sendVerificationEmail(user.email, verifyEmailToken);
+const changePassword = catchAsync(async (req, res) => {
+  const employee = req.user as Employee;
+  await authService.changePassword(employee.id, req.body.currentPassword, req.body.newPassword);
   res.status(httpStatus.NO_CONTENT).send();
 });
 
-const verifyEmail = catchAsync(async (req, res) => {
-  await authService.verifyEmail(req.query.token as string);
-  res.status(httpStatus.NO_CONTENT).send();
+const getProfile = catchAsync(async (req, res) => {
+  const employee = req.user as Employee;
+  const profile = await employeeService.getEmployeeById(employee.id);
+  if (!profile) {
+    res.status(httpStatus.NOT_FOUND).send({ message: 'Employee not found' });
+    return;
+  }
+  res.send(exclude(profile, ['passwordHash']));
+});
+
+const updateProfile = catchAsync(async (req, res) => {
+  const employee = req.user as Employee;
+  const updated = await employeeService.updateEmployeeById(employee.id, req.body);
+  res.send(exclude(updated, ['passwordHash']));
 });
 
 export default {
-  register,
   login,
   logout,
   refreshTokens,
   forgotPassword,
   resetPassword,
-  sendVerificationEmail,
-  verifyEmail
+  changePassword,
+  getProfile,
+  updateProfile
 };

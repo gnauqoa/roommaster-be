@@ -2,28 +2,30 @@ import jwt from 'jsonwebtoken';
 import moment, { Moment } from 'moment';
 import httpStatus from 'http-status';
 import config from 'config/env';
-import userService from './user.service';
-import { Token, TokenType } from '@prisma/client';
+import employeeService from './employee.service';
+import { Token } from '@prisma/client';
 import prisma from 'prisma';
 import { AuthTokensResponse } from 'types/response';
 import ApiError from 'utils/ApiError';
 
+type TokenType = 'ACCESS' | 'REFRESH' | 'RESET_PASSWORD';
+
 /**
  * Generate token
- * @param {number} userId
+ * @param {number} employeeId
  * @param {Moment} expires
  * @param {string} type
  * @param {string} [secret]
  * @returns {string}
  */
 const generateToken = (
-  userId: number,
+  employeeId: number,
   expires: Moment,
   type: TokenType,
   secret = config.jwt.secret
 ): string => {
   const payload = {
-    sub: userId,
+    sub: employeeId,
     iat: moment().unix(),
     exp: expires.unix(),
     type
@@ -34,7 +36,7 @@ const generateToken = (
 /**
  * Save a token
  * @param {string} token
- * @param {number} userId
+ * @param {number} employeeId
  * @param {Moment} expires
  * @param {string} type
  * @param {boolean} [blacklisted]
@@ -42,7 +44,7 @@ const generateToken = (
  */
 const saveToken = async (
   token: string,
-  userId: number,
+  employeeId: number,
   expires: Moment,
   type: TokenType,
   blacklisted = false
@@ -50,7 +52,7 @@ const saveToken = async (
   const createdToken = prisma.token.create({
     data: {
       token,
-      userId: userId,
+      employeeId,
       expires: expires.toDate(),
       type,
       blacklisted
@@ -67,9 +69,9 @@ const saveToken = async (
  */
 const verifyToken = async (token: string, type: TokenType): Promise<Token> => {
   const payload = jwt.verify(token, config.jwt.secret);
-  const userId = Number(payload.sub);
+  const employeeId = Number(payload.sub);
   const tokenData = await prisma.token.findFirst({
-    where: { token, type, userId, blacklisted: false }
+    where: { token, type, employeeId, blacklisted: false }
   });
   if (!tokenData) {
     throw new Error('Token not found');
@@ -79,16 +81,16 @@ const verifyToken = async (token: string, type: TokenType): Promise<Token> => {
 
 /**
  * Generate auth tokens
- * @param {User} user
+ * @param {Object} employee
  * @returns {Promise<AuthTokensResponse>}
  */
-const generateAuthTokens = async (user: { id: number }): Promise<AuthTokensResponse> => {
+const generateAuthTokens = async (employee: { id: number }): Promise<AuthTokensResponse> => {
   const accessTokenExpires = moment().add(config.jwt.accessExpirationMinutes, 'minutes');
-  const accessToken = generateToken(user.id, accessTokenExpires, TokenType.ACCESS);
+  const accessToken = generateToken(employee.id, accessTokenExpires, 'ACCESS');
 
   const refreshTokenExpires = moment().add(config.jwt.refreshExpirationDays, 'days');
-  const refreshToken = generateToken(user.id, refreshTokenExpires, TokenType.REFRESH);
-  await saveToken(refreshToken, user.id, refreshTokenExpires, TokenType.REFRESH);
+  const refreshToken = generateToken(employee.id, refreshTokenExpires, 'REFRESH');
+  await saveToken(refreshToken, employee.id, refreshTokenExpires, 'REFRESH');
 
   return {
     access: {
@@ -108,26 +110,14 @@ const generateAuthTokens = async (user: { id: number }): Promise<AuthTokensRespo
  * @returns {Promise<string>}
  */
 const generateResetPasswordToken = async (email: string): Promise<string> => {
-  const user = await userService.getUserByEmail(email);
-  if (!user) {
-    throw new ApiError(httpStatus.NOT_FOUND, 'No users found with this email');
+  const employee = await employeeService.getEmployeeByEmail(email);
+  if (!employee) {
+    throw new ApiError(httpStatus.NOT_FOUND, 'No employee found with this email');
   }
   const expires = moment().add(config.jwt.resetPasswordExpirationMinutes, 'minutes');
-  const resetPasswordToken = generateToken(user.id, expires, TokenType.RESET_PASSWORD);
-  await saveToken(resetPasswordToken, user.id, expires, TokenType.RESET_PASSWORD);
+  const resetPasswordToken = generateToken(employee.id, expires, 'RESET_PASSWORD');
+  await saveToken(resetPasswordToken, employee.id, expires, 'RESET_PASSWORD');
   return resetPasswordToken;
-};
-
-/**
- * Generate verify email token
- * @param {User} user
- * @returns {Promise<string>}
- */
-const generateVerifyEmailToken = async (user: { id: number }): Promise<string> => {
-  const expires = moment().add(config.jwt.verifyEmailExpirationMinutes, 'minutes');
-  const verifyEmailToken = generateToken(user.id, expires, TokenType.VERIFY_EMAIL);
-  await saveToken(verifyEmailToken, user.id, expires, TokenType.VERIFY_EMAIL);
-  return verifyEmailToken;
 };
 
 export default {
@@ -135,6 +125,5 @@ export default {
   saveToken,
   verifyToken,
   generateAuthTokens,
-  generateResetPasswordToken,
-  generateVerifyEmailToken
+  generateResetPasswordToken
 };
