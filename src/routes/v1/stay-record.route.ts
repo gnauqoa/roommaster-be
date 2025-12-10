@@ -7,7 +7,77 @@ import { PERMISSIONS } from 'config/roles';
 
 const router = express.Router();
 
-// Walk-in check-in
+/**
+ * @swagger
+ * tags:
+ *   - name: Stay Records
+ *     description: Stay records and guest check-in/check-out management
+ */
+
+/**
+ * @swagger
+ * /stay-records:
+ *   post:
+ *     summary: Create a new stay record (walk-in check-in)
+ *     tags: [Stay Records]
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - customerId
+ *               - roomId
+ *               - checkInDate
+ *               - expectedCheckOutDate
+ *             properties:
+ *               customerId:
+ *                 type: integer
+ *               roomId:
+ *                 type: integer
+ *               checkInDate:
+ *                 type: string
+ *                 format: date-time
+ *               expectedCheckOutDate:
+ *                 type: string
+ *                 format: date
+ *               numberOfGuests:
+ *                 type: integer
+ *     responses:
+ *       "201":
+ *         description: Stay record created successfully
+ *       "401":
+ *         description: Unauthorized
+ *       "403":
+ *         description: Forbidden
+ *   get:
+ *     summary: Get all stay records
+ *     tags: [Stay Records]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: query
+ *         name: page
+ *         schema:
+ *           type: integer
+ *       - in: query
+ *         name: limit
+ *         schema:
+ *           type: integer
+ *       - in: query
+ *         name: status
+ *         schema:
+ *           type: string
+ *           enum: [CHECKED_IN, CHECKED_OUT]
+ *     responses:
+ *       "200":
+ *         description: List of stay records
+ *       "401":
+ *         description: Unauthorized
+ */
 router
   .route('/')
   .post(
@@ -21,121 +91,28 @@ router
     stayRecordController.getStayRecords
   );
 
-router.get('/guests', auth(PERMISSIONS.STAY_RECORD_READ), stayRecordController.getCurrentGuests);
-
-router
-  .route('/:stayRecordId')
-  .get(
-    auth(PERMISSIONS.STAY_RECORD_READ),
-    validate(stayRecordValidation.getStayRecord),
-    stayRecordController.getStayRecord
-  );
-
-router.post(
-  '/:stayRecordId/check-out',
-  auth(PERMISSIONS.STAY_RECORD_UPDATE),
-  validate(stayRecordValidation.checkOut),
-  stayRecordController.checkOut
-);
-
-router.post(
-  '/details/:stayDetailId/check-out',
-  auth(PERMISSIONS.STAY_RECORD_UPDATE),
-  validate(stayRecordValidation.checkOutRoom),
-  stayRecordController.checkOutRoom
-);
-
-router.post(
-  '/details/:stayDetailId/move',
-  auth(PERMISSIONS.STAY_RECORD_UPDATE),
-  validate(stayRecordValidation.moveRoom),
-  stayRecordController.moveRoom
-);
-
-router.post(
-  '/details/:stayDetailId/extend',
-  auth(PERMISSIONS.STAY_RECORD_UPDATE),
-  validate(stayRecordValidation.extendStay),
-  stayRecordController.extendStay
-);
-
-router.post(
-  '/details/:stayDetailId/guests',
-  auth(PERMISSIONS.STAY_RECORD_UPDATE),
-  validate(stayRecordValidation.addGuestToRoom),
-  stayRecordController.addGuest
-);
-
-export default router;
-
-/**
- * @swagger
- * tags:
- *   name: StayRecords
- *   description: Stay record and check-in/out management
- */
-
-/**
- * @swagger
- * /stay-records:
- *   post:
- *     summary: Create a walk-in stay record (direct check-in without reservation)
- *     tags: [StayRecords]
- *     security:
- *       - bearerAuth: []
- *     requestBody:
- *       required: true
- *       content:
- *         application/json:
- *           schema:
- *             $ref: '#/components/schemas/CreateStayRecord'
- *     responses:
- *       "201":
- *         description: Created
- *       "401":
- *         $ref: '#/components/responses/Unauthorized'
- *   get:
- *     summary: Get all stay records
- *     tags: [StayRecords]
- *     security:
- *       - bearerAuth: []
- *     responses:
- *       "200":
- *         description: OK
- *       "401":
- *         $ref: '#/components/responses/Unauthorized'
- */
-
 /**
  * @swagger
  * /stay-records/guests:
  *   get:
- *     summary: Get current guests in residence
- *     tags: [StayRecords]
+ *     summary: Get current guests
+ *     tags: [Stay Records]
  *     security:
  *       - bearerAuth: []
- *     parameters:
- *       - in: query
- *         name: roomId
- *         schema:
- *           type: integer
- *       - in: query
- *         name: floor
- *         schema:
- *           type: integer
  *     responses:
  *       "200":
- *         description: OK
+ *         description: List of current guests checked in
  *       "401":
- *         $ref: '#/components/responses/Unauthorized'
+ *         description: Unauthorized
  */
+router.get('/guests', auth(PERMISSIONS.STAY_RECORD_READ), stayRecordController.getCurrentGuests);
 
 /**
  * @swagger
- * /stay-records/{stayRecordId}/check-out:
- *   post:
- *     summary: Check out a stay record (all rooms)
- *     tags: [StayRecords]
+ * /stay-records/{stayRecordId}:
+ *   get:
+ *     summary: Get stay record by ID
+ *     tags: [Stay Records]
  *     security:
  *       - bearerAuth: []
  *     parameters:
@@ -146,19 +123,98 @@ export default router;
  *           type: integer
  *     responses:
  *       "200":
- *         description: OK
+ *         description: Stay record details
  *       "401":
- *         $ref: '#/components/responses/Unauthorized'
+ *         description: Unauthorized
  *       "404":
- *         $ref: '#/components/responses/NotFound'
+ *         description: Stay record not found
  */
+router
+  .route('/:stayRecordId')
+  .get(
+    auth(PERMISSIONS.STAY_RECORD_READ),
+    validate(stayRecordValidation.getStayRecord),
+    stayRecordController.getStayRecord
+  );
+
+/**
+ * @swagger
+ * /stay-records/{stayRecordId}/check-out:
+ *   post:
+ *     summary: Check out a guest
+ *     tags: [Stay Records]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: stayRecordId
+ *         required: true
+ *         schema:
+ *           type: integer
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *     responses:
+ *       "200":
+ *         description: Guest checked out successfully
+ *       "401":
+ *         description: Unauthorized
+ *       "403":
+ *         description: Forbidden
+ *       "404":
+ *         description: Stay record not found
+ */
+router.post(
+  '/:stayRecordId/check-out',
+  auth(PERMISSIONS.STAY_RECORD_UPDATE),
+  validate(stayRecordValidation.checkOut),
+  stayRecordController.checkOut
+);
+
+/**
+ * @swagger
+ * /stay-records/details/{stayDetailId}/check-out:
+ *   post:
+ *     summary: Check out a specific room in a stay
+ *     tags: [Stay Records]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: stayDetailId
+ *         required: true
+ *         schema:
+ *           type: integer
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *     responses:
+ *       "200":
+ *         description: Room checked out successfully
+ *       "401":
+ *         description: Unauthorized
+ *       "403":
+ *         description: Forbidden
+ */
+router.post(
+  '/details/:stayDetailId/check-out',
+  auth(PERMISSIONS.STAY_RECORD_UPDATE),
+  validate(stayRecordValidation.checkOutRoom),
+  stayRecordController.checkOutRoom
+);
 
 /**
  * @swagger
  * /stay-records/details/{stayDetailId}/move:
  *   post:
- *     summary: Move guest to a different room
- *     tags: [StayRecords]
+ *     summary: Move guest to another room
+ *     tags: [Stay Records]
  *     security:
  *       - bearerAuth: []
  *     parameters:
@@ -178,11 +234,100 @@ export default router;
  *             properties:
  *               newRoomId:
  *                 type: integer
- *               reason:
+ *     responses:
+ *       "200":
+ *         description: Guest moved successfully
+ *       "401":
+ *         description: Unauthorized
+ *       "403":
+ *         description: Forbidden
+ */
+router.post(
+  '/details/:stayDetailId/move',
+  auth(PERMISSIONS.STAY_RECORD_UPDATE),
+  validate(stayRecordValidation.moveRoom),
+  stayRecordController.moveRoom
+);
+
+/**
+ * @swagger
+ * /stay-records/details/{stayDetailId}/extend:
+ *   post:
+ *     summary: Extend guest stay
+ *     tags: [Stay Records]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: stayDetailId
+ *         required: true
+ *         schema:
+ *           type: integer
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - newCheckOutDate
+ *             properties:
+ *               newCheckOutDate:
+ *                 type: string
+ *                 format: date
+ *     responses:
+ *       "200":
+ *         description: Stay extended successfully
+ *       "401":
+ *         description: Unauthorized
+ *       "403":
+ *         description: Forbidden
+ */
+router.post(
+  '/details/:stayDetailId/extend',
+  auth(PERMISSIONS.STAY_RECORD_UPDATE),
+  validate(stayRecordValidation.extendStay),
+  stayRecordController.extendStay
+);
+
+/**
+ * @swagger
+ * /stay-records/details/{stayDetailId}/guests:
+ *   post:
+ *     summary: Add guest to a room
+ *     tags: [Stay Records]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: stayDetailId
+ *         required: true
+ *         schema:
+ *           type: integer
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - guestName
+ *             properties:
+ *               guestName:
  *                 type: string
  *     responses:
  *       "200":
- *         description: OK
+ *         description: Guest added successfully
  *       "401":
- *         $ref: '#/components/responses/Unauthorized'
+ *         description: Unauthorized
+ *       "403":
+ *         description: Forbidden
  */
+router.post(
+  '/details/:stayDetailId/guests',
+  auth(PERMISSIONS.STAY_RECORD_UPDATE),
+  validate(stayRecordValidation.addGuestToRoom),
+  stayRecordController.addGuest
+);
+
+export default router;

@@ -7,6 +7,90 @@ import { PERMISSIONS } from '../../config/roles';
 
 const router = express.Router();
 
+/**
+ * @swagger
+ * tags:
+ *   - name: Inspections
+ *     description: Room inspection management
+ */
+
+/**
+ * @swagger
+ * /inspections/{stayDetailId}:
+ *   post:
+ *     summary: Create a room inspection
+ *     tags: [Inspections]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: stayDetailId
+ *         required: true
+ *         schema:
+ *           type: integer
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               notes:
+ *                 type: string
+ *               damages:
+ *                 type: array
+ *                 items:
+ *                   type: string
+ *     responses:
+ *       "201":
+ *         description: Inspection created successfully
+ *       "401":
+ *         description: Unauthorized
+ *       "403":
+ *         description: Forbidden
+ *   get:
+ *     summary: Get inspection for a stay detail
+ *     tags: [Inspections]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: stayDetailId
+ *         required: true
+ *         schema:
+ *           type: integer
+ *     responses:
+ *       "200":
+ *         description: Inspection details
+ *       "401":
+ *         description: Unauthorized
+ *       "404":
+ *         description: Inspection not found
+ *   patch:
+ *     summary: Update inspection
+ *     tags: [Inspections]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: stayDetailId
+ *         required: true
+ *         schema:
+ *           type: integer
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *     responses:
+ *       "200":
+ *         description: Inspection updated successfully
+ *       "401":
+ *         description: Unauthorized
+ *       "403":
+ *         description: Forbidden
+ */
 router.post(
   '/:stayDetailId',
   auth(PERMISSIONS.INSPECTION_CREATE),
@@ -28,6 +112,26 @@ router.patch(
   inspectionController.updateInspection
 );
 
+/**
+ * @swagger
+ * /inspections/{stayDetailId}/can-checkout:
+ *   get:
+ *     summary: Check if guest can checkout
+ *     tags: [Inspections]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: stayDetailId
+ *         required: true
+ *         schema:
+ *           type: integer
+ *     responses:
+ *       "200":
+ *         description: Checkout eligibility result
+ *       "401":
+ *         description: Unauthorized
+ */
 router.get(
   '/:stayDetailId/can-checkout',
   auth(PERMISSIONS.INSPECTION_READ),
@@ -36,125 +140,3 @@ router.get(
 );
 
 export default router;
-
-/**
- * @swagger
- * tags:
- *   name: Inspections
- *   description: Room inspection before checkout
- */
-
-/**
- * @swagger
- * /inspections/{stayDetailId}:
- *   post:
- *     summary: Create room inspection
- *     tags: [Inspections]
- *     security:
- *       - bearerAuth: []
- *     parameters:
- *       - in: path
- *         name: stayDetailId
- *         required: true
- *         schema:
- *           type: integer
- *     requestBody:
- *       required: true
- *       content:
- *         application/json:
- *           schema:
- *             type: object
- *             properties:
- *               hasDamages:
- *                 type: boolean
- *               damageNotes:
- *                 type: string
- *               damageAmount:
- *                 type: number
- *               hasMissingItems:
- *                 type: boolean
- *               missingItems:
- *                 type: string
- *               missingAmount:
- *                 type: number
- *               hasViolations:
- *                 type: boolean
- *               violationNotes:
- *                 type: string
- *               penaltyAmount:
- *                 type: number
- *               notes:
- *                 type: string
- *     responses:
- *       "201":
- *         description: Created
- *       "401":
- *         $ref: '#/components/responses/Unauthorized'
- *   get:
- *     summary: Get room inspection
- *     tags: [Inspections]
- *     security:
- *       - bearerAuth: []
- *     parameters:
- *       - in: path
- *         name: stayDetailId
- *         required: true
- *         schema:
- *           type: integer
- *     responses:
- *       "200":
- *         description: OK
- *       "404":
- *         $ref: '#/components/responses/NotFound'
- *   patch:
- *     summary: Update room inspection (approve/add notes)
- *     tags: [Inspections]
- *     security:
- *       - bearerAuth: []
- *     parameters:
- *       - in: path
- *         name: stayDetailId
- *         required: true
- *         schema:
- *           type: integer
- *     requestBody:
- *       required: true
- *       content:
- *         application/json:
- *           schema:
- *             type: object
- *             properties:
- *               isApproved:
- *                 type: boolean
- *               notes:
- *                 type: string
- *     responses:
- *       "200":
- *         description: OK
- */
-
-/**
- * @swagger
- * /inspections/{stayDetailId}/can-checkout:
- *   get:
- *     summary: Check if room can be checked out
- *     tags: [Inspections]
- *     security:
- *       - bearerAuth: []
- *     parameters:
- *       - in: path
- *         name: stayDetailId
- *         required: true
- *         schema:
- *           type: integer
- *     responses:
- *       "200":
- *         description: OK
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *               properties:
- *                 canCheckout:
- *                   type: boolean
- */

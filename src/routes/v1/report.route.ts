@@ -7,64 +7,18 @@ import { PERMISSIONS } from '../../config/roles';
 
 const router = express.Router();
 
-router.get(
-  '/daily-snapshot',
-  auth(PERMISSIONS.REPORT_READ),
-  validate(reportValidation.getSnapshot),
-  reportController.getDailySnapshot
-);
-
-router.get(
-  '/snapshots',
-  auth(PERMISSIONS.REPORT_READ),
-  validate(reportValidation.getSnapshots),
-  reportController.getSnapshots
-);
-
-router.get(
-  '/occupancy',
-  auth(PERMISSIONS.REPORT_READ),
-  validate(reportValidation.getOccupancyReport),
-  reportController.getOccupancyReport
-);
-
-router.get(
-  '/revenue',
-  auth(PERMISSIONS.REPORT_READ),
-  validate(reportValidation.getRevenueReport),
-  reportController.getRevenueReport
-);
-
-router.get(
-  '/revenue-by-room-type',
-  auth(PERMISSIONS.REPORT_READ),
-  validate(reportValidation.getRevenueByRoomType),
-  reportController.getRevenueByRoomType
-);
-
-router.get(
-  '/bookings',
-  auth(PERMISSIONS.REPORT_READ),
-  validate(reportValidation.getBookingReport),
-  reportController.getBookingReport
-);
-
-router.get('/dashboard', auth(PERMISSIONS.REPORT_READ), reportController.getDashboard);
-
-export default router;
-
 /**
  * @swagger
  * tags:
- *   name: Reports
- *   description: Reports and analytics endpoints
+ *   - name: Reports
+ *     description: Business reporting and analytics
  */
 
 /**
  * @swagger
  * /reports/daily-snapshot:
  *   get:
- *     summary: Get daily snapshot for a specific date
+ *     summary: Get daily snapshot report
  *     tags: [Reports]
  *     security:
  *       - bearerAuth: []
@@ -75,21 +29,70 @@ export default router;
  *         schema:
  *           type: string
  *           format: date
- *         description: The date to get snapshot for (YYYY-MM-DD)
  *     responses:
  *       "200":
- *         description: OK
+ *         description: Daily snapshot data
  *       "401":
- *         $ref: '#/components/responses/Unauthorized'
- *       "404":
- *         description: Snapshot not found for the given date
+ *         description: Unauthorized
+ *       "403":
+ *         description: Forbidden
  */
+router.get(
+  '/daily-snapshot',
+  auth(PERMISSIONS.REPORT_READ),
+  validate(reportValidation.getSnapshot),
+  reportController.getDailySnapshot
+);
+
+/**
+ * @swagger
+ * /reports/snapshots:
+ *   get:
+ *     summary: Get daily snapshots
+ *     tags: [Reports]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: query
+ *         name: startDate
+ *         required: true
+ *         schema:
+ *           type: string
+ *           format: date
+ *       - in: query
+ *         name: endDate
+ *         required: true
+ *         schema:
+ *           type: string
+ *           format: date
+ *       - in: query
+ *         name: page
+ *         schema:
+ *           type: integer
+ *       - in: query
+ *         name: limit
+ *         schema:
+ *           type: integer
+ *     responses:
+ *       "200":
+ *         description: List of daily snapshots
+ *       "401":
+ *         description: Unauthorized
+ *       "403":
+ *         description: Forbidden
+ */
+router.get(
+  '/snapshots',
+  auth(PERMISSIONS.REPORT_READ),
+  validate(reportValidation.getSnapshots),
+  reportController.getSnapshots
+);
 
 /**
  * @swagger
  * /reports/occupancy:
  *   get:
- *     summary: Get occupancy report for a date range
+ *     summary: Get occupancy report
  *     tags: [Reports]
  *     security:
  *       - bearerAuth: []
@@ -106,36 +109,30 @@ export default router;
  *         schema:
  *           type: string
  *           format: date
+ *       - in: query
+ *         name: roomTypeId
+ *         schema:
+ *           type: integer
  *     responses:
  *       "200":
- *         description: OK
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *               properties:
- *                 period:
- *                   type: object
- *                   properties:
- *                     startDate:
- *                       type: string
- *                     endDate:
- *                       type: string
- *                 averageOccupancyRate:
- *                   type: number
- *                 totalRoomNights:
- *                   type: integer
- *                 occupiedRoomNights:
- *                   type: integer
- *                 dailyData:
- *                   type: array
+ *         description: Occupancy report data
+ *       "401":
+ *         description: Unauthorized
+ *       "403":
+ *         description: Forbidden
  */
+router.get(
+  '/occupancy',
+  auth(PERMISSIONS.REPORT_READ),
+  validate(reportValidation.getOccupancyReport),
+  reportController.getOccupancyReport
+);
 
 /**
  * @swagger
  * /reports/revenue:
  *   get:
- *     summary: Get revenue report for a date range
+ *     summary: Get revenue report
  *     tags: [Reports]
  *     security:
  *       - bearerAuth: []
@@ -154,49 +151,107 @@ export default router;
  *           format: date
  *     responses:
  *       "200":
- *         description: OK
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *               properties:
- *                 period:
- *                   type: object
- *                 totalRevenue:
- *                   type: number
- *                 roomRevenue:
- *                   type: number
- *                 serviceRevenue:
- *                   type: number
- *                 revPAR:
- *                   type: number
- *                   description: Revenue Per Available Room
- *                 dailyData:
- *                   type: array
+ *         description: Revenue report data
+ *       "401":
+ *         description: Unauthorized
+ *       "403":
+ *         description: Forbidden
  */
+router.get(
+  '/revenue',
+  auth(PERMISSIONS.REPORT_READ),
+  validate(reportValidation.getRevenueReport),
+  reportController.getRevenueReport
+);
+
+/**
+ * @swagger
+ * /reports/revenue-by-room-type:
+ *   get:
+ *     summary: Get revenue by room type report
+ *     tags: [Reports]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: query
+ *         name: startDate
+ *         required: true
+ *         schema:
+ *           type: string
+ *           format: date
+ *       - in: query
+ *         name: endDate
+ *         required: true
+ *         schema:
+ *           type: string
+ *           format: date
+ *     responses:
+ *       "200":
+ *         description: Revenue breakdown by room type
+ *       "401":
+ *         description: Unauthorized
+ *       "403":
+ *         description: Forbidden
+ */
+router.get(
+  '/revenue-by-room-type',
+  auth(PERMISSIONS.REPORT_READ),
+  validate(reportValidation.getRevenueByRoomType),
+  reportController.getRevenueByRoomType
+);
+
+/**
+ * @swagger
+ * /reports/bookings:
+ *   get:
+ *     summary: Get booking report
+ *     tags: [Reports]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: query
+ *         name: startDate
+ *         required: true
+ *         schema:
+ *           type: string
+ *           format: date
+ *       - in: query
+ *         name: endDate
+ *         required: true
+ *         schema:
+ *           type: string
+ *           format: date
+ *     responses:
+ *       "200":
+ *         description: Booking report data
+ *       "401":
+ *         description: Unauthorized
+ *       "403":
+ *         description: Forbidden
+ */
+router.get(
+  '/bookings',
+  auth(PERMISSIONS.REPORT_READ),
+  validate(reportValidation.getBookingReport),
+  reportController.getBookingReport
+);
 
 /**
  * @swagger
  * /reports/dashboard:
  *   get:
- *     summary: Get operational dashboard with real-time metrics
+ *     summary: Get dashboard data
  *     tags: [Reports]
  *     security:
  *       - bearerAuth: []
  *     responses:
  *       "200":
- *         description: OK
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *               properties:
- *                 todayOccupancy:
- *                   type: object
- *                 roomStatus:
- *                   type: object
- *                 arrivalsAndDepartures:
- *                   type: object
- *                 todayRevenue:
- *                   type: object
+ *         description: Dashboard data with key metrics
+ *       "401":
+ *         description: Unauthorized
+ *       "403":
+ *         description: Forbidden
  */
+router.get('/dashboard', auth(PERMISSIONS.REPORT_READ), reportController.getDashboard);
+
+export default router;

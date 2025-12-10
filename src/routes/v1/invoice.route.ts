@@ -7,6 +7,66 @@ import { PERMISSIONS } from '../../config/roles';
 
 const router = express.Router();
 
+/**
+ * @swagger
+ * tags:
+ *   - name: Invoices
+ *     description: Invoice generation and management
+ */
+
+/**
+ * @swagger
+ * /invoices:
+ *   post:
+ *     summary: Create a new invoice
+ *     tags: [Invoices]
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - folioId
+ *             properties:
+ *               folioId:
+ *                 type: integer
+ *               notes:
+ *                 type: string
+ *     responses:
+ *       "201":
+ *         description: Invoice created successfully
+ *       "401":
+ *         description: Unauthorized
+ *       "403":
+ *         description: Forbidden
+ *   get:
+ *     summary: Get all invoices
+ *     tags: [Invoices]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: query
+ *         name: page
+ *         schema:
+ *           type: integer
+ *       - in: query
+ *         name: limit
+ *         schema:
+ *           type: integer
+ *       - in: query
+ *         name: status
+ *         schema:
+ *           type: string
+ *           enum: [DRAFT, ISSUED, PAID, CANCELLED]
+ *     responses:
+ *       "200":
+ *         description: List of invoices
+ *       "401":
+ *         description: Unauthorized
+ */
 router
   .route('/')
   .post(
@@ -19,95 +79,6 @@ router
     validate(invoiceValidation.getInvoices),
     invoiceController.getInvoices
   );
-
-router
-  .route('/:invoiceId')
-  .get(
-    auth(PERMISSIONS.INVOICE_READ),
-    validate(invoiceValidation.getInvoice),
-    invoiceController.getInvoice
-  );
-
-router.get(
-  '/:invoiceId/print',
-  auth(PERMISSIONS.INVOICE_READ),
-  validate(invoiceValidation.printInvoice),
-  invoiceController.getInvoiceForPrint
-);
-
-export default router;
-
-/**
- * @swagger
- * tags:
- *   name: Invoices
- *   description: Invoice management
- */
-
-/**
- * @swagger
- * /invoices:
- *   post:
- *     summary: Create an invoice from folio transactions
- *     tags: [Invoices]
- *     security:
- *       - bearerAuth: []
- *     requestBody:
- *       required: true
- *       content:
- *         application/json:
- *           schema:
- *             type: object
- *             required:
- *               - guestFolioId
- *               - invoiceToCustomerId
- *               - transactionIds
- *             properties:
- *               guestFolioId:
- *                 type: integer
- *               invoiceToCustomerId:
- *                 type: integer
- *               taxId:
- *                 type: string
- *               transactionIds:
- *                 type: array
- *                 items:
- *                   type: integer
- *     responses:
- *       "201":
- *         description: Created
- *       "401":
- *         $ref: '#/components/responses/Unauthorized'
- *   get:
- *     summary: Get all invoices
- *     tags: [Invoices]
- *     security:
- *       - bearerAuth: []
- *     parameters:
- *       - in: query
- *         name: guestFolioId
- *         schema:
- *           type: integer
- *       - in: query
- *         name: invoiceToCustomerId
- *         schema:
- *           type: integer
- *       - in: query
- *         name: fromDate
- *         schema:
- *           type: string
- *           format: date
- *       - in: query
- *         name: toDate
- *         schema:
- *           type: string
- *           format: date
- *     responses:
- *       "200":
- *         description: OK
- *       "401":
- *         $ref: '#/components/responses/Unauthorized'
- */
 
 /**
  * @swagger
@@ -125,16 +96,25 @@ export default router;
  *           type: integer
  *     responses:
  *       "200":
- *         description: OK
+ *         description: Invoice details
+ *       "401":
+ *         description: Unauthorized
  *       "404":
- *         $ref: '#/components/responses/NotFound'
+ *         description: Invoice not found
  */
+router
+  .route('/:invoiceId')
+  .get(
+    auth(PERMISSIONS.INVOICE_READ),
+    validate(invoiceValidation.getInvoice),
+    invoiceController.getInvoice
+  );
 
 /**
  * @swagger
  * /invoices/{invoiceId}/print:
  *   get:
- *     summary: Get invoice data for printing/PDF
+ *     summary: Get invoice for printing
  *     tags: [Invoices]
  *     security:
  *       - bearerAuth: []
@@ -146,7 +126,17 @@ export default router;
  *           type: integer
  *     responses:
  *       "200":
- *         description: OK
+ *         description: Printable invoice
+ *       "401":
+ *         description: Unauthorized
  *       "404":
- *         $ref: '#/components/responses/NotFound'
+ *         description: Invoice not found
  */
+router.get(
+  '/:invoiceId/print',
+  auth(PERMISSIONS.INVOICE_READ),
+  validate(invoiceValidation.printInvoice),
+  invoiceController.getInvoiceForPrint
+);
+
+export default router;

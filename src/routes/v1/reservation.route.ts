@@ -7,6 +7,80 @@ import { PERMISSIONS } from 'config/roles';
 
 const router = express.Router();
 
+/**
+ * @swagger
+ * tags:
+ *   - name: Reservations
+ *     description: Reservation management endpoints
+ */
+
+/**
+ * @swagger
+ * /reservations:
+ *   post:
+ *     summary: Create a new reservation
+ *     tags: [Reservations]
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - customerId
+ *               - roomTypeId
+ *               - checkInDate
+ *               - checkOutDate
+ *               - numberOfGuests
+ *             properties:
+ *               customerId:
+ *                 type: integer
+ *               roomTypeId:
+ *                 type: integer
+ *               checkInDate:
+ *                 type: string
+ *                 format: date
+ *               checkOutDate:
+ *                 type: string
+ *                 format: date
+ *               numberOfGuests:
+ *                 type: integer
+ *               specialRequests:
+ *                 type: string
+ *     responses:
+ *       "201":
+ *         description: Reservation created successfully
+ *       "401":
+ *         description: Unauthorized
+ *       "403":
+ *         description: Forbidden
+ *   get:
+ *     summary: Get all reservations
+ *     tags: [Reservations]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: query
+ *         name: page
+ *         schema:
+ *           type: integer
+ *       - in: query
+ *         name: limit
+ *         schema:
+ *           type: integer
+ *       - in: query
+ *         name: status
+ *         schema:
+ *           type: string
+ *           enum: [PENDING, CONFIRMED, CANCELLED, CHECKED_IN, CHECKED_OUT]
+ *     responses:
+ *       "200":
+ *         description: List of reservations
+ *       "401":
+ *         description: Unauthorized
+ */
 router
   .route('/')
   .post(
@@ -20,104 +94,6 @@ router
     reservationController.getReservations
   );
 
-router.get('/arrivals', auth(PERMISSIONS.RESERVATION_READ), reservationController.getTodayArrivals);
-
-router.get(
-  '/departures',
-  auth(PERMISSIONS.RESERVATION_READ),
-  reservationController.getTodayDepartures
-);
-
-router
-  .route('/:reservationId')
-  .get(
-    auth(PERMISSIONS.RESERVATION_READ),
-    validate(reservationValidation.getReservation),
-    reservationController.getReservation
-  )
-  .patch(
-    auth(PERMISSIONS.RESERVATION_UPDATE),
-    validate(reservationValidation.updateReservation),
-    reservationController.updateReservation
-  );
-
-router.post(
-  '/:reservationId/confirm',
-  auth(PERMISSIONS.RESERVATION_UPDATE),
-  validate(reservationValidation.confirmReservation),
-  reservationController.confirmReservation
-);
-
-router.post(
-  '/:reservationId/cancel',
-  auth(PERMISSIONS.RESERVATION_UPDATE),
-  validate(reservationValidation.cancelReservation),
-  reservationController.cancelReservation
-);
-
-router.post(
-  '/:reservationId/check-in',
-  auth(PERMISSIONS.STAY_RECORD_CREATE),
-  validate(reservationValidation.checkInReservation),
-  reservationController.checkInReservation
-);
-
-export default router;
-
-/**
- * @swagger
- * tags:
- *   name: Reservations
- *   description: Reservation management
- */
-
-/**
- * @swagger
- * /reservations:
- *   post:
- *     summary: Create a reservation
- *     tags: [Reservations]
- *     security:
- *       - bearerAuth: []
- *     requestBody:
- *       required: true
- *       content:
- *         application/json:
- *           schema:
- *             $ref: '#/components/schemas/CreateReservation'
- *     responses:
- *       "201":
- *         description: Created
- *       "401":
- *         $ref: '#/components/responses/Unauthorized'
- *   get:
- *     summary: Get all reservations
- *     tags: [Reservations]
- *     security:
- *       - bearerAuth: []
- *     parameters:
- *       - in: query
- *         name: status
- *         schema:
- *           type: string
- *           enum: [PENDING, CONFIRMED, CHECKED_IN, CHECKED_OUT, CANCELLED, NO_SHOW]
- *       - in: query
- *         name: checkInDate
- *         schema:
- *           type: string
- *           format: date
- *       - in: query
- *         name: checkOutDate
- *         schema:
- *           type: string
- *           format: date
- *     responses:
- *       "200":
- *         description: OK
- *       "401":
- *         $ref: '#/components/responses/Unauthorized'
- */
-
 /**
  * @swagger
  * /reservations/arrivals:
@@ -128,10 +104,11 @@ export default router;
  *       - bearerAuth: []
  *     responses:
  *       "200":
- *         description: OK
+ *         description: List of arrivals for today
  *       "401":
- *         $ref: '#/components/responses/Unauthorized'
+ *         description: Unauthorized
  */
+router.get('/arrivals', auth(PERMISSIONS.RESERVATION_READ), reservationController.getTodayArrivals);
 
 /**
  * @swagger
@@ -143,16 +120,39 @@ export default router;
  *       - bearerAuth: []
  *     responses:
  *       "200":
- *         description: OK
+ *         description: List of departures for today
  *       "401":
- *         $ref: '#/components/responses/Unauthorized'
+ *         description: Unauthorized
  */
+router.get(
+  '/departures',
+  auth(PERMISSIONS.RESERVATION_READ),
+  reservationController.getTodayDepartures
+);
 
 /**
  * @swagger
- * /reservations/{reservationId}/check-in:
- *   post:
- *     summary: Check in a reservation
+ * /reservations/{reservationId}:
+ *   get:
+ *     summary: Get reservation by ID
+ *     tags: [Reservations]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: reservationId
+ *         required: true
+ *         schema:
+ *           type: integer
+ *     responses:
+ *       "200":
+ *         description: Reservation details
+ *       "401":
+ *         description: Unauthorized
+ *       "404":
+ *         description: Reservation not found
+ *   patch:
+ *     summary: Update reservation
  *     tags: [Reservations]
  *     security:
  *       - bearerAuth: []
@@ -168,24 +168,149 @@ export default router;
  *         application/json:
  *           schema:
  *             type: object
- *             required:
- *               - roomAssignments
  *             properties:
- *               roomAssignments:
- *                 type: array
- *                 items:
- *                   type: object
- *                   properties:
- *                     roomId:
- *                       type: integer
- *                     expectedCheckOut:
- *                       type: string
- *                       format: date-time
+ *               checkInDate:
+ *                 type: string
+ *                 format: date
+ *               checkOutDate:
+ *                 type: string
+ *                 format: date
+ *               numberOfGuests:
+ *                 type: integer
+ *               specialRequests:
+ *                 type: string
  *     responses:
  *       "200":
- *         description: OK
+ *         description: Reservation updated successfully
  *       "401":
- *         $ref: '#/components/responses/Unauthorized'
+ *         description: Unauthorized
+ *       "403":
+ *         description: Forbidden
  *       "404":
- *         $ref: '#/components/responses/NotFound'
+ *         description: Reservation not found
  */
+router
+  .route('/:reservationId')
+  .get(
+    auth(PERMISSIONS.RESERVATION_READ),
+    validate(reservationValidation.getReservation),
+    reservationController.getReservation
+  )
+  .patch(
+    auth(PERMISSIONS.RESERVATION_UPDATE),
+    validate(reservationValidation.updateReservation),
+    reservationController.updateReservation
+  );
+
+/**
+ * @swagger
+ * /reservations/{reservationId}/confirm:
+ *   post:
+ *     summary: Confirm reservation
+ *     tags: [Reservations]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: reservationId
+ *         required: true
+ *         schema:
+ *           type: integer
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *     responses:
+ *       "200":
+ *         description: Reservation confirmed successfully
+ *       "401":
+ *         description: Unauthorized
+ *       "403":
+ *         description: Forbidden
+ */
+router.post(
+  '/:reservationId/confirm',
+  auth(PERMISSIONS.RESERVATION_UPDATE),
+  validate(reservationValidation.confirmReservation),
+  reservationController.confirmReservation
+);
+
+/**
+ * @swagger
+ * /reservations/{reservationId}/cancel:
+ *   post:
+ *     summary: Cancel reservation
+ *     tags: [Reservations]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: reservationId
+ *         required: true
+ *         schema:
+ *           type: integer
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               reason:
+ *                 type: string
+ *     responses:
+ *       "200":
+ *         description: Reservation cancelled successfully
+ *       "401":
+ *         description: Unauthorized
+ *       "403":
+ *         description: Forbidden
+ */
+router.post(
+  '/:reservationId/cancel',
+  auth(PERMISSIONS.RESERVATION_UPDATE),
+  validate(reservationValidation.cancelReservation),
+  reservationController.cancelReservation
+);
+
+/**
+ * @swagger
+ * /reservations/{reservationId}/check-in:
+ *   post:
+ *     summary: Check in reservation
+ *     tags: [Reservations]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: reservationId
+ *         required: true
+ *         schema:
+ *           type: integer
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               roomId:
+ *                 type: integer
+ *     responses:
+ *       "200":
+ *         description: Checked in successfully
+ *       "401":
+ *         description: Unauthorized
+ *       "403":
+ *         description: Forbidden
+ */
+router.post(
+  '/:reservationId/check-in',
+  auth(PERMISSIONS.STAY_RECORD_CREATE),
+  validate(reservationValidation.checkInReservation),
+  reservationController.checkInReservation
+);
+
+export default router;

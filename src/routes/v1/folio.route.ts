@@ -7,6 +7,66 @@ import { PERMISSIONS } from 'config/roles';
 
 const router = express.Router();
 
+/**
+ * @swagger
+ * tags:
+ *   - name: Folios
+ *     description: Guest folio and billing management
+ */
+
+/**
+ * @swagger
+ * /folios:
+ *   post:
+ *     summary: Create a new guest folio
+ *     tags: [Folios]
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - stayRecordId
+ *             properties:
+ *               stayRecordId:
+ *                 type: integer
+ *               notes:
+ *                 type: string
+ *     responses:
+ *       "201":
+ *         description: Folio created successfully
+ *       "401":
+ *         description: Unauthorized
+ *       "403":
+ *         description: Forbidden
+ *   get:
+ *     summary: Get all folios
+ *     tags: [Folios]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: query
+ *         name: page
+ *         schema:
+ *           type: integer
+ *       - in: query
+ *         name: limit
+ *         schema:
+ *           type: integer
+ *       - in: query
+ *         name: status
+ *         schema:
+ *           type: string
+ *           enum: [OPEN, CLOSED, SETTLED]
+ *     responses:
+ *       "200":
+ *         description: List of folios
+ *       "401":
+ *         description: Unauthorized
+ */
 router
   .route('/')
   .post(
@@ -20,6 +80,55 @@ router
     folioController.getFolios
   );
 
+/**
+ * @swagger
+ * /folios/{folioId}:
+ *   get:
+ *     summary: Get folio by ID
+ *     tags: [Folios]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: folioId
+ *         required: true
+ *         schema:
+ *           type: integer
+ *     responses:
+ *       "200":
+ *         description: Folio details
+ *       "401":
+ *         description: Unauthorized
+ *       "404":
+ *         description: Folio not found
+ *   patch:
+ *     summary: Update folio
+ *     tags: [Folios]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: folioId
+ *         required: true
+ *         schema:
+ *           type: integer
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               notes:
+ *                 type: string
+ *     responses:
+ *       "200":
+ *         description: Folio updated successfully
+ *       "401":
+ *         description: Unauthorized
+ *       "403":
+ *         description: Forbidden
+ */
 router
   .route('/:folioId')
   .get(
@@ -33,117 +142,11 @@ router
     folioController.updateFolio
   );
 
-router.get(
-  '/:folioId/summary',
-  auth(PERMISSIONS.FOLIO_READ),
-  validate(folioValidation.getFolioSummary),
-  folioController.getFolioSummary
-);
-
-router.post(
-  '/:folioId/close',
-  auth(PERMISSIONS.FOLIO_UPDATE),
-  validate(folioValidation.closeFolio),
-  folioController.closeFolio
-);
-
-// Charges
-router.post(
-  '/:folioId/room-charges',
-  auth(PERMISSIONS.FOLIO_UPDATE),
-  validate(folioValidation.addRoomCharge),
-  folioController.addRoomCharge
-);
-
-router.post(
-  '/:folioId/service-charges',
-  auth(PERMISSIONS.FOLIO_UPDATE),
-  validate(folioValidation.addServiceCharge),
-  folioController.addServiceCharge
-);
-
-// Payments
-router.post(
-  '/:folioId/payments',
-  auth(PERMISSIONS.PAYMENT_CREATE),
-  validate(folioValidation.addPayment),
-  folioController.addPayment
-);
-
-router.post(
-  '/:folioId/deposits',
-  auth(PERMISSIONS.PAYMENT_CREATE),
-  validate(folioValidation.addDeposit),
-  folioController.addDeposit
-);
-
-router.post(
-  '/:folioId/refunds',
-  auth(PERMISSIONS.PAYMENT_CREATE),
-  validate(folioValidation.addRefund),
-  folioController.addRefund
-);
-
-router.post(
-  '/:folioId/discounts',
-  auth(PERMISSIONS.FOLIO_UPDATE),
-  validate(folioValidation.addDiscount),
-  folioController.addDiscount
-);
-
-// Void transaction
-router.post(
-  '/transactions/:transactionId/void',
-  auth(PERMISSIONS.FOLIO_UPDATE),
-  validate(folioValidation.voidTransaction),
-  folioController.voidTransaction
-);
-
-export default router;
-
-/**
- * @swagger
- * tags:
- *   name: Folios
- *   description: Guest folio and billing management
- */
-
-/**
- * @swagger
- * /folios:
- *   post:
- *     summary: Create a guest folio
- *     tags: [Folios]
- *     security:
- *       - bearerAuth: []
- *     requestBody:
- *       required: true
- *       content:
- *         application/json:
- *           schema:
- *             $ref: '#/components/schemas/CreateFolio'
- *     responses:
- *       "201":
- *         description: Created
- *       "401":
- *         $ref: '#/components/responses/Unauthorized'
- *   get:
- *     summary: Get all folios
- *     tags: [Folios]
- *     security:
- *       - bearerAuth: []
- *     responses:
- *       "200":
- *         description: OK
- *       "401":
- *         $ref: '#/components/responses/Unauthorized'
- */
-
 /**
  * @swagger
  * /folios/{folioId}/summary:
  *   get:
- *     summary: Get folio summary with balance
+ *     summary: Get folio summary
  *     tags: [Folios]
  *     security:
  *       - bearerAuth: []
@@ -155,12 +158,147 @@ export default router;
  *           type: integer
  *     responses:
  *       "200":
- *         description: OK
+ *         description: Folio summary with totals
  *       "401":
- *         $ref: '#/components/responses/Unauthorized'
- *       "404":
- *         $ref: '#/components/responses/NotFound'
+ *         description: Unauthorized
  */
+router.get(
+  '/:folioId/summary',
+  auth(PERMISSIONS.FOLIO_READ),
+  validate(folioValidation.getFolioSummary),
+  folioController.getFolioSummary
+);
+
+/**
+ * @swagger
+ * /folios/{folioId}/close:
+ *   post:
+ *     summary: Close a folio
+ *     tags: [Folios]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: folioId
+ *         required: true
+ *         schema:
+ *           type: integer
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *     responses:
+ *       "200":
+ *         description: Folio closed successfully
+ *       "401":
+ *         description: Unauthorized
+ *       "403":
+ *         description: Forbidden
+ */
+router.post(
+  '/:folioId/close',
+  auth(PERMISSIONS.FOLIO_UPDATE),
+  validate(folioValidation.closeFolio),
+  folioController.closeFolio
+);
+
+// ===== CHARGES =====
+
+/**
+ * @swagger
+ * /folios/{folioId}/room-charges:
+ *   post:
+ *     summary: Add room charge to folio
+ *     tags: [Folios]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: folioId
+ *         required: true
+ *         schema:
+ *           type: integer
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - stayDetailId
+ *               - amount
+ *             properties:
+ *               stayDetailId:
+ *                 type: integer
+ *               amount:
+ *                 type: number
+ *                 format: decimal
+ *               description:
+ *                 type: string
+ *     responses:
+ *       "200":
+ *         description: Room charge added successfully
+ *       "401":
+ *         description: Unauthorized
+ *       "403":
+ *         description: Forbidden
+ */
+router.post(
+  '/:folioId/room-charges',
+  auth(PERMISSIONS.FOLIO_UPDATE),
+  validate(folioValidation.addRoomCharge),
+  folioController.addRoomCharge
+);
+
+/**
+ * @swagger
+ * /folios/{folioId}/service-charges:
+ *   post:
+ *     summary: Add service charge to folio
+ *     tags: [Folios]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: folioId
+ *         required: true
+ *         schema:
+ *           type: integer
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - serviceId
+ *               - quantity
+ *             properties:
+ *               serviceId:
+ *                 type: integer
+ *               quantity:
+ *                 type: integer
+ *               amount:
+ *                 type: number
+ *                 format: decimal
+ *     responses:
+ *       "200":
+ *         description: Service charge added successfully
+ *       "401":
+ *         description: Unauthorized
+ *       "403":
+ *         description: Forbidden
+ */
+router.post(
+  '/:folioId/service-charges',
+  auth(PERMISSIONS.FOLIO_UPDATE),
+  validate(folioValidation.addServiceCharge),
+  folioController.addServiceCharge
+);
+
+// ===== PAYMENTS =====
 
 /**
  * @swagger
@@ -188,13 +326,189 @@ export default router;
  *             properties:
  *               amount:
  *                 type: number
+ *                 format: decimal
  *               paymentMethodId:
  *                 type: integer
- *               description:
+ *               reference:
  *                 type: string
  *     responses:
- *       "201":
- *         description: Created
+ *       "200":
+ *         description: Payment added successfully
  *       "401":
- *         $ref: '#/components/responses/Unauthorized'
+ *         description: Unauthorized
+ *       "403":
+ *         description: Forbidden
  */
+router.post(
+  '/:folioId/payments',
+  auth(PERMISSIONS.PAYMENT_CREATE),
+  validate(folioValidation.addPayment),
+  folioController.addPayment
+);
+
+/**
+ * @swagger
+ * /folios/{folioId}/deposits:
+ *   post:
+ *     summary: Add deposit to folio
+ *     tags: [Folios]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: folioId
+ *         required: true
+ *         schema:
+ *           type: integer
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - amount
+ *               - paymentMethodId
+ *             properties:
+ *               amount:
+ *                 type: number
+ *                 format: decimal
+ *               paymentMethodId:
+ *                 type: integer
+ *     responses:
+ *       "200":
+ *         description: Deposit added successfully
+ *       "401":
+ *         description: Unauthorized
+ *       "403":
+ *         description: Forbidden
+ */
+router.post(
+  '/:folioId/deposits',
+  auth(PERMISSIONS.PAYMENT_CREATE),
+  validate(folioValidation.addDeposit),
+  folioController.addDeposit
+);
+
+/**
+ * @swagger
+ * /folios/{folioId}/refunds:
+ *   post:
+ *     summary: Add refund to folio
+ *     tags: [Folios]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: folioId
+ *         required: true
+ *         schema:
+ *           type: integer
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - amount
+ *             properties:
+ *               amount:
+ *                 type: number
+ *                 format: decimal
+ *               reason:
+ *                 type: string
+ *     responses:
+ *       "200":
+ *         description: Refund added successfully
+ *       "401":
+ *         description: Unauthorized
+ *       "403":
+ *         description: Forbidden
+ */
+router.post(
+  '/:folioId/refunds',
+  auth(PERMISSIONS.PAYMENT_CREATE),
+  validate(folioValidation.addRefund),
+  folioController.addRefund
+);
+
+/**
+ * @swagger
+ * /folios/{folioId}/discounts:
+ *   post:
+ *     summary: Add discount to folio
+ *     tags: [Folios]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: folioId
+ *         required: true
+ *         schema:
+ *           type: integer
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - amount
+ *             properties:
+ *               amount:
+ *                 type: number
+ *                 format: decimal
+ *               reason:
+ *                 type: string
+ *     responses:
+ *       "200":
+ *         description: Discount added successfully
+ *       "401":
+ *         description: Unauthorized
+ *       "403":
+ *         description: Forbidden
+ */
+router.post(
+  '/:folioId/discounts',
+  auth(PERMISSIONS.FOLIO_UPDATE),
+  validate(folioValidation.addDiscount),
+  folioController.addDiscount
+);
+
+/**
+ * @swagger
+ * /folios/transactions/{transactionId}/void:
+ *   post:
+ *     summary: Void a transaction
+ *     tags: [Folios]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: transactionId
+ *         required: true
+ *         schema:
+ *           type: integer
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *     responses:
+ *       "200":
+ *         description: Transaction voided successfully
+ *       "401":
+ *         description: Unauthorized
+ *       "403":
+ *         description: Forbidden
+ */
+router.post(
+  '/transactions/:transactionId/void',
+  auth(PERMISSIONS.FOLIO_UPDATE),
+  validate(folioValidation.voidTransaction),
+  folioController.voidTransaction
+);
+
+export default router;

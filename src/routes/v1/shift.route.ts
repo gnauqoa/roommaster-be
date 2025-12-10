@@ -7,7 +7,72 @@ import { PERMISSIONS } from '../../config/roles';
 
 const router = express.Router();
 
-// Work Shift CRUD
+/**
+ * @swagger
+ * tags:
+ *   - name: Shifts
+ *     description: Work shift management and shift sessions
+ */
+
+// ===== WORK SHIFTS =====
+
+/**
+ * @swagger
+ * /shifts:
+ *   post:
+ *     summary: Create a new work shift
+ *     tags: [Shifts]
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - name
+ *               - startTime
+ *               - endTime
+ *             properties:
+ *               name:
+ *                 type: string
+ *                 example: "Morning Shift"
+ *               startTime:
+ *                 type: string
+ *                 format: time
+ *                 example: "08:00"
+ *               endTime:
+ *                 type: string
+ *                 format: time
+ *                 example: "16:00"
+ *     responses:
+ *       "201":
+ *         description: Work shift created successfully
+ *       "401":
+ *         description: Unauthorized
+ *       "403":
+ *         description: Forbidden
+ *   get:
+ *     summary: Get all work shifts
+ *     tags: [Shifts]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: query
+ *         name: page
+ *         schema:
+ *           type: integer
+ *       - in: query
+ *         name: limit
+ *         schema:
+ *           type: integer
+ *     responses:
+ *       "200":
+ *         description: List of work shifts
+ *       "401":
+ *         description: Unauthorized
+ */
 router
   .route('/')
   .post(
@@ -21,6 +86,83 @@ router
     shiftController.getWorkShifts
   );
 
+/**
+ * @swagger
+ * /shifts/{shiftId}:
+ *   get:
+ *     summary: Get work shift by ID
+ *     tags: [Shifts]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: shiftId
+ *         required: true
+ *         schema:
+ *           type: integer
+ *     responses:
+ *       "200":
+ *         description: Work shift details
+ *       "401":
+ *         description: Unauthorized
+ *       "404":
+ *         description: Work shift not found
+ *   patch:
+ *     summary: Update work shift
+ *     tags: [Shifts]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: shiftId
+ *         required: true
+ *         schema:
+ *           type: integer
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               name:
+ *                 type: string
+ *               startTime:
+ *                 type: string
+ *                 format: time
+ *               endTime:
+ *                 type: string
+ *                 format: time
+ *     responses:
+ *       "200":
+ *         description: Work shift updated successfully
+ *       "401":
+ *         description: Unauthorized
+ *       "403":
+ *         description: Forbidden
+ *       "404":
+ *         description: Work shift not found
+ *   delete:
+ *     summary: Delete work shift
+ *     tags: [Shifts]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: shiftId
+ *         required: true
+ *         schema:
+ *           type: integer
+ *     responses:
+ *       "204":
+ *         description: Work shift deleted successfully
+ *       "401":
+ *         description: Unauthorized
+ *       "403":
+ *         description: Forbidden
+ *       "404":
+ *         description: Work shift not found
+ */
 router
   .route('/:shiftId')
   .get(
@@ -39,150 +181,7 @@ router
     shiftController.deleteWorkShift
   );
 
-// Shift session management
-router.post(
-  '/sessions/open',
-  auth(PERMISSIONS.SHIFT_SESSION_MANAGE),
-  validate(shiftValidation.openShiftSession),
-  shiftController.openSession
-);
-
-router.post(
-  '/sessions/:sessionId/close',
-  auth(PERMISSIONS.SHIFT_SESSION_MANAGE),
-  validate(shiftValidation.closeShiftSession),
-  shiftController.closeSession
-);
-
-router.post(
-  '/sessions/:sessionId/approve',
-  auth(PERMISSIONS.SHIFT_SESSION_APPROVE),
-  validate(shiftValidation.approveShiftSession),
-  shiftController.approveSession
-);
-
-router.get(
-  '/sessions',
-  auth(PERMISSIONS.SHIFT_SESSION_READ),
-  validate(shiftValidation.getShiftSessions),
-  shiftController.getSessions
-);
-
-router.get(
-  '/sessions/me',
-  auth(PERMISSIONS.SHIFT_SESSION_MANAGE),
-  validate(shiftValidation.getMyCurrentSession),
-  shiftController.getCurrentSession
-);
-
-export default router;
-
-/**
- * @swagger
- * tags:
- *   name: Shifts
- *   description: Shift and shift session management
- */
-
-/**
- * @swagger
- * /shifts:
- *   post:
- *     summary: Create a shift
- *     tags: [Shifts]
- *     security:
- *       - bearerAuth: []
- *     requestBody:
- *       required: true
- *       content:
- *         application/json:
- *           schema:
- *             type: object
- *             required:
- *               - code
- *               - name
- *               - startTime
- *               - endTime
- *             properties:
- *               code:
- *                 type: string
- *               name:
- *                 type: string
- *               startTime:
- *                 type: string
- *                 format: time
- *                 description: HH:mm format
- *               endTime:
- *                 type: string
- *                 format: time
- *                 description: HH:mm format
- *               description:
- *                 type: string
- *     responses:
- *       "201":
- *         description: Created
- *   get:
- *     summary: Get all shifts
- *     tags: [Shifts]
- *     security:
- *       - bearerAuth: []
- *     responses:
- *       "200":
- *         description: OK
- */
-
-/**
- * @swagger
- * /shifts/{shiftId}:
- *   get:
- *     summary: Get shift by ID
- *     tags: [Shifts]
- *     security:
- *       - bearerAuth: []
- *     parameters:
- *       - in: path
- *         name: shiftId
- *         required: true
- *         schema:
- *           type: integer
- *     responses:
- *       "200":
- *         description: OK
- *   patch:
- *     summary: Update shift
- *     tags: [Shifts]
- *     security:
- *       - bearerAuth: []
- *     parameters:
- *       - in: path
- *         name: shiftId
- *         required: true
- *         schema:
- *           type: integer
- *     requestBody:
- *       required: true
- *       content:
- *         application/json:
- *           schema:
- *             type: object
- *     responses:
- *       "200":
- *         description: OK
- *   delete:
- *     summary: Delete shift
- *     tags: [Shifts]
- *     security:
- *       - bearerAuth: []
- *     parameters:
- *       - in: path
- *         name: shiftId
- *         required: true
- *         schema:
- *           type: integer
- *     responses:
- *       "204":
- *         description: No Content
- */
+// ===== SHIFT SESSIONS =====
 
 /**
  * @swagger
@@ -200,18 +199,26 @@ export default router;
  *             type: object
  *             required:
  *               - shiftId
- *               - openingCash
+ *               - employeeId
  *             properties:
  *               shiftId:
  *                 type: integer
- *               openingCash:
- *                 type: number
+ *               employeeId:
+ *                 type: integer
  *     responses:
  *       "201":
- *         description: Created
- *       "400":
- *         description: Employee already has an open session
+ *         description: Shift session opened successfully
+ *       "401":
+ *         description: Unauthorized
+ *       "403":
+ *         description: Forbidden
  */
+router.post(
+  '/sessions/open',
+  auth(PERMISSIONS.SHIFT_SESSION_MANAGE),
+  validate(shiftValidation.openShiftSession),
+  shiftController.openSession
+);
 
 /**
  * @swagger
@@ -233,23 +240,26 @@ export default router;
  *         application/json:
  *           schema:
  *             type: object
- *             required:
- *               - closingCash
- *             properties:
- *               closingCash:
- *                 type: number
- *               notes:
- *                 type: string
  *     responses:
  *       "200":
- *         description: OK
+ *         description: Shift session closed successfully
+ *       "401":
+ *         description: Unauthorized
+ *       "403":
+ *         description: Forbidden
  */
+router.post(
+  '/sessions/:sessionId/close',
+  auth(PERMISSIONS.SHIFT_SESSION_MANAGE),
+  validate(shiftValidation.closeShiftSession),
+  shiftController.closeSession
+);
 
 /**
  * @swagger
  * /shifts/sessions/{sessionId}/approve:
  *   post:
- *     summary: Approve a closed shift session
+ *     summary: Approve a shift session
  *     tags: [Shifts]
  *     security:
  *       - bearerAuth: []
@@ -259,46 +269,76 @@ export default router;
  *         required: true
  *         schema:
  *           type: integer
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
  *     responses:
  *       "200":
- *         description: OK
- *       "400":
- *         description: Session must be closed first
+ *         description: Shift session approved successfully
+ *       "401":
+ *         description: Unauthorized
+ *       "403":
+ *         description: Forbidden
  */
+router.post(
+  '/sessions/:sessionId/approve',
+  auth(PERMISSIONS.SHIFT_SESSION_APPROVE),
+  validate(shiftValidation.approveShiftSession),
+  shiftController.approveSession
+);
 
 /**
  * @swagger
  * /shifts/sessions:
  *   get:
- *     summary: Get shift sessions
+ *     summary: Get all shift sessions
  *     tags: [Shifts]
  *     security:
  *       - bearerAuth: []
  *     parameters:
  *       - in: query
- *         name: shiftId
+ *         name: page
  *         schema:
  *           type: integer
  *       - in: query
- *         name: employeeId
+ *         name: limit
  *         schema:
  *           type: integer
- *       - in: query
- *         name: status
- *         schema:
- *           type: string
- *           enum: [OPEN, CLOSED, APPROVED]
- *       - in: query
- *         name: fromDate
- *         schema:
- *           type: string
- *           format: date
- *       - in: query
- *         name: toDate
- *         schema:
- *           type: string
- *           format: date
  *     responses:
  *       "200":
- *         description: OK
+ *         description: List of shift sessions
+ *       "401":
+ *         description: Unauthorized
  */
+router.get(
+  '/sessions',
+  auth(PERMISSIONS.SHIFT_SESSION_READ),
+  validate(shiftValidation.getShiftSessions),
+  shiftController.getSessions
+);
+
+/**
+ * @swagger
+ * /shifts/sessions/me:
+ *   get:
+ *     summary: Get current user's shift session
+ *     tags: [Shifts]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       "200":
+ *         description: Current shift session details
+ *       "401":
+ *         description: Unauthorized
+ */
+router.get(
+  '/sessions/me',
+  auth(PERMISSIONS.SHIFT_SESSION_MANAGE),
+  validate(shiftValidation.getMyCurrentSession),
+  shiftController.getCurrentSession
+);
+
+export default router;
