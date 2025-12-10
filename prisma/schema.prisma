@@ -116,6 +116,8 @@ enum ServiceGroup {
   OTHER
 }
 
+
+
 enum HousekeepingStatus {
   PENDING
   ASSIGNED
@@ -450,7 +452,7 @@ model StayDetail {
   folioTransactions FolioTransaction[]
   roomMoveLogs      RoomMoveLog[]
   roomInspection    RoomInspection?
-
+  guestFolio       GuestFolio[]
   @@map("stay_details")
 }
 
@@ -483,6 +485,7 @@ model GuestFolio {
   code             String      @unique @db.VarChar(20)
   reservationId    Int? // Link với đặt phòng (để thu cọc)
   stayRecordId     Int? // Link với phiếu thuê (gán khi check-in)
+  stayDetailId Int? // Cho folio của phiếu thuê cụ thể
   billToCustomerId Int
   folioType        FolioType   @default(GUEST)
   status           FolioStatus @default(OPEN)
@@ -495,6 +498,7 @@ model GuestFolio {
 
   reservation       Reservation?       @relation(fields: [reservationId], references: [id])
   stayRecord        StayRecord?        @relation(fields: [stayRecordId], references: [id])
+  stayDetail        StayDetail?        @relation(fields: [stayDetailId], references: [id])
   billToCustomer    Customer           @relation("BillToCustomer", fields: [billToCustomerId], references: [id])
   folioTransactions FolioTransaction[]
   invoices          Invoice[]

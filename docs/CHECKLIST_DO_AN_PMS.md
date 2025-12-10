@@ -35,7 +35,7 @@
 4. [Sử dụng Dịch vụ (Service Usage)](#-4-sử-dụng-dịch-vụ-service-usage)
 5. [Phụ Thu (Surcharge)](#-5-phụ-thu-surcharge)
 6. [Phạt (Penalty)](#-6-phạt-penalty)
-7. [Check-out & Billing](#-7-check-out--billing)
+7. [Check-out &amp; Billing](#-7-check-out--billing)
 8. [Quản lý Khách hàng (Customer Management)](#-8-quản-lý-khách-hàng-customer-management)
 
 </details>
@@ -57,7 +57,7 @@
 <details>
 <summary><h3>🟢 LOW PRIORITY (HOÀN THIỆN) - Điểm 9.5-10/10</h3></summary>
 
-17. [Master & Guest Folio](#-17-master--guest-folio-group-booking)
+17. [Master &amp; Guest Folio](#-17-master--guest-folio-group-booking)
 18. [Void / Adjust](#-18-void--adjust-transaction)
 19. [Shift Management](#-19-shift-management-quản-lý-ca)
 20. [Reporting](#-20-reporting-báo-cáo-đầy-đủ)
@@ -173,12 +173,12 @@ THEN PHIEUDAT.TrangThaiPhieu = 'CHECKED_OUT'
 
 #### 2️⃣ **THUÊ PHÒNG (Stay/Rental)**
 
-| Level      | Field                           | Giá trị       | Ý nghĩa               | Khi nào chuyển?                                 |
-| ---------- | ------------------------------- | ------------- | --------------------- | ----------------------------------------------- |
-| **Header** | PHIEUTHUEPHONG.TrangThaiPhieu   | `CHECKED_IN`  | Đang thuê phòng       | Tạo khi check-in                                |
-|            |                                 | `CHECKED_OUT` | Đã trả phòng xong     | Khi **tất cả** phòng checkout + thanh toán xong |
-| **Detail** | CT_PHIEUTHUEPHONG.TrangThaiThue | `OCCUPIED`    | Phòng đang có khách ở | Tạo khi check-in                                |
-|            |                                 | `CHECKED_OUT` | Phòng đã checkout     | Khi checkout phòng này                          |
+| Level      | Field                           | Giá trị       | Ý nghĩa               | Khi nào chuyển?                                |
+| ---------- | ------------------------------- | ------------- | --------------------- | ---------------------------------------------- |
+| **Header** | PHIEUTHUEPHONG.TrangThaiPhieu   | `CHECKED_IN`  | Đang thuê phòng       | Tạo khi check-in                               |
+|            |                                 | `CHECKED_OUT` | Đã trả phòng xong     | Khi**tất cả** phòng checkout + thanh toán xong |
+| **Detail** | CT_PHIEUTHUEPHONG.TrangThaiThue | `OCCUPIED`    | Phòng đang có khách ở | Tạo khi check-in                               |
+|            |                                 | `CHECKED_OUT` | Phòng đã checkout     | Khi checkout phòng này                         |
 
 **💡 Rule cập nhật PHIEUTHUEPHONG.TrangThaiPhieu:**
 
@@ -308,8 +308,8 @@ THEN PHIEUTHUEPHONG.TrangThaiPhieu = 'CHECKED_OUT'
 
 ## 🔴 CẤP ĐỘ HIGH PRIORITY (BẮT BUỘC)
 
-> **Mục tiêu**: Đạt 7-8/10 điểm  
-> **Thời gian**: 60-70% effort  
+> **Mục tiêu**: Đạt 7-8/10 điểm
+> **Thời gian**: 60-70% effort
 > **Yêu cầu**: PHẢI CÓ đầy đủ các tính năng này
 
 ### 🔴 MODULE 1: QUẢN LÝ PHÒNG
@@ -725,8 +725,8 @@ Post Service Charge:
 
 ### ✅ 5. Phụ Thu (Surcharge)
 
-**📌 Khái niệm:**  
-Phụ thu là **phí phát sinh do khách YÊU CẦU dịch vụ thêm hoặc thay đổi lịch trình**.  
+**📌 Khái niệm:**
+Phụ thu là **phí phát sinh do khách YÊU CẦU dịch vụ thêm hoặc thay đổi lịch trình**.
 Đặc điểm: **CÓ THỂ BIẾT TRƯỚC, có thể tránh được**, khách có quyền lựa chọn.
 
 **💡 Tại sao cần hiểu rõ Phụ Thu?**
@@ -739,8 +739,8 @@ Phụ thu là **phí phát sinh do khách YÊU CẦU dịch vụ thêm hoặc th
 **Lưu vào:** Bảng **DICHVU** với `NhomDichVu = 'PHUTHU'`
 
 | Loại phụ thu | Thời điểm phát sinh | Thời điểm tính | Công thức | MaDV (ví dụ) |
-| **Early Check-in** | Check-in trước 14:00 | Ngay khi check-in | • Trước 10:00: 50% giá phòng<br>• 10:00-14:00: Miễn phí (nếu phòng sẵn sàng) | DV_PT001 |
-| **Late Checkout** | Checkout sau 14:00 | Ngay khi checkout | • 14:00-18:00: 50% giá phòng<br>• Sau 18:00: 100% giá phòng | DV_PT002 |
+| **Early Check-in** | Check-in trước 14:00 | Ngay khi check-in | • Trước 10:00: 50% giá phòng`<br>`• 10:00-14:00: Miễn phí (nếu phòng sẵn sàng) | DV_PT001 |
+| **Late Checkout** | Checkout sau 14:00 | Ngay khi checkout | • 14:00-18:00: 50% giá phòng`<br>`• Sau 18:00: 100% giá phòng | DV_PT002 |
 | **Extra Person** | Số người > Số người chuẩn | Ngay khi check-in | 30-50% giá phòng/người/đêm | DV_PT003 |
 | **Extra Bed** | Khách yêu cầu giường phụ | Ngay khi check-in | 200k-500k/giường/đêm | DV_PT004 |
 | **Pet** | Khách mang thú cưng | Ngay khi check-in | 200k-500k/đêm + Deposit 1-2 triệu | DV_PT005 |
@@ -840,8 +840,8 @@ VALUES ('DV_PT002', 'Phụ thu Late Checkout', 0, '%', 'PHUTHU',
 
 ### ✅ 6. Phạt (Penalty)
 
-**📌 Khái niệm:**  
-Phạt là **tiền phạt do khách VI PHẠM nội quy hoặc làm hư hỏng tài sản**.  
+**📌 Khái niệm:**
+Phạt là **tiền phạt do khách VI PHẠM nội quy hoặc làm hư hỏng tài sản**.
 Đặc điểm: **KHÔNG MONG MUỐN, phát sinh ngoài dự kiến**, khách không thể tránh sau khi đã vi phạm.
 
 **💡 Tại sao cần tách riêng Phạt?**
@@ -951,24 +951,24 @@ VALUES ('DV_PH002', 'Phạt Mất chìa khóa/thẻ từ', 300000, 'chiếc', 'P
 
 ## 📊 SO SÁNH: PHỤ THU vs PHẠT
 
-| Tiêu chí       | 💰 PHỤ THU (SURCHARGE)                      | ⚠️ PHẠT (PENALTY)                |
-| -------------- | ------------------------------------------- | -------------------------------- |
-| **Khái niệm**  | Phí do khách **YÊU CẦU** dịch vụ thêm       | Tiền phạt do **VI PHẠM** nội quy |
-| **Tính chất**  | CÓ THỂ BIẾT TRƯỚC, tránh được               | KHÔNG MONG MUỐN, ngoài dự kiến   |
-| **Ví dụ**      | Early check-in, Late checkout, Extra person | Hư hỏng, Mất đồ, Hút thuốc       |
-| **Thời điểm**  | Check-in/Mỗi đêm/Checkout                   | Khi checkout (kiểm tra phòng)    |
-| **Lưu vào**    | DICHVU (NhomDichVu='PHUTHU')                | DICHVU (NhomDichVu='PHAT')       |
-| **Post Folio** | LoaiGiaoDich='Surcharge'                    | LoaiGiaoDich='Penalty'           |
-| **Miễn phí**   | ✅ Dễ miễn cho VIP                          | ⚠️ Khó miễn, cần lý do           |
-| **Attitude**   | Tích cực (khách muốn tốt hơn)               | Tiêu cực (khách làm sai)         |
-| **UI Color**   | 🟢 Xanh                                     | 🔴 Đỏ                            |
+| Tiêu chí       | 💰 PHỤ THU (SURCHARGE)                      | ⚠️ PHẠT (PENALTY)               |
+| -------------- | ------------------------------------------- | ------------------------------- |
+| **Khái niệm**  | Phí do khách**YÊU CẦU** dịch vụ thêm        | Tiền phạt do**VI PHẠM** nội quy |
+| **Tính chất**  | CÓ THỂ BIẾT TRƯỚC, tránh được               | KHÔNG MONG MUỐN, ngoài dự kiến  |
+| **Ví dụ**      | Early check-in, Late checkout, Extra person | Hư hỏng, Mất đồ, Hút thuốc      |
+| **Thời điểm**  | Check-in/Mỗi đêm/Checkout                   | Khi checkout (kiểm tra phòng)   |
+| **Lưu vào**    | DICHVU (NhomDichVu='PHUTHU')                | DICHVU (NhomDichVu='PHAT')      |
+| **Post Folio** | LoaiGiaoDich='Surcharge'                    | LoaiGiaoDich='Penalty'          |
+| **Miễn phí**   | ✅ Dễ miễn cho VIP                          | ⚠️ Khó miễn, cần lý do          |
+| **Attitude**   | Tích cực (khách muốn tốt hơn)               | Tiêu cực (khách làm sai)        |
+| **UI Color**   | 🟢 Xanh                                     | 🔴 Đỏ                           |
 
 ---
 
 ### ✅ 7. Check-out & Billing
 
-**📌 Tổng quan:**  
-Module này tổng hợp **TOÀN BỘ QUY TRÌNH** từ khi khách muốn checkout cho đến khi hoàn tất thanh toán và xuất hóa đơn.  
+**📌 Tổng quan:**
+Module này tổng hợp **TOÀN BỘ QUY TRÌNH** từ khi khách muốn checkout cho đến khi hoàn tất thanh toán và xuất hóa đơn.
 **Luồng chính:** Tính tiền phòng (đã auto) → Tính dịch vụ (đã post) → Áp dụng phụ thu (nếu có) → Áp dụng phạt (nếu có) → Hiển thị bill tổng hợp → Thu tiền → Đóng folio → Xuất hóa đơn.
 
 **💡 Tại sao gộp Billing và Checkout?**
@@ -1212,6 +1212,7 @@ AND MaKhachHang = @MaKhachHang
   ```
 
 - [ ] **Validation & Thu tiền**
+
   ```sql
   IF ConLai > 0 THEN
     -- Khách còn nợ → Phải thu
@@ -1708,16 +1709,16 @@ ORDER BY ft.NgayGiaoDich;
 
 ### 📊 SO SÁNH THIẾT KẾ CŨ vs MỚI
 
-| Tiêu chí                  | ❌ Thiết kế Cũ                                                            | ✅ Thiết kế Mới (Dùng DICHVU)    |
-| ------------------------- | ------------------------------------------------------------------------- | -------------------------------- |
-| **Số bảng**               | 3 bảng:<br>• DICHVU (dịch vụ)<br>• PHUTHU (phụ thu)<br>• PHIEUPHAT (phạt) | 1 bảng:<br>• DICHVU (all-in-one) |
-| **Phân biệt loại**        | Theo bảng                                                                 | Theo NhomDichVu                  |
-| **Thêm loại mới**         | Phải tạo bảng mới                                                         | Chỉ cần INSERT record            |
-| **Query bill**            | JOIN 3 bảng                                                               | JOIN 1 bảng                      |
-| **Quản lý master data**   | Phân tán 3 nơi                                                            | Tập trung 1 nơi                  |
-| **FOLIOTRANSACTION.MaDV** | NULL (không link được)                                                    | Link trực tiếp → DICHVU          |
-| **Lấy tên dịch vụ**       | Phức tạp (check nhiều bảng)                                               | Đơn giản (JOIN DICHVU)           |
-| **Mở rộng**               | Khó (thêm bảng = thêm FK)                                                 | Dễ (thêm NhomDichVu)             |
+| Tiêu chí                  | ❌ Thiết kế Cũ                                                                  | ✅ Thiết kế Mới (Dùng DICHVU)      |
+| ------------------------- | ------------------------------------------------------------------------------- | ---------------------------------- |
+| **Số bảng**               | 3 bảng:`<br>`• DICHVU (dịch vụ)`<br>`• PHUTHU (phụ thu)`<br>`• PHIEUPHAT (phạt) | 1 bảng:`<br>`• DICHVU (all-in-one) |
+| **Phân biệt loại**        | Theo bảng                                                                       | Theo NhomDichVu                    |
+| **Thêm loại mới**         | Phải tạo bảng mới                                                               | Chỉ cần INSERT record              |
+| **Query bill**            | JOIN 3 bảng                                                                     | JOIN 1 bảng                        |
+| **Quản lý master data**   | Phân tán 3 nơi                                                                  | Tập trung 1 nơi                    |
+| **FOLIOTRANSACTION.MaDV** | NULL (không link được)                                                          | Link trực tiếp → DICHVU            |
+| **Lấy tên dịch vụ**       | Phức tạp (check nhiều bảng)                                                     | Đơn giản (JOIN DICHVU)             |
+| **Mở rộng**               | Khó (thêm bảng = thêm FK)                                                       | Dễ (thêm NhomDichVu)               |
 
 ---
 
@@ -1870,8 +1871,8 @@ Nếu làm đủ 8 chức năng trên với chất lượng tốt:
 
 NG CAO)
 
-> **Mục tiêu**: Đạt 8-9/10 điểm  
-> **Thời gian**: 20-25% effort  
+> **Mục tiêu**: Đạt 8-9/10 điểm
+> **Thời gian**: 20-25% effort
 > **Yêu cầu**: Thể hiện hiểu biết nghiệp vụ sâu
 
 ### ✅ 9. Pricing Engine (Giá phòng nâng cao)
@@ -2555,34 +2556,34 @@ Relationships:
 
 **🔴 HIGH PRIORITY (BẮT BUỘC):**
 
-- [ ] 1. Room Management
-- [ ] 2. Reservation + Availability Check
-- [ ] 3. Check-in
-- [ ] 4. Service Usage
-- [ ] 5. Phụ Thu (Surcharge)
-- [ ] 6. Phạt (Penalty)
-- [ ] 7. Check-out & Billing (tổng hợp)
-- [ ] 8. Customer Management
+- [ ]
+- [ ]
+- [ ]
+- [ ]
+- [ ]
+- [ ]
+- [ ]
+- [ ]
 
 **🟠 MEDIUM PRIORITY (NÂNG CAO):**
 
-- [ ] 9. Pricing Engine (Dynamic/Seasonal/Holiday)
-- [ ] 10. Room Move
-- [ ] 11. Folio Transaction (đầy đủ loại)
-- [ ] 12. Quản lý thông tin khách lưu trú (NGUOIO)
-- [ ] 13. Invoice Generation
-- [ ] 14. Housekeeping Workflow
-- [ ] 15. Quản lý Loại khách hàng (VIP upgrade)
-- [ ] 16. Edge Cases (Late/Early/Overstay)
+- [ ]
+- [ ]
+- [ ]
+- [ ]
+- [ ]
+- [ ]
+- [ ]
+- [ ]
 
 **🟢 LOW PRIORITY (HOÀN THIỆN):**
 
-- [ ] 17. Master & Guest Folio
-- [ ] 18. Void / Adjust Transaction
-- [ ] 19. Shift Management
-- [ ] 20. Full Reporting Suite
-- [ ] 21. Advanced Search
-- [ ] 22. Minibar Automation (Bonus)
+- [ ]
+- [ ]
+- [ ]
+- [ ]
+- [ ]
+- [ ]
 
 ---
 
@@ -2590,23 +2591,23 @@ Relationships:
 
 ### 🎯 Để đạt 7-8 điểm:
 
-✅ Làm đủ HIGH priority  
-✅ Workflow end-to-end hoàn chỉnh  
+✅ Làm đủ HIGH priority
+✅ Workflow end-to-end hoàn chỉnh
 ✅ Tài liệu đầy đủ (SRS + ERD + Use Case)
 
 ### 🎯 Để đạt 8-9 điểm:
 
-✅ Làm đủ HIGH + MEDIUM  
-✅ Xử lý đúng business logic phức tạp  
-✅ Code clean, có test case  
+✅ Làm đủ HIGH + MEDIUM
+✅ Xử lý đúng business logic phức tạp
+✅ Code clean, có test case
 ✅ UI/UX đẹp, professional
 
 ### 🎯 Để đạt 9.5-10 điểm:
 
-✅ Làm đủ HIGH + MEDIUM + 50% LOW  
-✅ Có wow factor (automation, advanced features)  
-✅ Tài liệu xuất sắc (chi tiết, có diagram)  
-✅ Demo mượt mà, xử lý tốt Q&A  
+✅ Làm đủ HIGH + MEDIUM + 50% LOW
+✅ Có wow factor (automation, advanced features)
+✅ Tài liệu xuất sắc (chi tiết, có diagram)
+✅ Demo mượt mà, xử lý tốt Q&A
 ✅ Code quality cao (patterns, SOLID, test coverage)
 
 ---
@@ -2632,6 +2633,7 @@ Relationships:
    - → Demo bị lỗi = mất điểm nặng
 
 5. **UI xấu, khó dùng**
+
    - → First impression rất quan trọng
 
 ### ✅ Tips tối ưu thời gian:
@@ -2656,6 +2658,7 @@ Relationships:
    - Flow 3: Group booking → Master/Guest folio → Split bill
 
 3. **Chuẩn bị câu hỏi thường gặp:**
+
    - "Xử lý overbooking thế nào?"
    - "Tính tiền cuối tuần + lễ như thế nào?"
    - "Nếu khách ở quá ngày thì sao?"
@@ -2668,9 +2671,9 @@ Relationships:
 
 #### **Ưu điểm của thiết kế mới:**
 
-✅ **Đơn giản hơn**: Không cần bảng THANHTOAN_COC riêng  
-✅ **Thống nhất**: Tất cả giao dịch tiền đều qua FOLIO  
-✅ **Realtime**: Folio.ConLai luôn chính xác (âm = đã trả trước)  
+✅ **Đơn giản hơn**: Không cần bảng THANHTOAN_COC riêng
+✅ **Thống nhất**: Tất cả giao dịch tiền đều qua FOLIO
+✅ **Realtime**: Folio.ConLai luôn chính xác (âm = đã trả trước)
 ✅ **Dễ track**: Lịch sử cọc nằm trong FolioTransaction
 
 ---

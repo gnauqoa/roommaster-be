@@ -55,6 +55,7 @@ const generateTransactionCode = async (): Promise<string> => {
 const createGuestFolio = async (data: {
   reservationId?: number;
   stayRecordId?: number;
+  stayDetailId?: number;
   billToCustomerId: number;
   folioType?: FolioType;
   notes?: string;
@@ -64,22 +65,68 @@ const createGuestFolio = async (data: {
     throw new ApiError(httpStatus.BAD_REQUEST, 'Customer not found');
   }
 
+  const folioType = data.folioType ?? FolioType.GUEST;
+
+  // Validate folio type with stay relationships
+  if (folioType === FolioType.GUEST) {
+    // GUEST folio requires both stayDetailId and stayRecordId
+    if (!data.stayDetailId || !data.stayRecordId) {
+      throw new ApiError(
+        httpStatus.BAD_REQUEST,
+        'GUEST folio requires both stayDetailId and stayRecordId'
+      );
+    }
+    // Verify stayDetail exists
+    const stayDetail = await prisma.stayDetail.findUnique({ where: { id: data.stayDetailId } });
+    if (!stayDetail) {
+      throw new ApiError(httpStatus.BAD_REQUEST, 'StayDetail not found');
+    }
+    // Verify stayRecord exists
+    const stayRecord = await prisma.stayRecord.findUnique({ where: { id: data.stayRecordId } });
+    if (!stayRecord) {
+      throw new ApiError(httpStatus.BAD_REQUEST, 'StayRecord not found');
+    }
+  } else if (folioType === FolioType.MASTER) {
+    // MASTER folio requires only stayRecordId
+    if (!data.stayRecordId) {
+      throw new ApiError(httpStatus.BAD_REQUEST, 'MASTER folio requires stayRecordId');
+    }
+    if (data.stayDetailId) {
+      throw new ApiError(httpStatus.BAD_REQUEST, 'MASTER folio should not have stayDetailId');
+    }
+    // Verify stayRecord exists
+    const stayRecord = await prisma.stayRecord.findUnique({ where: { id: data.stayRecordId } });
+    if (!stayRecord) {
+      throw new ApiError(httpStatus.BAD_REQUEST, 'StayRecord not found');
+    }
+  } else if (folioType === FolioType.NON_RESIDENT) {
+    // NON_RESIDENT folios should not have stayRecordId or stayDetailId
+    if (data.stayRecordId || data.stayDetailId) {
+      throw new ApiError(
+        httpStatus.BAD_REQUEST,
+        'NON_RESIDENT folio should not be linked to a stay'
+      );
+    }
+  }
+
   const code = await generateFolioCode();
 
   return prisma.guestFolio.create({
     data: {
       code,
-      reservationId: data.reservationId,
-      stayRecordId: data.stayRecordId,
+      reservationId: folioType === FolioType.NON_RESIDENT ? undefined : data.reservationId,
+      stayRecordId: folioType !== FolioType.NON_RESIDENT ? data.stayRecordId : undefined,
+      stayDetailId: folioType === FolioType.GUEST ? data.stayDetailId : undefined,
       billToCustomerId: data.billToCustomerId,
-      folioType: data.folioType ?? FolioType.GUEST,
+      folioType,
       status: FolioStatus.OPEN,
       notes: data.notes
     },
     include: {
       billToCustomer: true,
       reservation: true,
-      stayRecord: true
+      stayRecord: true,
+      stayDetail: true
     }
   });
 };
@@ -107,7 +154,8 @@ const queryGuestFolios = async (
       include: {
         billToCustomer: true,
         reservation: true,
-        stayRecord: true
+        stayRecord: true,
+        stayDetail: true
       }
     }),
     prisma.guestFolio.count({ where: filter })
@@ -131,6 +179,7 @@ const getGuestFolioById = async (id: number): Promise<GuestFolio | null> => {
       billToCustomer: true,
       reservation: true,
       stayRecord: { include: { stayDetails: { include: { room: true } } } },
+      stayDetail: { include: { room: true } },
       folioTransactions: {
         orderBy: { transactionDate: 'desc' },
         include: {

@@ -6,6 +6,7 @@ const createGuestFolio = {
   body: Joi.object().keys({
     reservationId: Joi.number().integer().allow(null),
     stayRecordId: Joi.number().integer().allow(null),
+    stayDetailId: Joi.number().integer().allow(null),
     billToCustomerId: Joi.number().integer().required(),
     folioType: Joi.string()
       .valid(...Object.values(FolioType))
@@ -19,6 +20,7 @@ const getGuestFolios = {
     code: Joi.string(),
     reservationId: Joi.number().integer(),
     stayRecordId: Joi.number().integer(),
+    stayDetailId: Joi.number().integer(),
     billToCustomerId: Joi.number().integer(),
     folioType: Joi.string().valid(...Object.values(FolioType)),
     status: Joi.string().valid(...Object.values(FolioStatus)),

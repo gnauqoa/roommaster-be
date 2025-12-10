@@ -58,15 +58,7 @@ const postNightlyRoomCharges = async (employeeId: number) => {
           roomType: true
         }
       },
-      stayRecord: {
-        include: {
-          guestFolios: {
-            where: {
-              status: 'OPEN'
-            }
-          }
-        }
-      }
+      stayRecord: true
     }
   });
 
@@ -74,10 +66,20 @@ const postNightlyRoomCharges = async (employeeId: number) => {
 
   for (const stayDetail of occupiedStayDetails) {
     try {
-      // Get the first open folio for this stay
-      const folio = stayDetail.stayRecord.guestFolios[0];
+      // Get the MASTER folio for this stayRecord (room charges go to master folio)
+      const folio = await prisma.guestFolio.findFirst({
+        where: {
+          stayRecordId: stayDetail.stayRecordId,
+          status: 'OPEN'
+        }
+      });
+
       if (!folio) {
-        results.push({ stayDetailId: stayDetail.id, success: false, error: 'No open folio found' });
+        results.push({
+          stayDetailId: stayDetail.id,
+          success: false,
+          error: 'No open master folio found'
+        });
         continue;
       }
 
@@ -169,15 +171,7 @@ const postExtraPersonCharges = async (employeeId: number) => {
         }
       },
       guestsInResidence: true,
-      stayRecord: {
-        include: {
-          guestFolios: {
-            where: {
-              status: 'OPEN'
-            }
-          }
-        }
-      }
+      stayRecord: true
     }
   });
 
@@ -200,9 +194,20 @@ const postExtraPersonCharges = async (employeeId: number) => {
         continue; // No extra guests
       }
 
-      const folio = stayDetail.stayRecord.guestFolios[0];
+      // Get the MASTER folio for this stayRecord (surcharges go to master folio)
+      const folio = await prisma.guestFolio.findFirst({
+        where: {
+          stayRecordId: stayDetail.stayRecordId,
+          status: 'OPEN'
+        }
+      });
+
       if (!folio) {
-        results.push({ stayDetailId: stayDetail.id, success: false, error: 'No open folio found' });
+        results.push({
+          stayDetailId: stayDetail.id,
+          success: false,
+          error: 'No open master folio found'
+        });
         continue;
       }
 

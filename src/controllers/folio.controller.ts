@@ -12,7 +12,13 @@ const createFolio = catchAsync(async (req, res) => {
 });
 
 const getFolios = catchAsync(async (req, res) => {
-  const filter = pick(req.query, ['stayRecordId', 'reservationId', 'customerId', 'status']);
+  const filter = pick(req.query, [
+    'stayRecordId',
+    'stayDetailId',
+    'reservationId',
+    'customerId',
+    'status'
+  ]);
   const options = pick(req.query, ['sortBy', 'sortType', 'limit', 'page']);
   const result = await folioService.queryGuestFolios(filter, options);
   res.send(result);
