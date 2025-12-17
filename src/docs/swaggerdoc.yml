@@ -3,6 +3,15 @@ info:
   title: API
   version: 1.0.0
 paths:
+  openapi:
+    '0': '3'
+    '1': .
+    '2': '0'
+    '3': .
+    '4': '0'
+  info:
+    title: API
+    version: 1.0.0
   /auth/login:
     post:
       summary: Login with email and password

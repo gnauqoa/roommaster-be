@@ -21,7 +21,9 @@
     "docker:dev-db:start": "docker compose -f docker-compose.only-db-dev.yml up -d",
     "docker:dev-db:stop": "docker compose -f docker-compose.only-db-dev.yml down",
     "prepare": "husky install",
-    "build": "rimraf build && tsc -p tsconfig.json"
+    "build": "rimraf build && tsc -p tsconfig.json",
+    "generate:api-docs": "ts-node -r tsconfig-paths/register scripts/generate-api-docs.ts",
+    "generate:html-docs": "ts-node -r tsconfig-paths/register scripts/generate-html-docs.ts"
   },
   "scripts": {
     "generate:swagger": "node scripts/generate-swagger.js"
