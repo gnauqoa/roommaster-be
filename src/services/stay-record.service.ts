@@ -34,7 +34,6 @@ interface StayDetailInput {
 }
 
 interface RoomAssignment {
-  reservationDetailId: number;
   roomId: number;
   guests?: GuestInput[];
 }
@@ -191,7 +190,6 @@ export class StayRecordService {
           create: data.roomAssignments.map((a) => ({
             roomId: a.roomId,
             expectedCheckOut: reservation.expectedDeparture,
-            reservationDetailId: a.reservationDetailId,
             numberOfGuests: 1,
             status: StayDetailStatus.OCCUPIED,
             guestsInResidence: a.guests

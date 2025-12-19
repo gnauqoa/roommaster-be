@@ -1,4 +1,4 @@
-import { PromotionType, PromotionStatus, DateType } from '@prisma/client';
+import { PromotionType, PromotionStatus, RatePolicyLoop } from '@prisma/client';
 import Joi from 'joi';
 
 // Promotion validations
@@ -87,11 +87,10 @@ const createRatePolicy = {
     roomTypeId: Joi.number().integer().required(),
     fromDate: Joi.date().required(),
     toDate: Joi.date().required().greater(Joi.ref('fromDate')),
-    dateType: Joi.string()
-      .valid(...Object.values(DateType))
-      .required(),
-    dayOfWeek: Joi.string().max(20).allow('', null),
-    rateFactor: Joi.number().positive().required(),
+    loop: Joi.string()
+      .valid(...Object.values(RatePolicyLoop))
+      .default(RatePolicyLoop.NONE),
+    price: Joi.number().positive().required(),
     priority: Joi.number().integer().min(0).default(0)
   })
 };
@@ -101,7 +100,7 @@ const getRatePolicies = {
     code: Joi.string(),
     name: Joi.string(),
     roomTypeId: Joi.number().integer(),
-    dateType: Joi.string().valid(...Object.values(DateType)),
+    loop: Joi.string().valid(...Object.values(RatePolicyLoop)),
     fromDate: Joi.date(),
     toDate: Joi.date(),
     sortBy: Joi.string(),
@@ -128,9 +127,8 @@ const updateRatePolicy = {
       roomTypeId: Joi.number().integer(),
       fromDate: Joi.date(),
       toDate: Joi.date(),
-      dateType: Joi.string().valid(...Object.values(DateType)),
-      dayOfWeek: Joi.string().max(20).allow('', null),
-      rateFactor: Joi.number().positive(),
+      loop: Joi.string().valid(...Object.values(RatePolicyLoop)),
+      price: Joi.number().positive(),
       priority: Joi.number().integer().min(0)
     })
     .min(1)

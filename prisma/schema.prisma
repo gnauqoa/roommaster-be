@@ -24,13 +24,6 @@ enum RoomStatus {
   OUT_OF_ORDER
 }
 
-enum DateType {
-  WEEKDAY
-  WEEKEND
-  HOLIDAY
-  HIGH_SEASON
-}
-
 enum CustomerType {
   INDIVIDUAL
   CORPORATE
@@ -116,6 +109,13 @@ enum ServiceGroup {
   OTHER
 }
 
+enum RatePolicyLoop {
+  NONE
+  WEEKLY
+  MONTHLY
+  YEARLY
+}
+
 
 
 enum HousekeepingStatus {
@@ -191,18 +191,17 @@ model Room {
 }
 
 model RatePolicy {
-  id         Int      @id @default(autoincrement())
-  code       String   @unique @db.VarChar(20)
-  name       String   @db.VarChar(100)
+  id         Int             @id @default(autoincrement())
+  code       String          @unique @db.VarChar(20)
+  name       String          @db.VarChar(100)
   roomTypeId Int
-  fromDate   DateTime @db.Date
-  toDate     DateTime @db.Date
-  dateType   DateType
-  dayOfWeek  String?  @db.VarChar(20) // 2-8 where 2=Monday, 8=Sunday
-  rateFactor Decimal  @db.Decimal(5, 2) // Rate multiplier
-  priority   Int      @default(0)
-  createdAt  DateTime @default(now())
-  updatedAt  DateTime @updatedAt
+  fromDate   DateTime        @db.Date
+  toDate     DateTime        @db.Date
+  loop       RatePolicyLoop  @default(NONE)
+  price      Decimal         @db.Decimal(15, 2) // Direct price for the room type
+  priority   Int             @default(0)
+  createdAt  DateTime        @default(now())
+  updatedAt  DateTime        @updatedAt
 
   roomType       RoomType         @relation(fields: [roomTypeId], references: [id])
   ratePolicyLogs RatePolicyLog[]
@@ -211,19 +210,17 @@ model RatePolicy {
 }
 
 // Historical rate policy snapshot - preserves rates when policy changes
+// Created when RatePolicy is created/updated, and used for night audit rate lookup
 model RatePolicyLog {
   id           Int      @id @default(autoincrement())
   roomTypeId   Int
   date         DateTime @db.Date
-  dateType     DateType
-  rateFactor   Decimal  @db.Decimal(5, 2)
-  baseRate     Decimal  @db.Decimal(15, 2) // rackRate at snapshot time
+  price        Decimal  @db.Decimal(15, 2) // Direct price from RatePolicy
   ratePolicyId Int? // Original policy that was copied (nullable for manual entries)
   createdAt    DateTime @default(now())
 
-  roomType              RoomType               @relation(fields: [roomTypeId], references: [id])
-  ratePolicy            RatePolicy?            @relation(fields: [ratePolicyId], references: [id])
-  reservationDetailDays ReservationDetailDay[]
+  roomType   RoomType    @relation(fields: [roomTypeId], references: [id])
+  ratePolicy RatePolicy? @relation(fields: [ratePolicyId], references: [id])
 
   @@unique([roomTypeId, date]) // One rate per room type per date
   @@index([roomTypeId, date])
@@ -390,20 +387,21 @@ model Promotion {
 // ==========================================
 
 model Reservation {
-  id                Int               @id @default(autoincrement())
-  code              String            @unique @db.VarChar(20)
-  customerId        Int
-  reservationDate   DateTime          @default(now())
-  expectedArrival   DateTime          @db.Date
-  expectedDeparture DateTime          @db.Date
-  numberOfGuests    Int               @default(1) // Tổng số khách
-  depositRequired   Decimal?          @db.Decimal(15, 2) // Tiền cọc yêu cầu
-  depositPaid       Decimal           @default(0) @db.Decimal(15, 2) // Tiền cọc đã trả
-  status            ReservationStatus @default(PENDING)
-  source            String?           @db.VarChar(50) // Direct/OTA/Phone...
-  notes             String?           @db.Text
-  createdAt         DateTime          @default(now())
-  updatedAt         DateTime          @updatedAt
+  id                 Int               @id @default(autoincrement())
+  code               String            @unique @db.VarChar(20)
+  customerId         Int
+  reservationDate    DateTime          @default(now())
+  expectedArrival    DateTime          @db.Date
+  expectedDeparture  DateTime          @db.Date
+  numberOfGuests     Int               @default(1) // Tổng số khách
+  depositRequired    Decimal?          @db.Decimal(15, 2) // Tiền cọc yêu cầu
+  depositPaid        Decimal           @default(0) @db.Decimal(15, 2) // Tiền cọc đã trả
+  expectedTotalPrice Decimal?          @db.Decimal(15, 2) // Total expected price calculated at reservation time (info only)
+  status             ReservationStatus @default(PENDING)
+  source             String?           @db.VarChar(50) // Direct/OTA/Phone...
+  notes              String?           @db.Text
+  createdAt          DateTime          @default(now())
+  updatedAt          DateTime          @updatedAt
 
   customer           Customer            @relation(fields: [customerId], references: [id])
   reservationDetails ReservationDetail[]
@@ -425,31 +423,10 @@ model ReservationDetail {
   createdAt      DateTime                @default(now())
   updatedAt      DateTime                @updatedAt
 
-  reservation           Reservation            @relation(fields: [reservationId], references: [id], onDelete: Cascade)
-  roomType              RoomType               @relation(fields: [roomTypeId], references: [id])
-  reservationDetailDays ReservationDetailDay[]
+  reservation Reservation @relation(fields: [reservationId], references: [id], onDelete: Cascade)
+  roomType    RoomType    @relation(fields: [roomTypeId], references: [id])
 
   @@map("reservation_details")
-}
-
-// Daily rate for each night of the reservation
-model ReservationDetailDay {
-  id                  Int      @id @default(autoincrement())
-  reservationDetailId Int
-  date                DateTime @db.Date
-  baseRate            Decimal  @db.Decimal(15, 2) // rackRate from RoomType
-  rateFactor          Decimal  @db.Decimal(5, 2) // From RatePolicy (default 1.0)
-  finalRate           Decimal  @db.Decimal(15, 2) // baseRate × rateFactor
-  ratePolicyLogId     Int? // Links to frozen rate snapshot
-  createdAt           DateTime @default(now())
-  updatedAt           DateTime @updatedAt
-
-  reservationDetail ReservationDetail @relation(fields: [reservationDetailId], references: [id], onDelete: Cascade)
-  ratePolicyLog     RatePolicyLog?    @relation(fields: [ratePolicyLogId], references: [id])
-
-  @@unique([reservationDetailId, date])
-  @@index([reservationDetailId, date])
-  @@map("reservation_detail_days")
 }
 
 model StayRecord {
@@ -475,18 +452,17 @@ model StayRecord {
 
 // Chi tiết lưu trú - GÁN PHÒNG CỤ THỂ khi check-in
 model StayDetail {
-  id                    Int              @id @default(autoincrement())
-  stayRecordId          Int
-  roomId                Int // Phòng cụ thể được gán
-  roomAssignedTime      DateTime         @default(now())
-  expectedCheckOut      DateTime         @db.Date
-  actualCheckOut        DateTime?
-  reservationDetailId   Int? // Link to reservation detail for rate lookup
-  numberOfGuests        Int              @default(1) // Số khách trong phòng này
-  status                StayDetailStatus @default(OCCUPIED) // Trạng thái thuê phòng
-  notes                 String?          @db.Text
-  createdAt             DateTime         @default(now())
-  updatedAt             DateTime         @updatedAt
+  id               Int              @id @default(autoincrement())
+  stayRecordId     Int
+  roomId           Int // Phòng cụ thể được gán
+  roomAssignedTime DateTime         @default(now())
+  expectedCheckOut DateTime         @db.Date
+  actualCheckOut   DateTime?
+  numberOfGuests   Int              @default(1) // Số khách trong phòng này
+  status           StayDetailStatus @default(OCCUPIED) // Trạng thái thuê phòng
+  notes            String?          @db.Text
+  createdAt        DateTime         @default(now())
+  updatedAt        DateTime         @updatedAt
 
   stayRecord        StayRecord         @relation(fields: [stayRecordId], references: [id], onDelete: Cascade)
   room              Room               @relation(fields: [roomId], references: [id])

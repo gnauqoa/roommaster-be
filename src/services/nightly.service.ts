@@ -7,7 +7,7 @@ import {
   TransactionCategory,
   ServiceGroup,
   ReservationStatus,
-  DateType
+  RatePolicyLoop
 } from '@prisma/client';
 import { Injectable } from 'core/decorators';
 
@@ -47,9 +47,132 @@ export class NightlyService {
   }
 
   /**
+   * Check if a date matches a rate policy based on loop type
+   */
+  private isDateMatchingPolicy(
+    date: Date,
+    policy: { fromDate: Date; toDate: Date; loop: RatePolicyLoop }
+  ): boolean {
+    const normalizedDate = new Date(date);
+    normalizedDate.setHours(0, 0, 0, 0);
+    const fromDate = new Date(policy.fromDate);
+    fromDate.setHours(0, 0, 0, 0);
+    const toDate = new Date(policy.toDate);
+    toDate.setHours(0, 0, 0, 0);
+
+    switch (policy.loop) {
+      case RatePolicyLoop.NONE:
+        return normalizedDate >= fromDate && normalizedDate <= toDate;
+
+      case RatePolicyLoop.WEEKLY: {
+        const dayOfWeek = normalizedDate.getDay();
+        const fromDayOfWeek = fromDate.getDay();
+        const toDayOfWeek = toDate.getDay();
+        if (fromDayOfWeek === toDayOfWeek) {
+          return dayOfWeek === fromDayOfWeek;
+        }
+        if (fromDayOfWeek <= toDayOfWeek) {
+          return dayOfWeek >= fromDayOfWeek && dayOfWeek <= toDayOfWeek;
+        } else {
+          return dayOfWeek >= fromDayOfWeek || dayOfWeek <= toDayOfWeek;
+        }
+      }
+
+      case RatePolicyLoop.MONTHLY: {
+        const dayOfMonth = normalizedDate.getDate();
+        const fromDay = fromDate.getDate();
+        const toDay = toDate.getDate();
+        if (fromDay <= toDay) {
+          return dayOfMonth >= fromDay && dayOfMonth <= toDay;
+        } else {
+          return dayOfMonth >= fromDay || dayOfMonth <= toDay;
+        }
+      }
+
+      case RatePolicyLoop.YEARLY: {
+        const month = normalizedDate.getMonth();
+        const day = normalizedDate.getDate();
+        const fromMonth = fromDate.getMonth();
+        const fromDay = fromDate.getDate();
+        const toMonth = toDate.getMonth();
+        const toDay = toDate.getDate();
+
+        const dateValue = month * 100 + day;
+        const fromValue = fromMonth * 100 + fromDay;
+        const toValue = toMonth * 100 + toDay;
+
+        if (fromValue <= toValue) {
+          return dateValue >= fromValue && dateValue <= toValue;
+        } else {
+          return dateValue >= fromValue || dateValue <= toValue;
+        }
+      }
+
+      default:
+        return false;
+    }
+  }
+
+  /**
+   * Find applicable rate policy for a specific date and room type
+   */
+  private async findApplicableRatePolicy(
+    roomTypeId: number,
+    date: Date
+  ): Promise<{ price: Prisma.Decimal | null; ratePolicyId: number | null }> {
+    const normalizedDate = new Date(date);
+    normalizedDate.setHours(0, 0, 0, 0);
+
+    const policies = await this.prisma.ratePolicy.findMany({
+      where: { roomTypeId },
+      orderBy: { priority: 'desc' }
+    });
+
+    for (const policy of policies) {
+      if (this.isDateMatchingPolicy(normalizedDate, policy)) {
+        return {
+          price: policy.price,
+          ratePolicyId: policy.id
+        };
+      }
+    }
+
+    return {
+      price: null,
+      ratePolicyId: null
+    };
+  }
+
+  /**
+   * Find the nearest RatePolicyLog in the past for a given date and room type
+   */
+  private async findNearestRatePolicyLog(
+    roomTypeId: number,
+    referenceDate: Date
+  ): Promise<{ price: Prisma.Decimal } | null> {
+    const normalizedDate = new Date(referenceDate);
+    normalizedDate.setHours(0, 0, 0, 0);
+
+    const ratePolicyLog = await this.prisma.ratePolicyLog.findFirst({
+      where: {
+        roomTypeId,
+        date: { lte: normalizedDate }
+      },
+      orderBy: { date: 'desc' }
+    });
+
+    return ratePolicyLog;
+  }
+
+  /**
    * Post nightly room charges for all occupied rooms
    * Should run at midnight (00:00) every day
-   * Uses ReservationDetailDay for rate lookup, falls back to RatePolicyLog or rackRate
+   *
+   * Night audit flow:
+   * - For reservations: find RatePolicyLog nearest to reservation date
+   * - For walk-ins: find RatePolicyLog nearest to check-in time
+   * - For extended stays: find RatePolicyLog nearest to check-in time
+   * - Fallback: use rackRate if no RatePolicyLog found
    */
   async postNightlyRoomCharges(employeeId: number) {
     const today = new Date();
@@ -68,15 +191,7 @@ export class NightlyService {
         },
         stayRecord: {
           include: {
-            reservation: {
-              include: {
-                reservationDetails: {
-                  include: {
-                    reservationDetailDays: true
-                  }
-                }
-              }
-            }
+            reservation: true
           }
         }
       }
@@ -174,21 +289,20 @@ export class NightlyService {
 
   /**
    * Get daily room rate for a stay detail
-   * Priority: ReservationDetailDay -> RatePolicyLog -> RoomType.rackRate
+   *
+   * Night audit logic:
+   * - For reservations: find RatePolicyLog nearest in the past to reservation date
+   * - For walk-ins (no reservation) or extended stays: find RatePolicyLog nearest to check-in time
+   * - Fallback: use rackRate
    */
   private async getDailyRoomRate(
     stayDetail: {
-      reservationDetailId?: number | null;
       room: { roomType: { id: number; rackRate: Prisma.Decimal } };
+      expectedCheckOut: Date;
       stayRecord: {
+        checkInTime: Date;
         reservation?: {
-          reservationDetails: Array<{
-            roomTypeId: number;
-            reservationDetailDays: Array<{
-              date: Date;
-              finalRate: Prisma.Decimal;
-            }>;
-          }>;
+          reservationDate: Date;
         } | null;
       };
     },
@@ -197,113 +311,35 @@ export class NightlyService {
     const normalizedDate = new Date(date);
     normalizedDate.setHours(0, 0, 0, 0);
 
-    // 1. Try to get rate from ReservationDetailDay (if from reservation)
-    if (stayDetail.reservationDetailId) {
-      const reservationDetailDay = await this.prisma.reservationDetailDay.findUnique({
-        where: {
-          reservationDetailId_date: {
-            reservationDetailId: stayDetail.reservationDetailId,
-            date: normalizedDate
-          }
-        }
-      });
+    const roomTypeId = stayDetail.room.roomType.id;
+    const rackRate = stayDetail.room.roomType.rackRate;
 
-      if (reservationDetailDay) {
-        return reservationDetailDay.finalRate;
-      }
+    // Check if this is an extended stay (expectedCheckOut is in the past)
+    const expectedCheckOut = new Date(stayDetail.expectedCheckOut);
+    expectedCheckOut.setHours(0, 0, 0, 0);
+    const isExtendedStay = expectedCheckOut < normalizedDate;
+
+    // Determine the reference date for RatePolicyLog lookup
+    let referenceDate: Date;
+
+    if (stayDetail.stayRecord.reservation && !isExtendedStay) {
+      // For reservations: use reservation date
+      referenceDate = new Date(stayDetail.stayRecord.reservation.reservationDate);
+    } else {
+      // For walk-ins or extended stays: use check-in time
+      referenceDate = new Date(stayDetail.stayRecord.checkInTime);
     }
+    referenceDate.setHours(0, 0, 0, 0);
 
-    // 2. Try matching via reservation's room type
-    if (stayDetail.stayRecord.reservation) {
-      const matchingDetail = stayDetail.stayRecord.reservation.reservationDetails.find(
-        (rd) => rd.roomTypeId === stayDetail.room.roomType.id
-      );
-
-      if (matchingDetail) {
-        const dayRate = matchingDetail.reservationDetailDays.find((day) => {
-          const dayDate = new Date(day.date);
-          dayDate.setHours(0, 0, 0, 0);
-          return dayDate.getTime() === normalizedDate.getTime();
-        });
-
-        if (dayRate) {
-          return dayRate.finalRate;
-        }
-      }
-    }
-
-    // 3. Try to get rate from RatePolicyLog (for walk-ins or extended stays)
-    const ratePolicyLog = await this.prisma.ratePolicyLog.findUnique({
-      where: {
-        roomTypeId_date: {
-          roomTypeId: stayDetail.room.roomType.id,
-          date: normalizedDate
-        }
-      }
-    });
+    // Find the nearest RatePolicyLog in the past
+    const ratePolicyLog = await this.findNearestRatePolicyLog(roomTypeId, referenceDate);
 
     if (ratePolicyLog) {
-      return ratePolicyLog.baseRate.mul(ratePolicyLog.rateFactor);
+      return ratePolicyLog.price;
     }
 
-    // 4. Fallback: create RatePolicyLog entry and use rackRate with dynamic factor
-    const roomType = stayDetail.room.roomType;
-    const { rateFactor, dateType, ratePolicyId } = await this.findApplicableRatePolicy(
-      roomType.id,
-      normalizedDate
-    );
-
-    // Create RatePolicyLog for future reference
-    await this.prisma.ratePolicyLog.create({
-      data: {
-        roomTypeId: roomType.id,
-        date: normalizedDate,
-        dateType,
-        rateFactor,
-        baseRate: roomType.rackRate,
-        ratePolicyId
-      }
-    });
-
-    return roomType.rackRate.mul(rateFactor);
-  }
-
-  /**
-   * Find applicable rate policy for a specific date and room type
-   */
-  private async findApplicableRatePolicy(
-    roomTypeId: number,
-    date: Date
-  ): Promise<{ rateFactor: Prisma.Decimal; dateType: DateType; ratePolicyId: number | null }> {
-    const normalizedDate = new Date(date);
-    normalizedDate.setHours(0, 0, 0, 0);
-
-    const policy = await this.prisma.ratePolicy.findFirst({
-      where: {
-        roomTypeId,
-        fromDate: { lte: normalizedDate },
-        toDate: { gte: normalizedDate }
-      },
-      orderBy: { priority: 'desc' }
-    });
-
-    if (policy) {
-      return {
-        rateFactor: policy.rateFactor,
-        dateType: policy.dateType,
-        ratePolicyId: policy.id
-      };
-    }
-
-    // Default: no policy found, use factor 1.0 and determine dateType from day of week
-    const dayOfWeek = normalizedDate.getDay();
-    const isWeekend = dayOfWeek === 0 || dayOfWeek === 6;
-
-    return {
-      rateFactor: new Prisma.Decimal(1.0),
-      dateType: isWeekend ? DateType.WEEKEND : DateType.WEEKDAY,
-      ratePolicyId: null
-    };
+    // Fallback: use rackRate
+    return rackRate;
   }
 
   /**

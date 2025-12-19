@@ -4,6 +4,7 @@ export { TokenService } from './token.service';
 export { EmailService } from './email.service';
 export { EmployeeService } from './employee.service';
 export { RoomService } from './room.service';
+export { PricingService } from './pricing.service';
 
 // Note: The following services need to be converted to class-based pattern
 // For now, they are exported as default objects for backward compatibility

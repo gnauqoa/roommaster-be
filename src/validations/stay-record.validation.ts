@@ -1,4 +1,4 @@
-import { StayRecordStatus, StayDetailStatus } from '@prisma/client';
+import { StayRecordStatus } from '@prisma/client';
 import Joi from 'joi';
 
 const guestInResidenceSchema = Joi.object().keys({
@@ -36,7 +36,6 @@ const checkInFromReservation = {
     roomAssignments: Joi.array()
       .items(
         Joi.object().keys({
-          reservationDetailId: Joi.number().integer().required(),
           roomId: Joi.number().integer().required(),
           guests: Joi.array().items(guestInResidenceSchema)
         })

@@ -2,7 +2,7 @@ import {
   Reservation,
   ReservationDetail,
   ReservationStatus,
-  DateType,
+  RatePolicyLoop,
   Prisma,
   PrismaClient
 } from '@prisma/client';
@@ -60,59 +60,126 @@ export class ReservationService {
   }
 
   /**
+   * Check if a date matches a rate policy based on loop type
+   */
+  private isDateMatchingPolicy(
+    date: Date,
+    policy: { fromDate: Date; toDate: Date; loop: RatePolicyLoop }
+  ): boolean {
+    const normalizedDate = new Date(date);
+    normalizedDate.setHours(0, 0, 0, 0);
+    const fromDate = new Date(policy.fromDate);
+    fromDate.setHours(0, 0, 0, 0);
+    const toDate = new Date(policy.toDate);
+    toDate.setHours(0, 0, 0, 0);
+
+    switch (policy.loop) {
+      case RatePolicyLoop.NONE:
+        // Exact date range match
+        return normalizedDate >= fromDate && normalizedDate <= toDate;
+
+      case RatePolicyLoop.WEEKLY: {
+        // Match same day of week within date range
+        const dayOfWeek = normalizedDate.getDay();
+        const fromDayOfWeek = fromDate.getDay();
+        const toDayOfWeek = toDate.getDay();
+        // If fromDate and toDate are the same day of week, match that specific day
+        if (fromDayOfWeek === toDayOfWeek) {
+          return dayOfWeek === fromDayOfWeek;
+        }
+        // Otherwise check if the day is within the range of days
+        if (fromDayOfWeek <= toDayOfWeek) {
+          return dayOfWeek >= fromDayOfWeek && dayOfWeek <= toDayOfWeek;
+        } else {
+          // Wraps around (e.g., Friday to Monday)
+          return dayOfWeek >= fromDayOfWeek || dayOfWeek <= toDayOfWeek;
+        }
+      }
+
+      case RatePolicyLoop.MONTHLY: {
+        // Match same day of month
+        const dayOfMonth = normalizedDate.getDate();
+        const fromDay = fromDate.getDate();
+        const toDay = toDate.getDate();
+        if (fromDay <= toDay) {
+          return dayOfMonth >= fromDay && dayOfMonth <= toDay;
+        } else {
+          return dayOfMonth >= fromDay || dayOfMonth <= toDay;
+        }
+      }
+
+      case RatePolicyLoop.YEARLY: {
+        // Match same day/month combination
+        const month = normalizedDate.getMonth();
+        const day = normalizedDate.getDate();
+        const fromMonth = fromDate.getMonth();
+        const fromDay = fromDate.getDate();
+        const toMonth = toDate.getMonth();
+        const toDay = toDate.getDate();
+
+        const dateValue = month * 100 + day;
+        const fromValue = fromMonth * 100 + fromDay;
+        const toValue = toMonth * 100 + toDay;
+
+        if (fromValue <= toValue) {
+          return dateValue >= fromValue && dateValue <= toValue;
+        } else {
+          return dateValue >= fromValue || dateValue <= toValue;
+        }
+      }
+
+      default:
+        return false;
+    }
+  }
+
+  /**
    * Find applicable rate policy for a specific date and room type
    * Returns the policy with highest priority that matches the date
    */
   private async findApplicableRatePolicy(
     roomTypeId: number,
     date: Date
-  ): Promise<{ rateFactor: Prisma.Decimal; dateType: DateType; ratePolicyId: number | null }> {
+  ): Promise<{ price: Prisma.Decimal | null; ratePolicyId: number | null }> {
     const normalizedDate = new Date(date);
     normalizedDate.setHours(0, 0, 0, 0);
 
-    const policy = await this.prisma.ratePolicy.findFirst({
-      where: {
-        roomTypeId,
-        fromDate: { lte: normalizedDate },
-        toDate: { gte: normalizedDate }
-      },
+    // Get all policies for this room type ordered by priority
+    const policies = await this.prisma.ratePolicy.findMany({
+      where: { roomTypeId },
       orderBy: { priority: 'desc' }
     });
 
-    if (policy) {
-      return {
-        rateFactor: policy.rateFactor,
-        dateType: policy.dateType,
-        ratePolicyId: policy.id
-      };
+    // Find the first matching policy
+    for (const policy of policies) {
+      if (this.isDateMatchingPolicy(normalizedDate, policy)) {
+        return {
+          price: policy.price,
+          ratePolicyId: policy.id
+        };
+      }
     }
 
-    // Default: no policy found, use factor 1.0 and determine dateType from day of week
-    const dayOfWeek = normalizedDate.getDay();
-    const isWeekend = dayOfWeek === 0 || dayOfWeek === 6;
-
+    // No policy found
     return {
-      rateFactor: new Prisma.Decimal(1.0),
-      dateType: isWeekend ? DateType.WEEKEND : DateType.WEEKDAY,
+      price: null,
       ratePolicyId: null
     };
   }
 
   /**
-   * Ensure RatePolicyLog entry exists for a given room type and date
-   * Creates a snapshot if not exists
+   * Get the price for a specific date and room type
+   * Uses RatePolicyLog if available, otherwise finds applicable policy or falls back to rackRate
    */
-  private async ensureRatePolicyLog(
+  private async getPriceForDate(
     roomTypeId: number,
     date: Date,
-    baseRate: Prisma.Decimal,
-    rateFactor: Prisma.Decimal,
-    dateType: DateType,
-    ratePolicyId: number | null
-  ): Promise<number> {
+    rackRate: Prisma.Decimal
+  ): Promise<Prisma.Decimal> {
     const normalizedDate = new Date(date);
     normalizedDate.setHours(0, 0, 0, 0);
 
+    // Try to find existing RatePolicyLog for this date
     const existingLog = await this.prisma.ratePolicyLog.findUnique({
       where: {
         roomTypeId_date: {
@@ -123,71 +190,42 @@ export class ReservationService {
     });
 
     if (existingLog) {
-      return existingLog.id;
+      return existingLog.price;
     }
 
-    const newLog = await this.prisma.ratePolicyLog.create({
-      data: {
-        roomTypeId,
-        date: normalizedDate,
-        dateType,
-        rateFactor,
-        baseRate,
-        ratePolicyId
-      }
-    });
+    // Find applicable rate policy
+    const { price } = await this.findApplicableRatePolicy(roomTypeId, normalizedDate);
 
-    return newLog.id;
+    // Return policy price or rackRate as fallback
+    return price ?? rackRate;
   }
 
   /**
-   * Create daily rate records for a reservation detail
+   * Calculate expected total price for a reservation
+   * Uses current rate policies - this is for display purposes only
    */
-  private async createReservationDetailDays(
-    reservationDetailId: number,
-    roomTypeId: number,
+  private async calculateExpectedTotalPrice(
     expectedArrival: Date,
-    expectedDeparture: Date
-  ): Promise<void> {
-    const roomType = await this.prisma.roomType.findUnique({
-      where: { id: roomTypeId }
-    });
-
-    if (!roomType) {
-      throw new ApiError(httpStatus.BAD_REQUEST, 'Room type not found');
-    }
-
+    expectedDeparture: Date,
+    reservationDetails: Array<{ roomTypeId: number; quantity: number }>
+  ): Promise<Prisma.Decimal> {
+    let totalPrice = new Prisma.Decimal(0);
     const dates = this.getDateRange(expectedArrival, expectedDeparture);
 
-    for (const date of dates) {
-      const { rateFactor, dateType, ratePolicyId } = await this.findApplicableRatePolicy(
-        roomTypeId,
-        date
-      );
-
-      const baseRate = roomType.rackRate;
-      const finalRate = baseRate.mul(rateFactor);
-
-      const ratePolicyLogId = await this.ensureRatePolicyLog(
-        roomTypeId,
-        date,
-        baseRate,
-        rateFactor,
-        dateType,
-        ratePolicyId
-      );
-
-      await this.prisma.reservationDetailDay.create({
-        data: {
-          reservationDetailId,
-          date,
-          baseRate,
-          rateFactor,
-          finalRate,
-          ratePolicyLogId
-        }
+    for (const detail of reservationDetails) {
+      const roomType = await this.prisma.roomType.findUnique({
+        where: { id: detail.roomTypeId }
       });
+
+      if (!roomType) continue;
+
+      for (const date of dates) {
+        const price = await this.getPriceForDate(detail.roomTypeId, date, roomType.rackRate);
+        totalPrice = totalPrice.add(price.mul(detail.quantity));
+      }
     }
+
+    return totalPrice;
   }
 
   async createReservation(data: {
@@ -215,6 +253,16 @@ export class ReservationService {
 
     const code = await this.generateReservationCode();
 
+    // Calculate expected total price (info only)
+    const expectedTotalPrice = await this.calculateExpectedTotalPrice(
+      data.expectedArrival,
+      data.expectedDeparture,
+      data.reservationDetails.map((d) => ({
+        roomTypeId: d.roomTypeId,
+        quantity: d.quantity ?? 1
+      }))
+    );
+
     // Create reservation with details
     const reservation = await this.prisma.reservation.create({
       data: {
@@ -224,6 +272,7 @@ export class ReservationService {
         expectedDeparture: data.expectedDeparture,
         numberOfGuests: data.numberOfGuests ?? 1,
         depositRequired: data.depositRequired,
+        expectedTotalPrice,
         source: data.source,
         notes: data.notes,
         status: ReservationStatus.PENDING,
@@ -242,31 +291,7 @@ export class ReservationService {
       }
     });
 
-    // Create daily rate records for each reservation detail
-    for (const detail of reservation.reservationDetails) {
-      await this.createReservationDetailDays(
-        detail.id,
-        detail.roomTypeId,
-        data.expectedArrival,
-        data.expectedDeparture
-      );
-    }
-
-    // Return full reservation with daily rates
-    return this.prisma.reservation.findUniqueOrThrow({
-      where: { id: reservation.id },
-      include: {
-        customer: true,
-        reservationDetails: {
-          include: {
-            roomType: true,
-            reservationDetailDays: {
-              orderBy: { date: 'asc' }
-            }
-          }
-        }
-      }
-    });
+    return reservation;
   }
 
   async queryReservations(
@@ -416,21 +441,21 @@ export class ReservationService {
       include: { roomType: true }
     });
 
-    // Create daily rate records
-    await this.createReservationDetailDays(
-      reservationDetail.id,
-      detail.roomTypeId,
-      reservation.expectedArrival,
-      reservation.expectedDeparture
-    );
-
-    return this.prisma.reservationDetail.findUniqueOrThrow({
-      where: { id: reservationDetail.id },
-      include: {
-        roomType: true,
-        reservationDetailDays: { orderBy: { date: 'asc' } }
-      }
+    // Update expected total price (recalculate)
+    const allDetails = await this.prisma.reservationDetail.findMany({
+      where: { reservationId }
     });
+    const expectedTotalPrice = await this.calculateExpectedTotalPrice(
+      reservation.expectedArrival,
+      reservation.expectedDeparture,
+      allDetails.map((d) => ({ roomTypeId: d.roomTypeId, quantity: d.quantity }))
+    );
+    await this.prisma.reservation.update({
+      where: { id: reservationId },
+      data: { expectedTotalPrice }
+    });
+
+    return reservationDetail;
   }
 
   async updateReservationDetail(
