@@ -1,115 +1,130 @@
 import httpStatus from 'http-status';
-import tokenService from './token.service';
-import userService from './user.service';
-import { TokenType, User } from '@prisma/client';
-import prisma from 'prisma';
+import { TokenService } from './token.service';
+import { EmployeeService } from './employee.service';
+import { Employee, PrismaClient } from '@prisma/client';
 import { encryptPassword, isPasswordMatch } from 'utils/encryption';
 import { AuthTokensResponse } from 'types/response';
 import exclude from 'utils/exclude';
 import ApiError from 'utils/ApiError';
+import { Injectable } from 'core/decorators';
 
-/**
- * Login with username and password
- * @param {string} email
- * @param {string} password
- * @returns {Promise<Omit<User, 'password'>>}
- */
-const loginUserWithEmailAndPassword = async (
-  email: string,
-  password: string
-): Promise<Omit<User, 'password'>> => {
-  const user = await userService.getUserByEmail(email);
-  if (!user || !(await isPasswordMatch(password, user.password as string))) {
-    throw new ApiError(httpStatus.UNAUTHORIZED, 'Incorrect email or password');
-  }
-  return exclude(user, ['password']);
-};
+@Injectable()
+export class AuthService {
+  constructor(
+    private readonly prisma: PrismaClient,
+    private readonly tokenService: TokenService,
+    private readonly employeeService: EmployeeService
+  ) {}
 
-/**
- * Logout
- * @param {string} refreshToken
- * @returns {Promise<void>}
- */
-const logout = async (refreshToken: string): Promise<void> => {
-  const refreshTokenData = await prisma.token.findFirst({
-    where: {
-      token: refreshToken,
-      type: TokenType.REFRESH,
-      blacklisted: false
+  /**
+   * Login with email and password
+   * @param {string} email
+   * @param {string} password
+   * @returns {Promise<Omit<Employee, 'passwordHash'>>}
+   */
+  async loginWithEmailAndPassword(
+    email: string,
+    password: string
+  ): Promise<Omit<Employee, 'passwordHash'>> {
+    const employee = await this.employeeService.getEmployeeByEmail(email);
+    if (!employee || !(await isPasswordMatch(password, employee.passwordHash))) {
+      throw new ApiError(httpStatus.UNAUTHORIZED, 'Incorrect email or password');
     }
-  });
-  if (!refreshTokenData) {
-    throw new ApiError(httpStatus.NOT_FOUND, 'Not found');
-  }
-  await prisma.token.delete({ where: { id: refreshTokenData.id } });
-};
-
-/**
- * Refresh auth tokens
- * @param {string} refreshToken
- * @returns {Promise<AuthTokensResponse>}
- */
-const refreshAuth = async (refreshToken: string): Promise<AuthTokensResponse> => {
-  try {
-    const refreshTokenData = await tokenService.verifyToken(refreshToken, TokenType.REFRESH);
-    const { userId } = refreshTokenData;
-    await prisma.token.delete({ where: { id: refreshTokenData.id } });
-    return tokenService.generateAuthTokens({ id: userId });
-  } catch (error) {
-    throw new ApiError(httpStatus.UNAUTHORIZED, 'Please authenticate');
-  }
-};
-
-/**
- * Reset password
- * @param {string} resetPasswordToken
- * @param {string} newPassword
- * @returns {Promise<void>}
- */
-const resetPassword = async (resetPasswordToken: string, newPassword: string): Promise<void> => {
-  try {
-    const resetPasswordTokenData = await tokenService.verifyToken(
-      resetPasswordToken,
-      TokenType.RESET_PASSWORD
-    );
-    const user = await userService.getUserById(resetPasswordTokenData.userId);
-    if (!user) {
-      throw new Error();
+    if (!employee.isActive) {
+      throw new ApiError(httpStatus.UNAUTHORIZED, 'Account is inactive');
     }
-    const encryptedPassword = await encryptPassword(newPassword);
-    await userService.updateUserById(user.id, { password: encryptedPassword });
-    await prisma.token.deleteMany({ where: { userId: user.id, type: TokenType.RESET_PASSWORD } });
-  } catch (error) {
-    throw new ApiError(httpStatus.UNAUTHORIZED, 'Password reset failed');
+    return exclude(employee, ['passwordHash']);
   }
-};
 
-/**
- * Verify email
- * @param {string} verifyEmailToken
- * @returns {Promise<void>}
- */
-const verifyEmail = async (verifyEmailToken: string): Promise<void> => {
-  try {
-    const verifyEmailTokenData = await tokenService.verifyToken(
-      verifyEmailToken,
-      TokenType.VERIFY_EMAIL
-    );
-    await prisma.token.deleteMany({
-      where: { userId: verifyEmailTokenData.userId, type: TokenType.VERIFY_EMAIL }
+  /**
+   * Logout
+   * @param {string} refreshToken
+   * @returns {Promise<void>}
+   */
+  async logout(refreshToken: string): Promise<void> {
+    const refreshTokenData = await this.prisma.token.findFirst({
+      where: {
+        token: refreshToken,
+        type: 'REFRESH',
+        blacklisted: false
+      }
     });
-    await userService.updateUserById(verifyEmailTokenData.userId, { isEmailVerified: true });
-  } catch (error) {
-    throw new ApiError(httpStatus.UNAUTHORIZED, 'Email verification failed');
+    if (!refreshTokenData) {
+      throw new ApiError(httpStatus.NOT_FOUND, 'Not found');
+    }
+    await this.prisma.token.delete({ where: { id: refreshTokenData.id } });
   }
-};
 
-export default {
-  loginUserWithEmailAndPassword,
-  isPasswordMatch,
-  encryptPassword,
-  logout,
-  refreshAuth,
-  resetPassword,
-  verifyEmail
-};
+  /**
+   * Refresh auth tokens
+   * @param {string} refreshToken
+   * @returns {Promise<AuthTokensResponse>}
+   */
+  async refreshAuth(refreshToken: string): Promise<AuthTokensResponse> {
+    try {
+      const refreshTokenData = await this.tokenService.verifyToken(refreshToken, 'REFRESH');
+      const { employeeId } = refreshTokenData;
+      await this.prisma.token.delete({ where: { id: refreshTokenData.id } });
+      return this.tokenService.generateAuthTokens({ id: employeeId });
+    } catch (error) {
+      throw new ApiError(httpStatus.UNAUTHORIZED, 'Please authenticate');
+    }
+  }
+
+  /**
+   * Reset password
+   * @param {string} resetPasswordToken
+   * @param {string} newPassword
+   * @returns {Promise<void>}
+   */
+  async resetPassword(resetPasswordToken: string, newPassword: string): Promise<void> {
+    try {
+      const resetPasswordTokenData = await this.tokenService.verifyToken(
+        resetPasswordToken,
+        'RESET_PASSWORD'
+      );
+      const employee = await this.employeeService.getEmployeeById(
+        resetPasswordTokenData.employeeId
+      );
+      if (!employee) {
+        throw new Error();
+      }
+      const encryptedPassword = await encryptPassword(newPassword);
+      await this.employeeService.updateEmployeeById(employee.id, {
+        passwordHash: encryptedPassword
+      });
+      await this.prisma.token.deleteMany({
+        where: { employeeId: employee.id, type: 'RESET_PASSWORD' }
+      });
+    } catch (error) {
+      throw new ApiError(httpStatus.UNAUTHORIZED, 'Password reset failed');
+    }
+  }
+
+  /**
+   * Change password
+   * @param {number} employeeId
+   * @param {string} currentPassword
+   * @param {string} newPassword
+   * @returns {Promise<void>}
+   */
+  async changePassword(
+    employeeId: number,
+    currentPassword: string,
+    newPassword: string
+  ): Promise<void> {
+    const employee = await this.employeeService.getEmployeeById(employeeId);
+    if (!employee) {
+      throw new ApiError(httpStatus.NOT_FOUND, 'Employee not found');
+    }
+
+    if (!(await isPasswordMatch(currentPassword, employee.passwordHash))) {
+      throw new ApiError(httpStatus.BAD_REQUEST, 'Current password is incorrect');
+    }
+
+    const encryptedPassword = await encryptPassword(newPassword);
+    await this.employeeService.updateEmployeeById(employeeId, { passwordHash: encryptedPassword });
+  }
+}
+
+export default AuthService;

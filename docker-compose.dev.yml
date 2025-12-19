@@ -3,4 +3,5 @@ version: '3.8'
 services:
   node-app:
     container_name: node-app-dev
+    build: .
     command: yarn dev -L

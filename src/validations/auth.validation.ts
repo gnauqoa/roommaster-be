@@ -1,16 +1,9 @@
 import Joi from 'joi';
 import { password } from './custom.validation';
 
-const register = {
-  body: Joi.object().keys({
-    email: Joi.string().required().email(),
-    password: Joi.string().required().custom(password)
-  })
-};
-
 const login = {
   body: Joi.object().keys({
-    email: Joi.string().required(),
+    email: Joi.string().required().email(),
     password: Joi.string().required()
   })
 };
@@ -42,18 +35,31 @@ const resetPassword = {
   })
 };
 
-const verifyEmail = {
-  query: Joi.object().keys({
-    token: Joi.string().required()
+const changePassword = {
+  body: Joi.object().keys({
+    currentPassword: Joi.string().required(),
+    newPassword: Joi.string().required().custom(password)
   })
 };
 
+const getProfile = {};
+
+const updateProfile = {
+  body: Joi.object()
+    .keys({
+      name: Joi.string().max(100),
+      phone: Joi.string().max(20)
+    })
+    .min(1)
+};
+
 export default {
-  register,
   login,
   logout,
   refreshTokens,
   forgotPassword,
   resetPassword,
-  verifyEmail
+  changePassword,
+  getProfile,
+  updateProfile
 };

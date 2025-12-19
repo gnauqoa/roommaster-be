@@ -1,4 +1,4 @@
-import prisma from '../src/prisma';
+import prisma from 'prisma';
 import { beforeAll, beforeEach, afterAll } from '@jest/globals';
 
 const setupTestDB = () => {
@@ -8,12 +8,12 @@ const setupTestDB = () => {
 
   beforeEach(async () => {
     await prisma.token.deleteMany();
-    await prisma.user.deleteMany();
+    await prisma.employee.deleteMany();
   });
 
   afterAll(async () => {
     await prisma.token.deleteMany();
-    await prisma.user.deleteMany();
+    await prisma.employee.deleteMany();
     await prisma.$disconnect();
   });
 };

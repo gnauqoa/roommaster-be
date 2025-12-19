@@ -1,23 +1,62 @@
 components:
   schemas:
-    User:
+    # ==========================================
+    # AUTHENTICATION & AUTHORIZATION
+    # ==========================================
+    
+    Employee:
       type: object
       properties:
         id:
+          type: integer
+        code:
           type: string
+          example: "EMP001"
+        name:
+          type: string
+          example: "Admin User"
         email:
           type: string
           format: email
+          example: "admin@hotel.com"
+        phone:
+          type: string
+          example: "0123456789"
+        userGroupId:
+          type: integer
+          example: 1
+        isActive:
+          type: boolean
+          example: true
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+        userGroup:
+          $ref: '#/components/schemas/UserGroup'
+
+    UserGroup:
+      type: object
+      properties:
+        id:
+          type: integer
+        code:
+          type: string
+          example: "ADMIN_GROUP"
         name:
           type: string
-        role:
+          example: "Administrator"
+        description:
           type: string
-          enum: [USER, ADMIN]
-      example:
-        id: 5ebac534954b54139806c112
-        email: fake@example.com
-        name: fake name
-        role: USER
+          example: "Full system access with all permissions"
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
 
     Token:
       type: object
@@ -28,8 +67,8 @@ components:
           type: string
           format: date-time
       example:
-        token: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiI1ZWJhYzUzNDk1NGI1NDEzOTgwNmMxMTIiLCJpYXQiOjE1ODkyOTg0ODQsImV4cCI6MTU4OTMwMDI4NH0.m1U63blB0MLej_WfB7yC2FTMnCziif9X8yzwDEfJXAg
-        expires: 2020-05-12T16:18:04.793Z
+        token: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+        expires: 2024-12-31T23:59:59.000Z
 
     AuthTokens:
       type: object
@@ -39,6 +78,239 @@ components:
         refresh:
           $ref: '#/components/schemas/Token'
 
+    # ==========================================
+    # CUSTOMER MANAGEMENT
+    # ==========================================
+    
+    CustomerTier:
+      type: object
+      properties:
+        id:
+          type: integer
+        code:
+          type: string
+          example: "GOLD"
+        name:
+          type: string
+          example: "Gold"
+        pointsRequired:
+          type: integer
+          example: 500
+        roomDiscountFactor:
+          type: number
+          format: decimal
+          example: 10.00
+        serviceDiscountFactor:
+          type: number
+          format: decimal
+          example: 7.00
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+
+    Customer:
+      type: object
+      properties:
+        id:
+          type: integer
+        code:
+          type: string
+          example: "CUST001"
+        tierId:
+          type: integer
+          example: 1
+        fullName:
+          type: string
+          example: "Nguyễn Văn An"
+        phone:
+          type: string
+          example: "0901234567"
+        email:
+          type: string
+          format: email
+          example: "nguyenvanan@email.com"
+        idNumber:
+          type: string
+          example: "001234567890"
+        nationality:
+          type: string
+          example: "Vietnam"
+        address:
+          type: string
+          example: "123 Đường Lê Lợi, Q.1, TP.HCM"
+        customerType:
+          type: string
+          enum: [INDIVIDUAL, CORPORATE, TRAVEL_AGENT]
+          example: "INDIVIDUAL"
+        loyaltyPoints:
+          type: integer
+          example: 0
+        totalSpending:
+          type: number
+          format: decimal
+          example: 0
+        totalNights:
+          type: integer
+          example: 0
+        lastStayDate:
+          type: string
+          format: date
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+        tier:
+          $ref: '#/components/schemas/CustomerTier'
+
+    # ==========================================
+    # ROOM MANAGEMENT
+    # ==========================================
+    
+    RoomType:
+      type: object
+      properties:
+        id:
+          type: integer
+        code:
+          type: string
+          example: "DLX"
+        name:
+          type: string
+          example: "Deluxe Room"
+        baseCapacity:
+          type: integer
+          example: 2
+        maxCapacity:
+          type: integer
+          example: 4
+        amenities:
+          type: string
+          example: "Air conditioning, Smart TV, WiFi, Mini bar, Coffee maker, Bathtub, Ocean view"
+        rackRate:
+          type: number
+          format: decimal
+          example: 1800000
+        extraPersonFee:
+          type: number
+          format: decimal
+          example: 400000
+        description:
+          type: string
+          example: "Luxurious room with premium amenities and ocean view"
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+
+    Room:
+      type: object
+      properties:
+        id:
+          type: integer
+        code:
+          type: string
+          example: "301"
+        name:
+          type: string
+          example: "Room 301"
+        floor:
+          type: integer
+          example: 3
+        roomTypeId:
+          type: integer
+          example: 3
+        status:
+          type: string
+          enum: [AVAILABLE, RESERVED, OCCUPIED, CLEANING, MAINTENANCE, OUT_OF_ORDER]
+          example: "AVAILABLE"
+        notes:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+        roomType:
+          $ref: '#/components/schemas/RoomType'
+
+    # ==========================================
+    # SERVICE MANAGEMENT
+    # ==========================================
+    
+    Service:
+      type: object
+      properties:
+        id:
+          type: integer
+        code:
+          type: string
+          example: "FB001"
+        name:
+          type: string
+          example: "Breakfast Buffet"
+        unitPrice:
+          type: number
+          format: decimal
+          example: 150000
+        unit:
+          type: string
+          example: "person"
+        serviceGroup:
+          type: string
+          enum: [SURCHARGE, PENALTY, MINIBAR, SPA, LAUNDRY, F_AND_B, ROOM_SERVICE, OTHER]
+          example: "F_AND_B"
+        allowPromotion:
+          type: boolean
+          example: true
+        allowDiscount:
+          type: boolean
+          example: true
+        isActive:
+          type: boolean
+          example: true
+        notes:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+
+    PaymentMethod:
+      type: object
+      properties:
+        id:
+          type: integer
+        code:
+          type: string
+          example: "CASH"
+        name:
+          type: string
+          example: "Cash"
+        transactionFee:
+          type: number
+          format: decimal
+          example: 0
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+
+    # ==========================================
+    # COMMON SCHEMAS
+    # ==========================================
+    
     Error:
       type: object
       properties:
@@ -46,6 +318,22 @@ components:
           type: number
         message:
           type: string
+
+    PaginationMeta:
+      type: object
+      properties:
+        page:
+          type: integer
+          example: 1
+        limit:
+          type: integer
+          example: 10
+        totalPages:
+          type: integer
+          example: 5
+        totalResults:
+          type: integer
+          example: 50
 
   responses:
     DuplicateEmail:
@@ -57,6 +345,17 @@ components:
           example:
             code: 400
             message: Email already taken
+    
+    DuplicateCode:
+      description: Code already exists
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+          example:
+            code: 400
+            message: Code already exists
+    
     Unauthorized:
       description: Unauthorized
       content:
@@ -66,6 +365,7 @@ components:
           example:
             code: 401
             message: Please authenticate
+    
     Forbidden:
       description: Forbidden
       content:
@@ -75,6 +375,7 @@ components:
           example:
             code: 403
             message: Forbidden
+    
     NotFound:
       description: Not found
       content:
@@ -84,6 +385,16 @@ components:
           example:
             code: 404
             message: Not found
+    
+    BadRequest:
+      description: Bad Request
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+          example:
+            code: 400
+            message: Invalid request parameters
 
   securitySchemes:
     bearerAuth:
