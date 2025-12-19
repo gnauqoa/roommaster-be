@@ -15,7 +15,6 @@ const guestInResidenceSchema = Joi.object().keys({
 const stayDetailSchema = Joi.object().keys({
   roomId: Joi.number().integer().required(),
   expectedCheckOut: Joi.date().required(),
-  lockedRate: Joi.number().positive().allow(null),
   numberOfGuests: Joi.number().integer().min(1).default(1),
   notes: Joi.string().allow('', null),
   guests: Joi.array().items(guestInResidenceSchema)
@@ -39,7 +38,6 @@ const checkInFromReservation = {
         Joi.object().keys({
           reservationDetailId: Joi.number().integer().required(),
           roomId: Joi.number().integer().required(),
-          lockedRate: Joi.number().positive().allow(null),
           guests: Joi.array().items(guestInResidenceSchema)
         })
       )
@@ -112,7 +110,6 @@ const updateStayDetail = {
   body: Joi.object()
     .keys({
       expectedCheckOut: Joi.date(),
-      lockedRate: Joi.number().positive().allow(null),
       numberOfGuests: Joi.number().integer().min(1),
       notes: Joi.string().allow('', null)
     })

@@ -28,7 +28,6 @@ interface GuestInput {
 interface StayDetailInput {
   roomId: number;
   expectedCheckOut: Date;
-  lockedRate?: number;
   numberOfGuests?: number;
   notes?: string;
   guests?: GuestInput[];
@@ -37,7 +36,6 @@ interface StayDetailInput {
 interface RoomAssignment {
   reservationDetailId: number;
   roomId: number;
-  lockedRate?: number;
   guests?: GuestInput[];
 }
 
@@ -103,7 +101,6 @@ export class StayRecordService {
           create: data.stayDetails.map((d) => ({
             roomId: d.roomId,
             expectedCheckOut: d.expectedCheckOut,
-            lockedRate: d.lockedRate,
             numberOfGuests: d.numberOfGuests ?? 1,
             notes: d.notes,
             status: StayDetailStatus.OCCUPIED,
@@ -194,7 +191,7 @@ export class StayRecordService {
           create: data.roomAssignments.map((a) => ({
             roomId: a.roomId,
             expectedCheckOut: reservation.expectedDeparture,
-            lockedRate: a.lockedRate,
+            reservationDetailId: a.reservationDetailId,
             numberOfGuests: 1,
             status: StayDetailStatus.OCCUPIED,
             guestsInResidence: a.guests

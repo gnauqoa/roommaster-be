@@ -6,7 +6,8 @@ import {
   TransactionType,
   TransactionCategory,
   ServiceGroup,
-  ReservationStatus
+  ReservationStatus,
+  DateType
 } from '@prisma/client';
 import { Injectable } from 'core/decorators';
 
@@ -48,6 +49,7 @@ export class NightlyService {
   /**
    * Post nightly room charges for all occupied rooms
    * Should run at midnight (00:00) every day
+   * Uses ReservationDetailDay for rate lookup, falls back to RatePolicyLog or rackRate
    */
   async postNightlyRoomCharges(employeeId: number) {
     const today = new Date();
@@ -64,7 +66,19 @@ export class NightlyService {
             roomType: true
           }
         },
-        stayRecord: true
+        stayRecord: {
+          include: {
+            reservation: {
+              include: {
+                reservationDetails: {
+                  include: {
+                    reservationDetailDays: true
+                  }
+                }
+              }
+            }
+          }
+        }
       }
     });
 
@@ -109,8 +123,8 @@ export class NightlyService {
           continue;
         }
 
-        // Calculate room rate (use locked rate or calculate from room type)
-        const roomRate = stayDetail.lockedRate || stayDetail.room.roomType.rackRate;
+        // Calculate room rate using new daily rate logic
+        const roomRate = await this.getDailyRoomRate(stayDetail, today);
 
         // Create room charge transaction
         const txCode = await this.generateTransactionCode();
@@ -155,6 +169,140 @@ export class NightlyService {
       successful: results.filter((r) => r.success).length,
       failed: results.filter((r) => !r.success).length,
       details: results
+    };
+  }
+
+  /**
+   * Get daily room rate for a stay detail
+   * Priority: ReservationDetailDay -> RatePolicyLog -> RoomType.rackRate
+   */
+  private async getDailyRoomRate(
+    stayDetail: {
+      reservationDetailId?: number | null;
+      room: { roomType: { id: number; rackRate: Prisma.Decimal } };
+      stayRecord: {
+        reservation?: {
+          reservationDetails: Array<{
+            roomTypeId: number;
+            reservationDetailDays: Array<{
+              date: Date;
+              finalRate: Prisma.Decimal;
+            }>;
+          }>;
+        } | null;
+      };
+    },
+    date: Date
+  ): Promise<Prisma.Decimal> {
+    const normalizedDate = new Date(date);
+    normalizedDate.setHours(0, 0, 0, 0);
+
+    // 1. Try to get rate from ReservationDetailDay (if from reservation)
+    if (stayDetail.reservationDetailId) {
+      const reservationDetailDay = await this.prisma.reservationDetailDay.findUnique({
+        where: {
+          reservationDetailId_date: {
+            reservationDetailId: stayDetail.reservationDetailId,
+            date: normalizedDate
+          }
+        }
+      });
+
+      if (reservationDetailDay) {
+        return reservationDetailDay.finalRate;
+      }
+    }
+
+    // 2. Try matching via reservation's room type
+    if (stayDetail.stayRecord.reservation) {
+      const matchingDetail = stayDetail.stayRecord.reservation.reservationDetails.find(
+        (rd) => rd.roomTypeId === stayDetail.room.roomType.id
+      );
+
+      if (matchingDetail) {
+        const dayRate = matchingDetail.reservationDetailDays.find((day) => {
+          const dayDate = new Date(day.date);
+          dayDate.setHours(0, 0, 0, 0);
+          return dayDate.getTime() === normalizedDate.getTime();
+        });
+
+        if (dayRate) {
+          return dayRate.finalRate;
+        }
+      }
+    }
+
+    // 3. Try to get rate from RatePolicyLog (for walk-ins or extended stays)
+    const ratePolicyLog = await this.prisma.ratePolicyLog.findUnique({
+      where: {
+        roomTypeId_date: {
+          roomTypeId: stayDetail.room.roomType.id,
+          date: normalizedDate
+        }
+      }
+    });
+
+    if (ratePolicyLog) {
+      return ratePolicyLog.baseRate.mul(ratePolicyLog.rateFactor);
+    }
+
+    // 4. Fallback: create RatePolicyLog entry and use rackRate with dynamic factor
+    const roomType = stayDetail.room.roomType;
+    const { rateFactor, dateType, ratePolicyId } = await this.findApplicableRatePolicy(
+      roomType.id,
+      normalizedDate
+    );
+
+    // Create RatePolicyLog for future reference
+    await this.prisma.ratePolicyLog.create({
+      data: {
+        roomTypeId: roomType.id,
+        date: normalizedDate,
+        dateType,
+        rateFactor,
+        baseRate: roomType.rackRate,
+        ratePolicyId
+      }
+    });
+
+    return roomType.rackRate.mul(rateFactor);
+  }
+
+  /**
+   * Find applicable rate policy for a specific date and room type
+   */
+  private async findApplicableRatePolicy(
+    roomTypeId: number,
+    date: Date
+  ): Promise<{ rateFactor: Prisma.Decimal; dateType: DateType; ratePolicyId: number | null }> {
+    const normalizedDate = new Date(date);
+    normalizedDate.setHours(0, 0, 0, 0);
+
+    const policy = await this.prisma.ratePolicy.findFirst({
+      where: {
+        roomTypeId,
+        fromDate: { lte: normalizedDate },
+        toDate: { gte: normalizedDate }
+      },
+      orderBy: { priority: 'desc' }
+    });
+
+    if (policy) {
+      return {
+        rateFactor: policy.rateFactor,
+        dateType: policy.dateType,
+        ratePolicyId: policy.id
+      };
+    }
+
+    // Default: no policy found, use factor 1.0 and determine dateType from day of week
+    const dayOfWeek = normalizedDate.getDay();
+    const isWeekend = dayOfWeek === 0 || dayOfWeek === 6;
+
+    return {
+      rateFactor: new Prisma.Decimal(1.0),
+      dateType: isWeekend ? DateType.WEEKEND : DateType.WEEKDAY,
+      ratePolicyId: null
     };
   }
 

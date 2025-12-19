@@ -164,6 +164,7 @@ model RoomType {
 
   rooms              Room[]
   ratePolicies       RatePolicy[]
+  ratePolicyLogs     RatePolicyLog[]
   reservationDetails ReservationDetail[]
 
   @@map("room_types")
@@ -203,9 +204,30 @@ model RatePolicy {
   createdAt  DateTime @default(now())
   updatedAt  DateTime @updatedAt
 
-  roomType RoomType @relation(fields: [roomTypeId], references: [id])
+  roomType       RoomType         @relation(fields: [roomTypeId], references: [id])
+  ratePolicyLogs RatePolicyLog[]
 
   @@map("rate_policies")
+}
+
+// Historical rate policy snapshot - preserves rates when policy changes
+model RatePolicyLog {
+  id           Int      @id @default(autoincrement())
+  roomTypeId   Int
+  date         DateTime @db.Date
+  dateType     DateType
+  rateFactor   Decimal  @db.Decimal(5, 2)
+  baseRate     Decimal  @db.Decimal(15, 2) // rackRate at snapshot time
+  ratePolicyId Int? // Original policy that was copied (nullable for manual entries)
+  createdAt    DateTime @default(now())
+
+  roomType              RoomType               @relation(fields: [roomTypeId], references: [id])
+  ratePolicy            RatePolicy?            @relation(fields: [ratePolicyId], references: [id])
+  reservationDetailDays ReservationDetailDay[]
+
+  @@unique([roomTypeId, date]) // One rate per room type per date
+  @@index([roomTypeId, date])
+  @@map("rate_policy_logs")
 }
 
 model Service {
@@ -397,17 +419,37 @@ model ReservationDetail {
   reservationId  Int
   roomTypeId     Int
   quantity       Int                     @default(1) // Số lượng phòng loại này
-  expectedRate   Decimal?                @db.Decimal(15, 2) // Giá dự kiến/phòng/đêm
   numberOfGuests Int                     @default(1) // Số khách cho nhóm phòng này
   status         ReservationDetailStatus @default(PENDING) // Trạng thái từng dòng
   notes          String?                 @db.Text
   createdAt      DateTime                @default(now())
   updatedAt      DateTime                @updatedAt
 
-  reservation Reservation @relation(fields: [reservationId], references: [id], onDelete: Cascade)
-  roomType    RoomType    @relation(fields: [roomTypeId], references: [id])
+  reservation           Reservation            @relation(fields: [reservationId], references: [id], onDelete: Cascade)
+  roomType              RoomType               @relation(fields: [roomTypeId], references: [id])
+  reservationDetailDays ReservationDetailDay[]
 
   @@map("reservation_details")
+}
+
+// Daily rate for each night of the reservation
+model ReservationDetailDay {
+  id                  Int      @id @default(autoincrement())
+  reservationDetailId Int
+  date                DateTime @db.Date
+  baseRate            Decimal  @db.Decimal(15, 2) // rackRate from RoomType
+  rateFactor          Decimal  @db.Decimal(5, 2) // From RatePolicy (default 1.0)
+  finalRate           Decimal  @db.Decimal(15, 2) // baseRate × rateFactor
+  ratePolicyLogId     Int? // Links to frozen rate snapshot
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
+
+  reservationDetail ReservationDetail @relation(fields: [reservationDetailId], references: [id], onDelete: Cascade)
+  ratePolicyLog     RatePolicyLog?    @relation(fields: [ratePolicyLogId], references: [id])
+
+  @@unique([reservationDetailId, date])
+  @@index([reservationDetailId, date])
+  @@map("reservation_detail_days")
 }
 
 model StayRecord {
@@ -433,18 +475,18 @@ model StayRecord {
 
 // Chi tiết lưu trú - GÁN PHÒNG CỤ THỂ khi check-in
 model StayDetail {
-  id               Int              @id @default(autoincrement())
-  stayRecordId     Int
-  roomId           Int // Phòng cụ thể được gán
-  roomAssignedTime DateTime         @default(now())
-  expectedCheckOut DateTime         @db.Date
-  actualCheckOut   DateTime?
-  lockedRate       Decimal?         @db.Decimal(15, 2) // Giá đã khóa cho phòng này
-  numberOfGuests   Int              @default(1) // Số khách trong phòng này
-  status           StayDetailStatus @default(OCCUPIED) // Trạng thái thuê phòng
-  notes            String?          @db.Text
-  createdAt        DateTime         @default(now())
-  updatedAt        DateTime         @updatedAt
+  id                    Int              @id @default(autoincrement())
+  stayRecordId          Int
+  roomId                Int // Phòng cụ thể được gán
+  roomAssignedTime      DateTime         @default(now())
+  expectedCheckOut      DateTime         @db.Date
+  actualCheckOut        DateTime?
+  reservationDetailId   Int? // Link to reservation detail for rate lookup
+  numberOfGuests        Int              @default(1) // Số khách trong phòng này
+  status                StayDetailStatus @default(OCCUPIED) // Trạng thái thuê phòng
+  notes                 String?          @db.Text
+  createdAt             DateTime         @default(now())
+  updatedAt             DateTime         @updatedAt
 
   stayRecord        StayRecord         @relation(fields: [stayRecordId], references: [id], onDelete: Cascade)
   room              Room               @relation(fields: [roomId], references: [id])
@@ -452,7 +494,8 @@ model StayDetail {
   folioTransactions FolioTransaction[]
   roomMoveLogs      RoomMoveLog[]
   roomInspection    RoomInspection?
-  guestFolio       GuestFolio[]
+  guestFolio        GuestFolio[]
+
   @@map("stay_details")
 }
 

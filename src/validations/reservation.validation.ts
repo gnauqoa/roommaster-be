@@ -4,7 +4,6 @@ import Joi from 'joi';
 const reservationDetailSchema = Joi.object().keys({
   roomTypeId: Joi.number().integer().required(),
   quantity: Joi.number().integer().min(1).default(1),
-  expectedRate: Joi.number().positive().allow(null),
   numberOfGuests: Joi.number().integer().min(1).default(1),
   notes: Joi.string().allow('', null)
 });
@@ -95,7 +94,6 @@ const updateReservationDetail = {
     .keys({
       roomTypeId: Joi.number().integer(),
       quantity: Joi.number().integer().min(1),
-      expectedRate: Joi.number().positive().allow(null),
       numberOfGuests: Joi.number().integer().min(1),
       notes: Joi.string().allow('', null)
     })
@@ -136,7 +134,6 @@ const checkInReservation = {
         Joi.object().keys({
           roomId: Joi.number().integer().required(),
           expectedCheckOut: Joi.date().required(),
-          lockedRate: Joi.number().min(0),
           numberOfGuests: Joi.number().integer().min(1),
           notes: Joi.string()
         })

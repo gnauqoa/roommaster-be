@@ -2,6 +2,7 @@ import {
   Reservation,
   ReservationDetail,
   ReservationStatus,
+  DateType,
   Prisma,
   PrismaClient
 } from '@prisma/client';
@@ -13,7 +14,6 @@ import { Injectable } from 'core/decorators';
 interface ReservationDetailInput {
   roomTypeId: number;
   quantity?: number;
-  expectedRate?: number;
   numberOfGuests?: number;
   notes?: string;
 }
@@ -42,6 +42,154 @@ export class ReservationService {
     return `${prefix}${sequence.toString().padStart(4, '0')}`;
   }
 
+  /**
+   * Get date range between two dates (excluding end date for hotel nights)
+   */
+  private getDateRange(startDate: Date, endDate: Date): Date[] {
+    const dates: Date[] = [];
+    const current = new Date(startDate);
+    current.setHours(0, 0, 0, 0);
+    const end = new Date(endDate);
+    end.setHours(0, 0, 0, 0);
+
+    while (current < end) {
+      dates.push(new Date(current));
+      current.setDate(current.getDate() + 1);
+    }
+    return dates;
+  }
+
+  /**
+   * Find applicable rate policy for a specific date and room type
+   * Returns the policy with highest priority that matches the date
+   */
+  private async findApplicableRatePolicy(
+    roomTypeId: number,
+    date: Date
+  ): Promise<{ rateFactor: Prisma.Decimal; dateType: DateType; ratePolicyId: number | null }> {
+    const normalizedDate = new Date(date);
+    normalizedDate.setHours(0, 0, 0, 0);
+
+    const policy = await this.prisma.ratePolicy.findFirst({
+      where: {
+        roomTypeId,
+        fromDate: { lte: normalizedDate },
+        toDate: { gte: normalizedDate }
+      },
+      orderBy: { priority: 'desc' }
+    });
+
+    if (policy) {
+      return {
+        rateFactor: policy.rateFactor,
+        dateType: policy.dateType,
+        ratePolicyId: policy.id
+      };
+    }
+
+    // Default: no policy found, use factor 1.0 and determine dateType from day of week
+    const dayOfWeek = normalizedDate.getDay();
+    const isWeekend = dayOfWeek === 0 || dayOfWeek === 6;
+
+    return {
+      rateFactor: new Prisma.Decimal(1.0),
+      dateType: isWeekend ? DateType.WEEKEND : DateType.WEEKDAY,
+      ratePolicyId: null
+    };
+  }
+
+  /**
+   * Ensure RatePolicyLog entry exists for a given room type and date
+   * Creates a snapshot if not exists
+   */
+  private async ensureRatePolicyLog(
+    roomTypeId: number,
+    date: Date,
+    baseRate: Prisma.Decimal,
+    rateFactor: Prisma.Decimal,
+    dateType: DateType,
+    ratePolicyId: number | null
+  ): Promise<number> {
+    const normalizedDate = new Date(date);
+    normalizedDate.setHours(0, 0, 0, 0);
+
+    const existingLog = await this.prisma.ratePolicyLog.findUnique({
+      where: {
+        roomTypeId_date: {
+          roomTypeId,
+          date: normalizedDate
+        }
+      }
+    });
+
+    if (existingLog) {
+      return existingLog.id;
+    }
+
+    const newLog = await this.prisma.ratePolicyLog.create({
+      data: {
+        roomTypeId,
+        date: normalizedDate,
+        dateType,
+        rateFactor,
+        baseRate,
+        ratePolicyId
+      }
+    });
+
+    return newLog.id;
+  }
+
+  /**
+   * Create daily rate records for a reservation detail
+   */
+  private async createReservationDetailDays(
+    reservationDetailId: number,
+    roomTypeId: number,
+    expectedArrival: Date,
+    expectedDeparture: Date
+  ): Promise<void> {
+    const roomType = await this.prisma.roomType.findUnique({
+      where: { id: roomTypeId }
+    });
+
+    if (!roomType) {
+      throw new ApiError(httpStatus.BAD_REQUEST, 'Room type not found');
+    }
+
+    const dates = this.getDateRange(expectedArrival, expectedDeparture);
+
+    for (const date of dates) {
+      const { rateFactor, dateType, ratePolicyId } = await this.findApplicableRatePolicy(
+        roomTypeId,
+        date
+      );
+
+      const baseRate = roomType.rackRate;
+      const finalRate = baseRate.mul(rateFactor);
+
+      const ratePolicyLogId = await this.ensureRatePolicyLog(
+        roomTypeId,
+        date,
+        baseRate,
+        rateFactor,
+        dateType,
+        ratePolicyId
+      );
+
+      await this.prisma.reservationDetailDay.create({
+        data: {
+          reservationDetailId,
+          date,
+          baseRate,
+          rateFactor,
+          finalRate,
+          ratePolicyLogId
+        }
+      });
+    }
+  }
+
   async createReservation(data: {
     customerId: number;
     expectedArrival: Date;
@@ -67,7 +215,8 @@ export class ReservationService {
 
     const code = await this.generateReservationCode();
 
-    return this.prisma.reservation.create({
+    // Create reservation with details
+    const reservation = await this.prisma.reservation.create({
       data: {
         code,
         customerId: data.customerId,
@@ -82,7 +231,6 @@ export class ReservationService {
           create: data.reservationDetails.map((d) => ({
             roomTypeId: d.roomTypeId,
             quantity: d.quantity ?? 1,
-            expectedRate: d.expectedRate,
             numberOfGuests: d.numberOfGuests ?? 1,
             notes: d.notes
           }))
@@ -91,6 +239,32 @@ export class ReservationService {
       include: {
         customer: true,
         reservationDetails: { include: { roomType: true } }
+      }
+    });
+
+    // Create daily rate records for each reservation detail
+    for (const detail of reservation.reservationDetails) {
+      await this.createReservationDetailDays(
+        detail.id,
+        detail.roomTypeId,
+        data.expectedArrival,
+        data.expectedDeparture
+      );
+    }
+
+    // Return full reservation with daily rates
+    return this.prisma.reservation.findUniqueOrThrow({
+      where: { id: reservation.id },
+      include: {
+        customer: true,
+        reservationDetails: {
+          include: {
+            roomType: true,
+            reservationDetailDays: {
+              orderBy: { date: 'asc' }
+            }
+          }
+        }
       }
     });
   }
@@ -231,16 +405,31 @@ export class ReservationService {
       throw new ApiError(httpStatus.BAD_REQUEST, 'Room type not found');
     }
 
-    return this.prisma.reservationDetail.create({
+    const reservationDetail = await this.prisma.reservationDetail.create({
       data: {
         reservationId,
         roomTypeId: detail.roomTypeId,
         quantity: detail.quantity ?? 1,
-        expectedRate: detail.expectedRate,
         numberOfGuests: detail.numberOfGuests ?? 1,
         notes: detail.notes
       },
       include: { roomType: true }
+    });
+
+    // Create daily rate records
+    await this.createReservationDetailDays(
+      reservationDetail.id,
+      detail.roomTypeId,
+      reservation.expectedArrival,
+      reservation.expectedDeparture
+    );
+
+    return this.prisma.reservationDetail.findUniqueOrThrow({
+      where: { id: reservationDetail.id },
+      include: {
+        roomType: true,
+        reservationDetailDays: { orderBy: { date: 'asc' } }
+      }
     });
   }
 
