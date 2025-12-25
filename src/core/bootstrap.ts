@@ -11,7 +11,10 @@ import {
   AuthService,
   CustomerService,
   EmployeeService,
-  BookingService
+  BookingService,
+  RoomTypeService,
+  RoomService,
+  HotelServiceService
 } from 'services';
 
 /**
@@ -43,6 +46,24 @@ export function bootstrap(): void {
   container.registerFactory(
     TOKENS.BookingService,
     (...args: unknown[]) => new BookingService(args[0] as PrismaClient),
+    [TOKENS.PrismaClient]
+  );
+
+  container.registerFactory(
+    TOKENS.RoomTypeService,
+    (...args: unknown[]) => new RoomTypeService(args[0] as PrismaClient),
+    [TOKENS.PrismaClient]
+  );
+
+  container.registerFactory(
+    TOKENS.RoomService,
+    (...args: unknown[]) => new RoomService(args[0] as PrismaClient),
+    [TOKENS.PrismaClient]
+  );
+
+  container.registerFactory(
+    TOKENS.HotelServiceService,
+    (...args: unknown[]) => new HotelServiceService(args[0] as PrismaClient),
     [TOKENS.PrismaClient]
   );
 
