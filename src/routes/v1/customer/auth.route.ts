@@ -283,6 +283,13 @@ router.post(
  *     description: Reset customer password using a valid reset token
  *     tags: [Customer Auth]
  *     security: []
+ *     parameters:
+ *       - in: query
+ *         name: token
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: Password reset token from forgot-password endpoint
  *     requestBody:
  *       required: true
  *       content:
@@ -290,19 +297,14 @@ router.post(
  *           schema:
  *             type: object
  *             required:
- *               - token
  *               - password
  *             properties:
- *               token:
- *                 type: string
- *                 description: Password reset token
  *               password:
  *                 type: string
  *                 format: password
  *                 minLength: 8
- *                 description: New password
+ *                 description: New password (minimum 8 characters, must contain letter and number)
  *             example:
- *               token: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
  *               password: newPassword123
  *     responses:
  *       204:

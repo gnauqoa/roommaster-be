@@ -1,4 +1,4 @@
-import { PrismaClient, Customer } from '@prisma/client';
+import { PrismaClient, Customer, Prisma } from '@prisma/client';
 import { Injectable } from 'core/decorators';
 import httpStatus from 'http-status';
 import ApiError from 'utils/ApiError';
@@ -18,6 +18,17 @@ export interface UpdateCustomerData {
   email?: string;
   idNumber?: string;
   address?: string;
+}
+
+export interface CustomerFilters {
+  search?: string;
+}
+
+export interface PaginationOptions {
+  page?: number;
+  limit?: number;
+  sortBy?: string;
+  sortOrder?: 'asc' | 'desc';
 }
 
 @Injectable()
@@ -51,6 +62,79 @@ export class CustomerService {
     });
 
     return customer;
+  }
+
+  /**
+   * Get all customers with filters and pagination
+   * @param {CustomerFilters} filters - Filter options
+   * @param {PaginationOptions} options - Pagination options
+   * @returns {Promise<{ data: any[]; total: number; page: number; limit: number }>}
+   */
+  async getAllCustomers(
+    filters: CustomerFilters = {},
+    options: PaginationOptions = {}
+  ): Promise<{ data: any[]; total: number; page: number; limit: number }> {
+    const { search } = filters;
+    const { page = 1, limit = 10, sortBy = 'createdAt', sortOrder = 'desc' } = options;
+
+    const where: Prisma.CustomerWhereInput = {};
+
+    // Apply search filter (search by name, phone, or email)
+    if (search) {
+      where.OR = [
+        {
+          fullName: {
+            contains: search,
+            mode: 'insensitive'
+          }
+        },
+        {
+          phone: {
+            contains: search
+          }
+        },
+        {
+          email: {
+            contains: search,
+            mode: 'insensitive'
+          }
+        }
+      ];
+    }
+
+    const skip = (page - 1) * limit;
+
+    const [data, total] = await Promise.all([
+      this.prisma.customer.findMany({
+        where,
+        skip,
+        take: limit,
+        orderBy: { [sortBy]: sortOrder },
+        select: {
+          id: true,
+          fullName: true,
+          email: true,
+          phone: true,
+          idNumber: true,
+          address: true,
+          createdAt: true,
+          updatedAt: true,
+          _count: {
+            select: {
+              bookings: true
+            }
+          }
+        }
+      }),
+      this.prisma.customer.count({ where })
+    ]);
+
+    return {
+      data,
+      total,
+      page,
+      limit
+    };
   }
 
   /**
@@ -110,6 +194,28 @@ export class CustomerService {
     });
 
     return updatedCustomer;
+  }
+
+  /**
+   * Delete customer by ID
+   * @param {string} customerId - Customer ID
+   * @returns {Promise<void>}
+   */
+  async deleteCustomer(customerId: string): Promise<void> {
+    await this.getCustomerById(customerId);
+
+    // Check if customer has bookings
+    const bookingCount = await this.prisma.booking.count({
+      where: { primaryCustomerId: customerId }
+    });
+
+    if (bookingCount > 0) {
+      throw new ApiError(httpStatus.BAD_REQUEST, 'Cannot delete customer with booking history.');
+    }
+
+    await this.prisma.customer.delete({
+      where: { id: customerId }
+    });
   }
 }
 

@@ -9,7 +9,10 @@ prisma/seeds/
 ├── index.ts              # Main seed orchestrator
 ├── utils.ts              # Shared utilities (password hashing, etc.)
 ├── employee.seed.ts      # Employee seed data
-└── customer.seed.ts      # Customer seed data
+├── customer.seed.ts      # Customer seed data
+├── roomType.seed.ts      # Room type seed data
+├── room.seed.ts          # Room seed data
+└── service.seed.ts       # Hotel service seed data
 ```
 
 ## Files
@@ -19,7 +22,7 @@ prisma/seeds/
 Main entry point that orchestrates all seed functions. This file:
 
 - Creates the Prisma client instance
-- Imports and executes all seed functions in order
+- Imports and executes all seed functions in the correct order (respecting dependencies)
 - Handles errors and cleanup
 
 ### `utils.ts`
@@ -32,10 +35,10 @@ Shared utility functions used across different seed files:
 
 Seeds employee data with 5 employees across different roles:
 
-- 1 Admin
-- 2 Receptionists
-- 1 Housekeeping staff
-- 1 General staff
+- 1 Admin (`admin` / `password123`)
+- 2 Receptionists (`receptionist1`, `receptionist2`)
+- 1 Housekeeping staff (`housekeeping1`)
+- 1 General staff (`staff1`)
 
 **Default credentials**: All employees use `password123`
 
@@ -44,12 +47,53 @@ Seeds employee data with 5 employees across different roles:
 Seeds customer data with 10 customers with realistic Vietnamese information:
 
 - Full names
-- Phone numbers
+- Phone numbers (e.g., `0901234567`)
 - Email addresses
 - ID numbers (CMND/CCCD)
 - Addresses in various districts of Ho Chi Minh City
 
 **Default credentials**: All customers use `password123`
+
+### `roomType.seed.ts`
+
+Seeds 5 room types with different configurations:
+
+| Room Type | Capacity | Price/Night (VND) | Key Amenities |
+|-----------|----------|-------------------|---------------|
+| Phòng Standard | 2 | 500,000 | WiFi, AC, TV |
+| Phòng Deluxe | 2 | 800,000 | WiFi, AC, TV, Minibar, Bathtub |
+| Phòng Superior | 3 | 1,200,000 | WiFi, AC, TV, Minibar, Balcony, City View |
+| Phòng Suite | 4 | 2,000,000 | All amenities + Jacuzzi, Living Room |
+| Phòng Family | 6 | 1,800,000 | All amenities + Extra Beds, Kitchenette |
+
+### `room.seed.ts`
+
+Seeds 15 rooms across 3 floors:
+
+- **Floor 1**: 3 Standard rooms (101-103), 2 Deluxe rooms (104-105)
+- **Floor 2**: 2 Deluxe rooms (201-202), 3 Superior rooms (203-205)
+- **Floor 3**: 2 Suite rooms (301-302), 3 Family rooms (303-305)
+
+**Note**: Room 205 is in MAINTENANCE status, Room 305 is in CLEANING status.
+
+### `service.seed.ts`
+
+Seeds 12 hotel services:
+
+| Service | Price (VND) | Unit |
+|---------|-------------|------|
+| Giặt ủi | 50,000 | kg |
+| Minibar | 30,000 | lần |
+| Bữa sáng | 150,000 | phần |
+| Thuê xe máy | 200,000 | ngày |
+| Thuê xe ô tô | 800,000 | ngày |
+| Spa & Massage | 500,000 | giờ |
+| Phòng gym | 100,000 | lần |
+| Dịch vụ phòng | 50,000 | lần |
+| Đưa đón sân bay | 350,000 | lượt |
+| Bể bơi | 80,000 | lần |
+| Giữ hành lý | 20,000 | kiện/ngày |
+| Internet tốc độ cao | 100,000 | ngày (inactive) |
 
 ## Running Seeds
 
