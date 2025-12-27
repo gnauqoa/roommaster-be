@@ -1,11 +1,4 @@
-import {
-  PrismaClient,
-  BookingStatus,
-  RoomStatus,
-  TransactionType,
-  TransactionStatus,
-  PaymentMethod
-} from '@prisma/client';
+import { PrismaClient, BookingStatus, RoomStatus } from '@prisma/client';
 import { Injectable } from 'core/decorators';
 import httpStatus from 'http-status';
 import ApiError from 'utils/ApiError';
@@ -16,7 +9,7 @@ export interface RoomRequest {
   count: number;
 }
 
-export interface CreateBookingInput {
+export interface CreateBookingPayload {
   rooms: RoomRequest[];
   checkInDate: string;
   checkOutDate: string;
@@ -24,35 +17,34 @@ export interface CreateBookingInput {
   customerId: string;
 }
 
-export interface CheckInInput {
+export interface CheckInBooking {
   bookingId: string;
-  bookingRoomId: string;
-  guests: Array<{
-    customerId: string;
-    isPrimary: boolean;
-  }>;
   employeeId: string;
 }
-export interface CreateTransactionInput {
-  bookingId: string;
-  transactionType: TransactionType;
-  amount: number;
-  method: PaymentMethod;
-  bookingRoomId?: string; // Optional, for room-specific charges
-  transactionRef?: string;
-  description?: string;
+
+export interface CheckInPayload {
+  checkInInfo: { bookingRoomId: string; customerIds: string[] }[];
+  employeeId: string;
+}
+
+export interface CheckOutPayload {
+  bookingRoomIds: string[];
   employeeId: string;
 }
 
 @Injectable()
 export class BookingService {
-  constructor(private readonly prisma: PrismaClient) {}
+  constructor(
+    private readonly prisma: PrismaClient,
+    private readonly transactionService: any,
+    private readonly activityService: any
+  ) {}
 
   /**
    * Create a booking with automatic room allocation
    * Allocates available rooms based on room type and count
    */
-  async createBooking(input: CreateBookingInput) {
+  async createBooking(input: CreateBookingPayload) {
     const { rooms, checkInDate, checkOutDate, totalGuests, customerId } = input;
 
     // Calculate number of nights using dayjs
@@ -219,141 +211,300 @@ export class BookingService {
   }
 
   /**
-   * Check in guests for a confirmed booking
-   * Updates room status to OCCUPIED and records check-in time
+   * Check in specific booking rooms with customer assignments
+   * Updates booking room status to CHECKED_IN, room status to OCCUPIED,
+   * and creates BookingCustomer associations
    */
-  async checkIn(input: CheckInInput) {
-    const { bookingId, bookingRoomId, guests, employeeId } = input;
+  async checkIn(input: CheckInPayload) {
+    const { checkInInfo, employeeId } = input;
 
-    // Verify booking exists and is CONFIRMED
-    const booking = await this.prisma.booking.findUnique({
-      where: { id: bookingId },
-      include: {
-        bookingRooms: {
-          include: {
-            room: true
-          }
-        }
-      }
-    });
+    // Extract booking room IDs
+    const bookingRoomIds = checkInInfo.map((info) => info.bookingRoomId);
 
-    if (!booking) {
-      throw new ApiError(httpStatus.NOT_FOUND, 'Booking not found');
-    }
-
-    if (booking.status !== BookingStatus.CONFIRMED) {
-      throw new ApiError(
-        httpStatus.BAD_REQUEST,
-        `Cannot check in. Booking status must be CONFIRMED, current status: ${booking.status}`
-      );
-    }
-
-    // Verify booking room exists
-    const bookingRoom = booking.bookingRooms.find((br) => br.id === bookingRoomId);
-    if (!bookingRoom) {
-      throw new ApiError(httpStatus.NOT_FOUND, 'Booking room not found');
-    }
-
-    // Verify at least one guest is marked as primary
-    const hasPrimary = guests.some((g) => g.isPrimary);
-    if (!hasPrimary) {
-      throw new ApiError(
-        httpStatus.BAD_REQUEST,
-        'At least one guest must be designated as primary'
-      );
-    }
-
-    // Verify all customers exist
-    const customerIds = guests.map((g) => g.customerId);
-    const customers = await this.prisma.customer.findMany({
+    // Verify all booking rooms exist and are CONFIRMED
+    const bookingRooms = await this.prisma.bookingRoom.findMany({
       where: {
-        id: { in: customerIds }
+        id: { in: bookingRoomIds }
+      },
+      include: {
+        room: true,
+        booking: true
       }
     });
 
-    if (customers.length !== customerIds.length) {
-      throw new ApiError(httpStatus.NOT_FOUND, 'One or more customers not found');
+    if (bookingRooms.length !== bookingRoomIds.length) {
+      throw new ApiError(httpStatus.NOT_FOUND, 'One or more booking rooms not found');
     }
 
-    const now = new Date();
+    // Validate all booking rooms are CONFIRMED
+    const invalidRooms = bookingRooms.filter((br) => br.status !== BookingStatus.CONFIRMED);
+    if (invalidRooms.length > 0) {
+      throw new ApiError(
+        httpStatus.BAD_REQUEST,
+        `Cannot check in. All booking rooms must be CONFIRMED. Invalid rooms: ${invalidRooms
+          .map((br) => br.room.roomNumber)
+          .join(', ')}`
+      );
+    }
 
-    // Perform check-in transaction
-    const result = await this.prisma.$transaction(async (tx) => {
-      // Update booking room with actual check-in time
-      const updatedBookingRoom = await tx.bookingRoom.update({
-        where: { id: bookingRoomId },
-        data: {
-          actualCheckIn: now,
-          status: BookingStatus.CHECKED_IN
+    // Extract all customer IDs and verify they exist
+    const allCustomerIds = checkInInfo.flatMap((info) => info.customerIds);
+    const uniqueCustomerIds = [...new Set(allCustomerIds)];
+
+    if (uniqueCustomerIds.length > 0) {
+      const customers = await this.prisma.customer.findMany({
+        where: {
+          id: { in: uniqueCustomerIds }
         }
       });
 
-      // Update room status to OCCUPIED
-      await tx.room.update({
-        where: { id: bookingRoom.roomId },
+      if (customers.length !== uniqueCustomerIds.length) {
+        throw new ApiError(httpStatus.NOT_FOUND, 'One or more customers not found');
+      }
+    }
+
+    const now = dayjs();
+
+    // Perform check-in transaction
+    const result = await this.prisma.$transaction(async (tx) => {
+      // Update all booking rooms to CHECKED_IN with actual check-in time
+      await tx.bookingRoom.updateMany({
+        where: {
+          id: { in: bookingRoomIds }
+        },
+        data: {
+          status: BookingStatus.CHECKED_IN,
+          actualCheckIn: now.toDate()
+        }
+      });
+
+      // Update all rooms to OCCUPIED
+      const roomIds = bookingRooms.map((br) => br.roomId);
+      await tx.room.updateMany({
+        where: {
+          id: { in: roomIds }
+        },
         data: {
           status: RoomStatus.OCCUPIED
         }
       });
 
-      // Update booking status to CHECKED_IN
-      const updatedBooking = await tx.booking.update({
-        where: { id: bookingId },
-        data: {
-          status: BookingStatus.CHECKED_IN
+      // Create BookingCustomer associations for each room
+      for (const info of checkInInfo) {
+        const bookingRoom = bookingRooms.find((br) => br.id === info.bookingRoomId);
+        if (!bookingRoom) continue;
+
+        // Create BookingCustomer records for each customer in this room
+        const bookingCustomerPromises = info.customerIds.map((customerId) =>
+          tx.bookingCustomer.upsert({
+            where: {
+              bookingId_customerId: {
+                bookingId: bookingRoom.bookingId,
+                customerId
+              }
+            },
+            create: {
+              bookingId: bookingRoom.bookingId,
+              customerId,
+              bookingRoomId: info.bookingRoomId,
+              isPrimary: false
+            },
+            update: {
+              bookingRoomId: info.bookingRoomId
+            }
+          })
+        );
+
+        await Promise.all(bookingCustomerPromises);
+      }
+
+      // Create CHECKED_IN activity for each booking room
+      const transactionPromises = bookingRooms.map((br) =>
+        this.activityService.createCheckInActivity(br.id, employeeId, br.room.roomNumber, tx)
+      );
+
+      await Promise.all(transactionPromises);
+
+      // Check if all booking rooms for each booking are checked in
+      const uniqueBookingIds = [...new Set(bookingRooms.map((br) => br.bookingId))];
+
+      for (const bookingId of uniqueBookingIds) {
+        const allBookingRooms = await tx.bookingRoom.findMany({
+          where: { bookingId }
+        });
+
+        const allCheckedIn = allBookingRooms.every(
+          (br) => br.status === BookingStatus.CHECKED_IN || bookingRoomIds.includes(br.id)
+        );
+
+        // Update booking status to CHECKED_IN if all rooms are checked in
+        if (allCheckedIn) {
+          await tx.booking.update({
+            where: { id: bookingId },
+            data: {
+              status: BookingStatus.CHECKED_IN
+            }
+          });
+        }
+      }
+
+      // Fetch updated booking rooms with full details
+      const updatedBookingRooms = await tx.bookingRoom.findMany({
+        where: {
+          id: { in: bookingRoomIds }
         },
         include: {
-          bookingRooms: {
+          room: true,
+          roomType: true,
+          booking: {
             include: {
-              room: true,
-              roomType: true
+              primaryCustomer: {
+                select: {
+                  id: true,
+                  fullName: true,
+                  phone: true,
+                  email: true
+                }
+              }
             }
           },
-          primaryCustomer: {
-            select: {
-              id: true,
-              fullName: true,
-              phone: true,
-              email: true
+          bookingCustomers: {
+            include: {
+              customer: {
+                select: {
+                  id: true,
+                  fullName: true,
+                  phone: true,
+                  email: true
+                }
+              }
             }
-          }
-        }
-      });
-
-      // Link guests to the booking room
-      const bookingCustomersData = guests.map((guest) => ({
-        bookingId,
-        customerId: guest.customerId,
-        bookingRoomId,
-        isPrimary: guest.isPrimary
-      }));
-
-      await tx.bookingCustomer.createMany({
-        data: bookingCustomersData,
-        skipDuplicates: true
-      });
-
-      // Create audit trail entry
-      await tx.bookingHistory.create({
-        data: {
-          bookingId,
-          employeeId,
-          action: 'CHECK_IN',
-          changes: {
-            bookingRoomId,
-            actualCheckIn: now.toISOString(),
-            roomStatus: RoomStatus.OCCUPIED,
-            guests: guests.map((g) => ({
-              customerId: g.customerId,
-              isPrimary: g.isPrimary
-            }))
           }
         }
       });
 
       return {
-        booking: updatedBooking,
-        bookingRoom: updatedBookingRoom
+        bookingRooms: updatedBookingRooms
+      };
+    });
+
+    return result;
+  }
+
+  /**
+   * Check out specific booking rooms
+   * Updates booking room status to CHECKED_OUT and room status to AVAILABLE
+   */
+  async checkOut(input: CheckOutPayload) {
+    const { bookingRoomIds, employeeId } = input;
+
+    // Verify all booking rooms exist and are CHECKED_IN
+    const bookingRooms = await this.prisma.bookingRoom.findMany({
+      where: {
+        id: { in: bookingRoomIds }
+      },
+      include: {
+        room: true,
+        booking: true
+      }
+    });
+
+    if (bookingRooms.length !== bookingRoomIds.length) {
+      throw new ApiError(httpStatus.NOT_FOUND, 'One or more booking rooms not found');
+    }
+
+    // Validate all booking rooms are CHECKED_IN
+    const invalidRooms = bookingRooms.filter((br) => br.status !== BookingStatus.CHECKED_IN);
+    if (invalidRooms.length > 0) {
+      throw new ApiError(
+        httpStatus.BAD_REQUEST,
+        `Cannot check out. All booking rooms must be CHECKED_IN. Invalid rooms: ${invalidRooms
+          .map((br) => br.room.roomNumber)
+          .join(', ')}`
+      );
+    }
+
+    const now = dayjs();
+
+    // Perform check-out transaction
+    const result = await this.prisma.$transaction(async (tx) => {
+      // Update all booking rooms to CHECKED_OUT with actual check-out time
+      await tx.bookingRoom.updateMany({
+        where: {
+          id: { in: bookingRoomIds }
+        },
+        data: {
+          status: BookingStatus.CHECKED_OUT,
+          actualCheckOut: now.toDate()
+        }
+      });
+
+      // Update all rooms to AVAILABLE
+      const roomIds = bookingRooms.map((br) => br.roomId);
+      await tx.room.updateMany({
+        where: {
+          id: { in: roomIds }
+        },
+        data: {
+          status: RoomStatus.AVAILABLE
+        }
+      });
+
+      // Create CHECKED_OUT activity for each booking room
+      const transactionPromises = bookingRooms.map((br) =>
+        this.activityService.createCheckOutActivity(br.id, employeeId, br.room.roomNumber, tx)
+      );
+
+      await Promise.all(transactionPromises);
+
+      // Check if all booking rooms for each booking are checked out
+      const uniqueBookingIds = [...new Set(bookingRooms.map((br) => br.bookingId))];
+
+      for (const bookingId of uniqueBookingIds) {
+        const allBookingRooms = await tx.bookingRoom.findMany({
+          where: { bookingId }
+        });
+
+        const allCheckedOut = allBookingRooms.every(
+          (br) => br.status === BookingStatus.CHECKED_OUT || bookingRoomIds.includes(br.id)
+        );
+
+        // Update booking status to CHECKED_OUT if all rooms are checked out
+        if (allCheckedOut) {
+          await tx.booking.update({
+            where: { id: bookingId },
+            data: {
+              status: BookingStatus.CHECKED_OUT
+            }
+          });
+        }
+      }
+
+      // Fetch updated booking rooms with full details
+      const updatedBookingRooms = await tx.bookingRoom.findMany({
+        where: {
+          id: { in: bookingRoomIds }
+        },
+        include: {
+          room: true,
+          roomType: true,
+          booking: {
+            include: {
+              primaryCustomer: {
+                select: {
+                  id: true,
+                  fullName: true,
+                  phone: true,
+                  email: true
+                }
+              }
+            }
+          }
+        }
+      });
+
+      return {
+        bookingRooms: updatedBookingRooms
       };
     });
 
@@ -392,12 +543,6 @@ export class BookingService {
             phone: true,
             email: true
           }
-        },
-        histories: {
-          orderBy: {
-            createdAt: 'desc'
-          },
-          take: 10
         }
       }
     });
@@ -407,285 +552,6 @@ export class BookingService {
     }
 
     return booking;
-  }
-
-  /**
-   * Create a transaction for a booking
-   * Handles different transaction types with specific business logic
-   */
-  async createTransaction(input: CreateTransactionInput) {
-    const {
-      bookingId,
-      transactionType,
-      amount,
-      method,
-      bookingRoomId,
-      transactionRef,
-      description,
-      employeeId
-    } = input;
-
-    // Verify booking exists
-    const booking = await this.prisma.booking.findUnique({
-      where: { id: bookingId },
-      include: {
-        bookingRooms: true,
-        transactions: {
-          where: {
-            type: TransactionType.DEPOSIT,
-            status: TransactionStatus.COMPLETED
-          }
-        }
-      }
-    });
-
-    if (!booking) {
-      throw new ApiError(httpStatus.NOT_FOUND, 'Booking not found');
-    }
-
-    // Validate based on transaction type
-    await this.validateTransaction(booking, transactionType, amount);
-
-    // Create transaction with type-specific logic
-    const result = await this.prisma.$transaction(async (tx) => {
-      // Create the transaction record
-      const transaction = await tx.transaction.create({
-        data: {
-          bookingId,
-          bookingRoomId,
-          type: transactionType,
-          amount,
-          method,
-          status: TransactionStatus.COMPLETED,
-          processedById: employeeId,
-          transactionRef,
-          description:
-            description || this.getDefaultDescription(transactionType, booking.bookingCode),
-          occurredAt: new Date()
-        }
-      });
-
-      // Apply type-specific business logic
-      const updatedBooking = await this.applyTransactionLogic(
-        tx,
-        booking,
-        transaction,
-        transactionType,
-        amount
-      );
-
-      return {
-        transaction,
-        booking: updatedBooking
-      };
-    });
-
-    return result;
-  }
-
-  /**
-   * Validate transaction based on type
-   */
-  private async validateTransaction(
-    booking: any,
-    transactionType: TransactionType,
-    amount: number
-  ) {
-    switch (transactionType) {
-      case TransactionType.DEPOSIT:
-        // Can only deposit for PENDING bookings
-        if (booking.status !== BookingStatus.PENDING) {
-          throw new ApiError(
-            httpStatus.BAD_REQUEST,
-            `Cannot create deposit for booking with status: ${booking.status}. Only PENDING bookings can receive deposits.`
-          );
-        }
-        // Validate deposit amount
-        if (amount > Number(booking.totalAmount)) {
-          throw new ApiError(
-            httpStatus.BAD_REQUEST,
-            `Deposit amount (${amount}) cannot exceed total booking amount (${booking.totalAmount})`
-          );
-        }
-        // Check total deposits don't exceed booking amount
-        const totalDeposits = booking.transactions.reduce(
-          (sum: number, txn: any) => sum + Number(txn.amount),
-          0
-        );
-        if (totalDeposits + amount > Number(booking.totalAmount)) {
-          throw new ApiError(
-            httpStatus.BAD_REQUEST,
-            `Total deposits (${totalDeposits + amount}) would exceed booking amount (${
-              booking.totalAmount
-            })`
-          );
-        }
-        break;
-
-      case TransactionType.ROOM_CHARGE:
-      case TransactionType.SERVICE_CHARGE:
-        // Can only charge for CONFIRMED or CHECKED_IN bookings
-        if (![BookingStatus.CONFIRMED, BookingStatus.CHECKED_IN].includes(booking.status)) {
-          throw new ApiError(
-            httpStatus.BAD_REQUEST,
-            `Cannot create charges for booking with status: ${booking.status}`
-          );
-        }
-        // Validate amount is positive
-        if (amount <= 0) {
-          throw new ApiError(httpStatus.BAD_REQUEST, 'Charge amount must be positive');
-        }
-        break;
-
-      case TransactionType.REFUND:
-        // Can only refund if there's paid amount
-        if (Number(booking.totalPaid) <= 0) {
-          throw new ApiError(httpStatus.BAD_REQUEST, 'No payments to refund');
-        }
-        // Refund amount cannot exceed total paid
-        if (amount > Number(booking.totalPaid)) {
-          throw new ApiError(
-            httpStatus.BAD_REQUEST,
-            `Refund amount (${amount}) cannot exceed total paid (${booking.totalPaid})`
-          );
-        }
-        break;
-
-      case TransactionType.ADJUSTMENT:
-        // Adjustments can be positive or negative
-        // No specific validation needed
-        break;
-
-      default:
-        throw new ApiError(
-          httpStatus.BAD_REQUEST,
-          `Unsupported transaction type: ${transactionType}`
-        );
-    }
-  }
-
-  /**
-   * Apply transaction logic based on type
-   */
-  private async applyTransactionLogic(
-    tx: any,
-    booking: any,
-    transaction: any,
-    transactionType: TransactionType,
-    amount: number
-  ) {
-    let newTotalDeposit = Number(booking.totalDeposit);
-    let newTotalPaid = Number(booking.totalPaid);
-    let newTotalAmount = Number(booking.totalAmount);
-    let newBalance = Number(booking.balance);
-    let newStatus = booking.status;
-
-    switch (transactionType) {
-      case TransactionType.DEPOSIT:
-        // Increase deposit and paid amounts
-        newTotalDeposit += amount;
-        newTotalPaid += amount;
-        newBalance = newTotalAmount - newTotalPaid;
-
-        // Check if deposit is sufficient to confirm booking
-        const minimumDepositRequired = Number(booking.depositRequired);
-        if (newTotalDeposit >= minimumDepositRequired && booking.status === BookingStatus.PENDING) {
-          newStatus = BookingStatus.CONFIRMED;
-
-          // Update booking rooms status to CONFIRMED
-          await tx.bookingRoom.updateMany({
-            where: {
-              bookingId: booking.id,
-              status: BookingStatus.PENDING
-            },
-            data: {
-              status: BookingStatus.CONFIRMED,
-              depositAmount: amount / booking.bookingRooms.length
-            }
-          });
-        }
-        break;
-
-      case TransactionType.ROOM_CHARGE:
-      case TransactionType.SERVICE_CHARGE:
-        // Increase total amount and balance (additional charges)
-        newTotalAmount += amount;
-        newBalance += amount;
-        break;
-
-      case TransactionType.REFUND:
-        // Decrease paid amount and adjust balance
-        newTotalPaid -= amount;
-        newBalance = newTotalAmount - newTotalPaid;
-        // If refunding deposit, decrease deposit amount
-        if (newTotalDeposit > 0) {
-          newTotalDeposit = Math.max(0, newTotalDeposit - amount);
-        }
-        break;
-
-      case TransactionType.ADJUSTMENT:
-        // Adjustments can increase or decrease balance
-        // Positive = increase balance (credit to customer)
-        // Negative = decrease balance (debit from customer)
-        newBalance += amount;
-        newTotalAmount += amount;
-        break;
-    }
-
-    // Update booking with new totals
-    const updatedBooking = await tx.booking.update({
-      where: { id: booking.id },
-      data: {
-        totalDeposit: newTotalDeposit,
-        totalPaid: newTotalPaid,
-        totalAmount: newTotalAmount,
-        balance: newBalance,
-        status: newStatus
-      },
-      include: {
-        bookingRooms: {
-          include: {
-            room: true,
-            roomType: true
-          }
-        },
-        primaryCustomer: {
-          select: {
-            id: true,
-            fullName: true,
-            phone: true,
-            email: true
-          }
-        },
-        transactions: {
-          orderBy: {
-            createdAt: 'desc'
-          }
-        }
-      }
-    });
-
-    return updatedBooking;
-  }
-
-  /**
-   * Get default description for transaction type
-   */
-  private getDefaultDescription(transactionType: TransactionType, bookingCode: string): string {
-    switch (transactionType) {
-      case TransactionType.DEPOSIT:
-        return `Deposit for booking ${bookingCode}`;
-      case TransactionType.ROOM_CHARGE:
-        return `Room charge for booking ${bookingCode}`;
-      case TransactionType.SERVICE_CHARGE:
-        return `Service charge for booking ${bookingCode}`;
-      case TransactionType.REFUND:
-        return `Refund for booking ${bookingCode}`;
-      case TransactionType.ADJUSTMENT:
-        return `Adjustment for booking ${bookingCode}`;
-      default:
-        return `Transaction for booking ${bookingCode}`;
-    }
   }
 }
 

@@ -7,6 +7,7 @@ import roomRoute from './room.route';
 import serviceRoute from './service.route';
 import employeeManagementRoute from './employeeManagement.route';
 import customerManagementRoute from './customerManagement.route';
+import usageServiceRoute from './usage-service.route';
 
 const employeeRoute = express.Router();
 
@@ -18,5 +19,6 @@ employeeRoute.use('/rooms', roomRoute);
 employeeRoute.use('/services', serviceRoute);
 employeeRoute.use('/employees', employeeManagementRoute);
 employeeRoute.use('/customers', customerManagementRoute);
+employeeRoute.use('/service', usageServiceRoute);
 
 export default employeeRoute;

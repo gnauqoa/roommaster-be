@@ -14,7 +14,10 @@ import {
   BookingService,
   RoomTypeService,
   RoomService,
-  ServiceService
+  ServiceService,
+  UsageServiceService,
+  TransactionService,
+  ActivityService
 } from 'services';
 
 /**
@@ -44,8 +47,8 @@ export function bootstrap(): void {
   );
 
   container.registerFactory(
-    TOKENS.BookingService,
-    (...args: unknown[]) => new BookingService(args[0] as PrismaClient),
+    TOKENS.ActivityService,
+    (...args: unknown[]) => new ActivityService(args[0] as PrismaClient),
     [TOKENS.PrismaClient]
   );
 
@@ -65,6 +68,35 @@ export function bootstrap(): void {
     TOKENS.ServiceService,
     (...args: unknown[]) => new ServiceService(args[0] as PrismaClient),
     [TOKENS.PrismaClient]
+  );
+
+  container.registerFactory(
+    TOKENS.TransactionService,
+    (...args: unknown[]) =>
+      new TransactionService(
+        args[0] as PrismaClient,
+        args[1] as ActivityService,
+        args[2] as UsageServiceService
+      ),
+    [TOKENS.PrismaClient, TOKENS.ActivityService, TOKENS.UsageServiceService]
+  );
+
+  container.registerFactory(
+    TOKENS.BookingService,
+    (...args: unknown[]) =>
+      new BookingService(
+        args[0] as PrismaClient,
+        args[1] as TransactionService,
+        args[2] as ActivityService
+      ),
+    [TOKENS.PrismaClient, TOKENS.TransactionService, TOKENS.ActivityService]
+  );
+
+  container.registerFactory(
+    TOKENS.UsageServiceService,
+    (...args: unknown[]) =>
+      new UsageServiceService(args[0] as PrismaClient, args[1] as ActivityService),
+    [TOKENS.PrismaClient, TOKENS.ActivityService]
   );
 
   container.registerFactory(

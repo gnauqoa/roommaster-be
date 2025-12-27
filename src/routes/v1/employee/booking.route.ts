@@ -22,9 +22,9 @@ const employeeBookingController = new EmployeeBookingController(bookingService);
 /**
  * @swagger
  * /employee/bookings/check-in:
- *   patch:
- *     summary: Check in guests for a confirmed booking
- *     description: Update booking and room status to checked-in, record actual check-in time
+ *   post:
+ *     summary: Check in specific booking rooms with customer assignments
+ *     description: Check in one or more booking rooms and assign customers to each room
  *     tags: [Employee Bookings]
  *     security:
  *       - bearerAuth: []
@@ -35,38 +35,30 @@ const employeeBookingController = new EmployeeBookingController(bookingService);
  *           schema:
  *             type: object
  *             required:
- *               - bookingId
- *               - bookingRoomId
- *               - guests
+ *               - checkInInfo
  *             properties:
- *               bookingId:
- *                 type: string
- *                 description: Booking ID
- *               bookingRoomId:
- *                 type: string
- *                 description: Booking room ID to check in
- *               guests:
+ *               checkInInfo:
  *                 type: array
  *                 items:
  *                   type: object
  *                   required:
- *                     - customerId
+ *                     - bookingRoomId
+ *                     - customerIds
  *                   properties:
- *                     customerId:
+ *                     bookingRoomId:
  *                       type: string
- *                       description: Customer ID
- *                     isPrimary:
- *                       type: boolean
- *                       description: Whether this guest is the primary contact for the room
- *                 description: List of guests checking in
+ *                       description: Booking room ID to check in
+ *                     customerIds:
+ *                       type: array
+ *                       items:
+ *                         type: string
+ *                       description: List of customer IDs staying in this room
  *             example:
- *               bookingId: "booking_id_123"
- *               bookingRoomId: "booking_room_id_456"
- *               guests:
- *                 - customerId: "customer_id_1"
- *                   isPrimary: true
- *                 - customerId: "customer_id_2"
- *                   isPrimary: false
+ *               checkInInfo:
+ *                 - bookingRoomId: "booking_room_id_1"
+ *                   customerIds: ["customer_id_1", "customer_id_2"]
+ *                 - bookingRoomId: "booking_room_id_2"
+ *                   customerIds: ["customer_id_3"]
  *     responses:
  *       200:
  *         description: Check-in successful
@@ -78,10 +70,9 @@ const employeeBookingController = new EmployeeBookingController(bookingService);
  *                 data:
  *                   type: object
  *                   properties:
- *                     booking:
- *                       type: object
- *                     bookingRoom:
- *                       type: object
+ *                     bookingRooms:
+ *                       type: array
+ *                       description: Updated booking rooms with customer assignments
  *       400:
  *         description: Invalid booking status or validation error
  *       401:
@@ -89,19 +80,19 @@ const employeeBookingController = new EmployeeBookingController(bookingService);
  *       404:
  *         $ref: '#/components/responses/NotFound'
  */
-router.patch(
+router.post(
   '/check-in',
   authEmployee,
-  validate(bookingValidation.checkIn),
-  employeeBookingController.checkIn
+  validate(bookingValidation.checkInRooms),
+  employeeBookingController.checkInRooms
 );
 
 /**
  * @swagger
- * /employee/bookings/transaction:
+ * /employee/bookings/check-out:
  *   post:
- *     summary: Create a transaction for a booking
- *     description: Process various transaction types (deposit, charges, refunds, adjustments) with type-specific business logic
+ *     summary: Check out specific booking rooms
+ *     description: Check out one or more booking rooms and update room status to available
  *     tags: [Employee Bookings]
  *     security:
  *       - bearerAuth: []
@@ -112,44 +103,18 @@ router.patch(
  *           schema:
  *             type: object
  *             required:
- *               - bookingId
- *               - transactionType
- *               - amount
- *               - method
+ *               - bookingRoomIds
  *             properties:
- *               bookingId:
- *                 type: string
- *                 description: Booking ID
- *               transactionType:
- *                 type: string
- *                 enum: [DEPOSIT, ROOM_CHARGE, SERVICE_CHARGE, REFUND, ADJUSTMENT]
- *                 description: Type of transaction
- *               amount:
- *                 type: number
- *                 description: Transaction amount (can be negative for adjustments)
- *               method:
- *                 type: string
- *                 enum: [CASH, CREDIT_CARD, BANK_TRANSFER, E_WALLET]
- *                 description: Payment method
- *               bookingRoomId:
- *                 type: string
- *                 description: Specific booking room ID (optional, for room-specific charges)
- *               transactionRef:
- *                 type: string
- *                 description: External transaction reference (optional)
- *               description:
- *                 type: string
- *                 description: Additional notes about the transaction (optional)
+ *               bookingRoomIds:
+ *                 type: array
+ *                 items:
+ *                   type: string
+ *                 description: List of booking room IDs to check out
  *             example:
- *               bookingId: "booking_id_123"
- *               transactionType: "DEPOSIT"
- *               amount: 500000
- *               method: "BANK_TRANSFER"
- *               transactionRef: "TXN123456"
- *               description: "Initial deposit payment"
+ *               bookingRoomIds: ["booking_room_id_1", "booking_room_id_2"]
  *     responses:
- *       201:
- *         description: Transaction created successfully
+ *       200:
+ *         description: Check-out successful
  *         content:
  *           application/json:
  *             schema:
@@ -158,24 +123,21 @@ router.patch(
  *                 data:
  *                   type: object
  *                   properties:
- *                     transaction:
- *                       type: object
- *                       description: Created transaction details
- *                     booking:
- *                       type: object
- *                       description: Updated booking with new totals and status
+ *                     bookingRooms:
+ *                       type: array
+ *                       description: Updated booking rooms after check-out
  *       400:
- *         description: Invalid request or business rule violation
+ *         description: Invalid booking status or validation error
  *       401:
  *         $ref: '#/components/responses/Unauthorized'
  *       404:
  *         $ref: '#/components/responses/NotFound'
  */
 router.post(
-  '/transaction',
+  '/check-out',
   authEmployee,
-  validate(bookingValidation.createTransaction),
-  employeeBookingController.createTransaction
+  validate(bookingValidation.checkOutRooms),
+  employeeBookingController.checkOutRooms
 );
 
 /**
