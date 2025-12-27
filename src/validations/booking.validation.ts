@@ -34,6 +34,26 @@ const checkIn = {
   })
 };
 
+const checkInRooms = {
+  body: Joi.object().keys({
+    checkInInfo: Joi.array()
+      .items(
+        Joi.object().keys({
+          bookingRoomId: Joi.string().required(),
+          customerIds: Joi.array().items(Joi.string()).min(1).required()
+        })
+      )
+      .min(1)
+      .required()
+  })
+};
+
+const checkOutRooms = {
+  body: Joi.object().keys({
+    bookingRoomIds: Joi.array().items(Joi.string()).min(1).required()
+  })
+};
+
 const createTransaction = {
   body: Joi.object().keys({
     bookingId: Joi.string().required(),
@@ -53,5 +73,7 @@ const createTransaction = {
 export default {
   createBooking,
   checkIn,
+  checkInRooms,
+  checkOutRooms,
   createTransaction
 };

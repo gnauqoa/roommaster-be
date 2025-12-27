@@ -1,7 +1,7 @@
 import express from 'express';
 import validate from 'middlewares/validate';
 import { employeeValidation, authValidation } from 'validations';
-import EmployeeController from 'controllers/employee.controller';
+import EmployeeController from 'controllers/employee/employee.controller';
 import { container, TOKENS } from 'core/container';
 import { AuthService, EmployeeService, TokenService } from 'services';
 

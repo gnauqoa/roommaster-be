@@ -2,7 +2,7 @@ import express from 'express';
 import { authCustomer } from 'middlewares/auth';
 import validate from 'middlewares/validate';
 import { customerValidation, authValidation } from 'validations';
-import CustomerController from 'controllers/customer.controller';
+import CustomerController from 'controllers/customer/customer.controller';
 import { container, TOKENS } from 'core/container';
 import { AuthService, CustomerService, TokenService } from 'services';
 

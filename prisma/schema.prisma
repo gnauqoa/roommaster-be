@@ -9,6 +9,26 @@ datasource db {
 }
 
 // ==================== ENUMS ====================
+enum ActivityType {
+  CREATE_BOOKING
+  UPDATE_BOOKING
+  CREATE_BOOKING_ROOM
+  UPDATE_BOOKING_ROOM
+  CREATE_SERVICE_USAGE
+  UPDATE_SERVICE_USAGE
+  CREATE_TRANSACTION
+  UPDATE_TRANSACTION
+  CREATE_CUSTOMER
+  CHECKED_IN
+  CHECKED_OUT
+}
+
+enum ServiceUsageStatus {
+  PENDING
+  TRANSFERRED
+  COMPLETED
+  CANCELLED
+}
 
 enum BookingStatus {
   PENDING
@@ -43,11 +63,11 @@ enum PaymentMethod {
 }
 
 enum TransactionType {
-  DEPOSIT // Tiền cọc
-  ROOM_CHARGE // Thanh toán tiền phòng
-  SERVICE_CHARGE // Thanh toán dịch vụ
-  REFUND // Hoàn tiền cho khách
-  ADJUSTMENT // Điều chỉnh tăng/giảm số dư
+  DEPOSIT
+  ROOM_CHARGE
+  SERVICE_CHARGE
+  REFUND
+  ADJUSTMENT
 }
 
 // ==================== MODELS ====================
@@ -59,10 +79,11 @@ model Employee {
   password String
   role     String @default("STAFF") // ADMIN, RECEPTIONIST, HOUSEKEEPING
 
-  transactions     Transaction[]
-  bookingHistories BookingHistory[]
+  transactions Transaction[]
 
-  updatedAt DateTime @updatedAt
+  updatedAt     DateTime       @updatedAt
+  serviceUsages ServiceUsage[]
+  activities    Activity[]
 }
 
 model Customer {
@@ -77,8 +98,9 @@ model Customer {
   bookings         Booking[]
   bookingCustomers BookingCustomer[]
 
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  createdAt  DateTime   @default(now())
+  updatedAt  DateTime   @updatedAt
+  activities Activity[]
 
   @@index([phone])
 }
@@ -123,7 +145,8 @@ model Booking {
 
   checkInDate  DateTime
   checkOutDate DateTime
-  totalGuests  Int
+
+  totalGuests Int
 
   // TÀI CHÍNH TỔNG QUÁT (Tổng hợp từ BookingRooms)
   totalAmount     Decimal @default(0) @db.Decimal(10, 2)
@@ -136,7 +159,6 @@ model Booking {
   bookingCustomers BookingCustomer[]
   transactions     Transaction[]
   serviceUsages    ServiceUsage[]
-  histories        BookingHistory[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -166,16 +188,17 @@ model BookingRoom {
 
   status BookingStatus @default(PENDING)
 
-  booking          Booking           @relation(fields: [bookingId], references: [id], onDelete: Cascade)
-  room             Room              @relation(fields: [roomId], references: [id])
-  roomType         RoomType          @relation(fields: [roomTypeId], references: [id])
-  bookingCustomers BookingCustomer[]
-  transactions     Transaction[]
-  serviceUsages    ServiceUsage[]
+  booking  Booking  @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+  room     Room     @relation(fields: [roomId], references: [id])
+  roomType RoomType @relation(fields: [roomTypeId], references: [id])
 
-  createdAt          DateTime            @default(now())
-  updatedAt          DateTime            @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  bookingCustomers   BookingCustomer[]
+  serviceUsages      ServiceUsage[]
   transactionDetails TransactionDetail[]
+  activities         Activity[]
 
   @@index([status])
 }
@@ -199,13 +222,12 @@ model BookingCustomer {
 }
 
 model Transaction {
-  id            String  @id @default(cuid())
-  bookingId     String
-  bookingRoomId String?
+  id        String  @id @default(cuid())
+  bookingId String?
 
   type   TransactionType
-  amount Decimal           @db.Decimal(10, 2)
-  method PaymentMethod
+  amount Decimal           @default(0) @db.Decimal(10, 2)
+  method PaymentMethod?
   status TransactionStatus @default(PENDING)
 
   processedById String?
@@ -218,16 +240,15 @@ model Transaction {
   occurredAt     DateTime @default(now())
   description    String?
 
-  booking     Booking      @relation(fields: [bookingId], references: [id], onDelete: Cascade)
-  bookingRoom BookingRoom? @relation(fields: [bookingRoomId], references: [id])
-
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+
+  booking Booking? @relation(fields: [bookingId], references: [id], onDelete: Cascade)
 }
 
 model TransactionDetail {
-  id            String @id @default(cuid())
-  transactionId String
+  id            String  @id @default(cuid())
+  transactionId String? // Optional - null for guest service payments
 
   // Số tiền phân bổ cho khoản mục này
   amount Decimal @db.Decimal(10, 2)
@@ -236,7 +257,7 @@ model TransactionDetail {
   bookingRoomId  String? // Nếu thanh toán tiền phòng
   serviceUsageId String? // Nếu thanh toán dịch vụ cụ thể
 
-  transaction  Transaction   @relation(fields: [transactionId], references: [id], onDelete: Cascade)
+  transaction  Transaction?  @relation(fields: [transactionId], references: [id], onDelete: Cascade)
   bookingRoom  BookingRoom?  @relation(fields: [bookingRoomId], references: [id])
   serviceUsage ServiceUsage? @relation(fields: [serviceUsageId], references: [id])
 
@@ -258,36 +279,48 @@ model Service {
 
 model ServiceUsage {
   id            String  @id @default(cuid())
-  bookingId     String
+  bookingId     String?
   bookingRoomId String?
+  employeeId    String
 
   serviceId  String
   quantity   Int     @default(1)
   unitPrice  Decimal @db.Decimal(10, 2)
-  totalPrice Decimal @db.Decimal(10, 2)
+  totalPrice Decimal @db.Decimal(10, 2) // Total cost (unitPrice × quantity)
+  totalPaid  Decimal @default(0) @db.Decimal(10, 2) // Amount paid so far
+  // balance = totalPrice - totalPaid (calculated field, not stored)
 
-  // Thêm quan hệ ngược để biết dịch vụ này đã được trả bao nhiêu tiền
-  transactionDetails TransactionDetail[]
+  status ServiceUsageStatus @default(PENDING)
 
-  booking     Booking      @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+  booking     Booking?     @relation(fields: [bookingId], references: [id], onDelete: Cascade)
   bookingRoom BookingRoom? @relation(fields: [bookingRoomId], references: [id])
   service     Service      @relation(fields: [serviceId], references: [id])
+  employee    Employee     @relation(fields: [employeeId], references: [id])
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+
+  transactionDetails TransactionDetail[]
+  activities         Activity[]
 }
 
-model BookingHistory {
-  id         Int     @id @default(autoincrement())
-  bookingId  String
-  employeeId String?
+model Activity {
+  id   String       @id @default(cuid())
+  type ActivityType
 
-  action  String
-  changes Json?
-  reason  String?
+  metadata    Json?
+  description String @default("")
 
-  booking  Booking   @relation(fields: [bookingId], references: [id])
-  employee Employee? @relation(fields: [employeeId], references: [id])
+  serviceUsageId String?
+  bookingRoomId  String?
+  customerId     String?
+  employeeId     String?
+
+  serviceUsage ServiceUsage? @relation(fields: [serviceUsageId], references: [id])
+  bookingRoom  BookingRoom?  @relation(fields: [bookingRoomId], references: [id])
+  customer     Customer?     @relation(fields: [customerId], references: [id])
+  employee     Employee?     @relation(fields: [employeeId], references: [id])
 
   createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }
