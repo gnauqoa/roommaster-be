@@ -51,3 +51,10 @@ export const seedEmployees = async (prisma: PrismaClient): Promise<void> => {
 
   console.log(`✓ Created ${employees.length} employees`);
 };
+
+/**
+ * Get seeded employees for use in other seeds
+ */
+export const getSeededEmployees = async (prisma: PrismaClient) => {
+  return prisma.employee.findMany();
+};

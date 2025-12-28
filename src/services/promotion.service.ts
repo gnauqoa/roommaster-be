@@ -38,7 +38,7 @@ export interface UpdatePromotionPayload {
   totalQty?: number;
   remainingQty?: number;
   perCustomerLimit?: number;
-  isActive?: boolean;
+  disabledAt?: Date | null;
   employeeId: string;
 }
 
@@ -64,6 +64,16 @@ export interface ValidatePromotionPayload {
   targetType: 'transaction' | 'room' | 'service';
   bookingRoomId?: string;
   serviceUsageId?: string;
+}
+
+export interface GetPromotionsQuery {
+  page?: number;
+  limit?: number;
+  code?: string;
+  description?: string;
+  maxDiscount?: number;
+  startDate?: Date;
+  endDate?: Date;
 }
 
 @Injectable()
@@ -121,7 +131,7 @@ export class PromotionService {
           totalQty,
           remainingQty: totalQty,
           perCustomerLimit,
-          isActive: true
+          disabledAt: null
         }
       });
 
@@ -218,8 +228,8 @@ export class PromotionService {
 
       // Validate promotion is active and within date range
       const now = new Date();
-      if (!promotion.isActive) {
-        throw new ApiError(httpStatus.BAD_REQUEST, 'Promotion is not active');
+      if (promotion.disabledAt && promotion.disabledAt <= now) {
+        throw new ApiError(httpStatus.BAD_REQUEST, 'Promotion has been disabled');
       }
 
       if (now < promotion.startDate || now > promotion.endDate) {
@@ -412,45 +422,115 @@ export class PromotionService {
   /**
    * Get available promotions for a customer
    */
-  async getAvailablePromotions(customerId: string) {
+  async getAvailablePromotions(customerId: string, query?: GetPromotionsQuery) {
+    const {
+      page = 1,
+      limit = 10,
+      code,
+      description,
+      maxDiscount,
+      startDate,
+      endDate
+    } = query || {};
+    const skip = (page - 1) * limit;
     const now = new Date();
 
-    return this.prisma.customerPromotion.findMany({
-      where: {
-        customerId,
-        status: CustomerPromotionStatus.AVAILABLE,
-        promotion: {
-          isActive: true,
-          startDate: { lte: now },
-          endDate: { gte: now }
-        }
-      },
-      include: {
-        promotion: true
-      },
-      orderBy: {
-        claimedAt: 'desc'
+    const where: any = {
+      customerId,
+      status: CustomerPromotionStatus.AVAILABLE,
+      promotion: {
+        disabledAt: null,
+        startDate: { lte: endDate || now },
+        endDate: { gte: startDate || now }
       }
-    });
+    };
+
+    // Add filters
+    if (code) {
+      where.promotion.code = { contains: code, mode: 'insensitive' };
+    }
+    if (description) {
+      where.promotion.description = { contains: description, mode: 'insensitive' };
+    }
+    if (maxDiscount !== undefined) {
+      where.promotion.maxDiscount = { lte: maxDiscount };
+    }
+
+    const [data, total] = await Promise.all([
+      this.prisma.customerPromotion.findMany({
+        where,
+        include: { promotion: true },
+        orderBy: { claimedAt: 'desc' },
+        skip,
+        take: limit
+      }),
+      this.prisma.customerPromotion.count({ where })
+    ]);
+
+    return {
+      data,
+      pagination: {
+        page,
+        limit,
+        total,
+        totalPages: Math.ceil(total / limit)
+      }
+    };
   }
 
   /**
    * Get active promotions (for public listing)
    */
-  async getActivePromotions() {
+  async getActivePromotions(query?: GetPromotionsQuery) {
+    const {
+      page = 1,
+      limit = 10,
+      code,
+      description,
+      maxDiscount,
+      startDate,
+      endDate
+    } = query || {};
+    const skip = (page - 1) * limit;
     const now = new Date();
 
-    return this.prisma.promotion.findMany({
-      where: {
-        isActive: true,
-        startDate: { lte: now },
-        endDate: { gte: now },
-        OR: [{ remainingQty: null }, { remainingQty: { gt: 0 } }]
-      },
-      orderBy: {
-        createdAt: 'desc'
+    const where: any = {
+      disabledAt: null,
+      startDate: { lte: endDate || now },
+      endDate: { gte: startDate || now },
+      OR: [{ remainingQty: null }, { remainingQty: { gt: 0 } }]
+    };
+
+    // Add filters
+    if (code) {
+      where.code = { contains: code, mode: 'insensitive' };
+    }
+    if (description) {
+      where.description = { contains: description, mode: 'insensitive' };
+    }
+    if (maxDiscount !== undefined) {
+      where.maxDiscount = { lte: maxDiscount };
+    }
+
+    const [data, total] = await Promise.all([
+      this.prisma.promotion.findMany({
+        where,
+        orderBy: { createdAt: 'desc' },
+        skip,
+        take: limit
+      }),
+      this.prisma.promotion.count({ where })
+    ]);
+
+    return {
+      data,
+      pagination: {
+        page,
+        limit,
+        total,
+        totalPages: Math.ceil(total / limit)
       }
-    });
+    };
   }
 
   /**
@@ -509,10 +589,10 @@ export class PromotionService {
 
     // Check if promotion is active and within date range
     const now = new Date();
-    if (!promotion.isActive) {
+    if (promotion.disabledAt && promotion.disabledAt <= now) {
       return {
         valid: false,
-        reason: 'Promotion is not active'
+        reason: 'Promotion has been disabled'
       };
     }
 

@@ -1,5 +1,5 @@
 import Joi from 'joi';
-import { password } from './custom.validation';
+import { password } from './common.validation';
 
 const login = {
   body: Joi.object().keys({

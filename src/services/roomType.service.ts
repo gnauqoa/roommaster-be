@@ -6,15 +6,17 @@ import ApiError from 'utils/ApiError';
 export interface CreateRoomTypeData {
   name: string;
   capacity: number;
+  totalBed: number;
   pricePerNight: number;
-  amenities?: any;
+  tagIds?: string[]; // Room tag IDs to associate
 }
 
 export interface UpdateRoomTypeData {
   name?: string;
   capacity?: number;
+  totalBed?: number;
   pricePerNight?: number;
-  amenities?: any;
+  tagIds?: string[]; // Room tag IDs to associate
 }
 
 export interface RoomTypeFilters {
@@ -55,8 +57,23 @@ export class RoomTypeService {
       data: {
         name: roomTypeData.name,
         capacity: roomTypeData.capacity,
+        totalBed: roomTypeData.totalBed,
         pricePerNight: roomTypeData.pricePerNight,
-        amenities: roomTypeData.amenities || null
+        roomTypeTags: roomTypeData.tagIds
+          ? {
+              create: roomTypeData.tagIds.map((tagId) => ({
+                name: `${roomTypeData.name}-${tagId}`,
+                roomTagId: tagId
+              }))
+            }
+          : undefined
+      },
+      include: {
+        roomTypeTags: {
+          include: {
+            roomTag: true
+          }
+        }
       }
     });
 
@@ -117,6 +134,11 @@ export class RoomTypeService {
         take: limit,
         orderBy: { [sortBy]: sortOrder },
         include: {
+          roomTypeTags: {
+            include: {
+              roomTag: true
+            }
+          },
           _count: {
             select: {
               rooms: true,
@@ -145,6 +167,11 @@ export class RoomTypeService {
     const roomType = await this.prisma.roomType.findUnique({
       where: { id: roomTypeId },
       include: {
+        roomTypeTags: {
+          include: {
+            roomTag: true
+          }
+        },
         _count: {
           select: {
             rooms: true,
@@ -184,9 +211,30 @@ export class RoomTypeService {
       }
     }
 
+    // Handle tag updates if provided
+    const { tagIds, ...basicUpdateData } = updateData;
+
     const updatedRoomType = await this.prisma.roomType.update({
       where: { id: roomTypeId },
-      data: updateData
+      data: {
+        ...basicUpdateData,
+        ...(tagIds !== undefined && {
+          roomTypeTags: {
+            deleteMany: {},
+            create: tagIds.map((tagId) => ({
+              name: `${updateData.name || 'roomtype'}-${tagId}`,
+              roomTagId: tagId
+            }))
+          }
+        })
+      },
+      include: {
+        roomTypeTags: {
+          include: {
+            roomTag: true
+          }
+        }
+      }
     });
 
     return updatedRoomType;

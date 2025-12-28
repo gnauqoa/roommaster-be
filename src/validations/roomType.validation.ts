@@ -4,8 +4,9 @@ const createRoomType = {
   body: Joi.object().keys({
     name: Joi.string().required().max(100),
     capacity: Joi.number().integer().min(1).required(),
+    totalBed: Joi.number().integer().min(0).required(),
     pricePerNight: Joi.number().min(0).required(),
-    amenities: Joi.object().optional()
+    tagIds: Joi.array().items(Joi.string()).optional()
   })
 };
 
@@ -39,8 +40,9 @@ const updateRoomType = {
     .keys({
       name: Joi.string().max(100),
       capacity: Joi.number().integer().min(1),
+      totalBed: Joi.number().integer().min(0),
       pricePerNight: Joi.number().min(0),
-      amenities: Joi.object()
+      tagIds: Joi.array().items(Joi.string())
     })
     .min(1)
 };

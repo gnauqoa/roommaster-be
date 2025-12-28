@@ -11,6 +11,24 @@ export interface CreateActivityPayload {
   employeeId?: string;
 }
 
+export interface ActivityFilters {
+  type?: ActivityType;
+  customerId?: string;
+  employeeId?: string;
+  bookingRoomId?: string;
+  serviceUsageId?: string;
+  startDate?: Date;
+  endDate?: Date;
+  search?: string;
+}
+
+export interface PaginationOptions {
+  page?: number;
+  limit?: number;
+  sortBy?: string;
+  sortOrder?: 'asc' | 'desc';
+}
+
 @Injectable()
 export class ActivityService {
   constructor(private readonly prisma: PrismaClient) {}
@@ -226,6 +244,164 @@ export class ActivityService {
       default:
         return 'Activity recorded';
     }
+  }
+
+  /**
+   * Get all activities with filters and pagination
+   * @param {ActivityFilters} filters - Filter options
+   * @param {PaginationOptions} options - Pagination options
+   * @returns {Promise<{ data: any[]; total: number; page: number; limit: number }>}
+   */
+  async getAllActivities(
+    filters: ActivityFilters = {},
+    options: PaginationOptions = {}
+  ): Promise<{ data: any[]; total: number; page: number; limit: number }> {
+    const {
+      type,
+      customerId,
+      employeeId,
+      bookingRoomId,
+      serviceUsageId,
+      startDate,
+      endDate,
+      search
+    } = filters;
+    const { page = 1, limit = 20, sortBy = 'createdAt', sortOrder = 'desc' } = options;
+
+    const where: Prisma.ActivityWhereInput = {};
+
+    // Apply type filter
+    if (type) {
+      where.type = type;
+    }
+
+    // Apply customer filter
+    if (customerId) {
+      where.customerId = customerId;
+    }
+
+    // Apply employee filter
+    if (employeeId) {
+      where.employeeId = employeeId;
+    }
+
+    // Apply booking room filter
+    if (bookingRoomId) {
+      where.bookingRoomId = bookingRoomId;
+    }
+
+    // Apply service usage filter
+    if (serviceUsageId) {
+      where.serviceUsageId = serviceUsageId;
+    }
+
+    // Apply date range filter
+    if (startDate || endDate) {
+      where.createdAt = {};
+      if (startDate) {
+        where.createdAt.gte = startDate;
+      }
+      if (endDate) {
+        where.createdAt.lte = endDate;
+      }
+    }
+
+    // Apply search filter (search in description)
+    if (search) {
+      where.description = {
+        contains: search,
+        mode: 'insensitive'
+      };
+    }
+
+    const skip = (page - 1) * limit;
+
+    const [data, total] = await Promise.all([
+      this.prisma.activity.findMany({
+        where,
+        skip,
+        take: limit,
+        orderBy: { [sortBy]: sortOrder },
+        include: {
+          customer: {
+            select: {
+              id: true,
+              fullName: true,
+              phone: true
+            }
+          },
+          employee: {
+            select: {
+              id: true,
+              name: true,
+              role: true
+            }
+          },
+          bookingRoom: {
+            select: {
+              id: true,
+              booking: {
+                select: {
+                  bookingCode: true
+                }
+              },
+              room: {
+                select: {
+                  roomNumber: true
+                }
+              }
+            }
+          },
+          serviceUsage: {
+            select: {
+              id: true,
+              service: {
+                select: {
+                  name: true
+                }
+              },
+              quantity: true
+            }
+          }
+        }
+      }),
+      this.prisma.activity.count({ where })
+    ]);
+
+    return {
+      data,
+      total,
+      page,
+      limit
+    };
+  }
+
+  /**
+   * Get activity by ID
+   * @param {string} activityId - Activity ID
+   * @returns {Promise<any>} Activity
+   */
+  async getActivityById(activityId: string): Promise<any> {
+    const activity = await this.prisma.activity.findUnique({
+      where: { id: activityId },
+      include: {
+        customer: true,
+        employee: true,
+        bookingRoom: {
+          include: {
+            booking: true,
+            room: true
+          }
+        },
+        serviceUsage: {
+          include: {
+            service: true
+          }
+        }
+      }
+    });
+
+    return activity;
   }
 }
 

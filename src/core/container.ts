@@ -123,6 +123,7 @@ export const TOKENS = {
   BookingService: Symbol('BookingService'),
   RoomTypeService: Symbol('RoomTypeService'),
   RoomService: Symbol('RoomService'),
+  RoomTagService: Symbol('RoomTagService'),
   ServiceService: Symbol('ServiceService'),
   UsageServiceService: Symbol('UsageServiceService'),
   TransactionService: Symbol('TransactionService'),

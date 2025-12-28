@@ -101,3 +101,16 @@ export const seedCustomers = async (prisma: PrismaClient): Promise<void> => {
 
   console.log(`✓ Created ${customers.length} customers`);
 };
+
+/**
+ * Get seeded customers for use in other seeds
+ */
+export const getSeededCustomers = async (prisma: PrismaClient) => {
+  return prisma.customer.findMany({
+    where: {
+      phone: {
+        startsWith: '090'
+      }
+    }
+  });
+};

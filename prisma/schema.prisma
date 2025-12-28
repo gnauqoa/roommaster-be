@@ -130,20 +130,43 @@ model RoomType {
   id            String  @id @default(cuid())
   name          String
   capacity      Int
+  totalBed      Int     @default(0)
   pricePerNight Decimal @db.Decimal(10, 2)
-  amenities     Json?
 
   rooms        Room[]
   bookingRooms BookingRoom[]
 
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
+  roomTypeTags RoomTypeTag[]
+}
+
+model RoomTag {
+  id          String  @id @default(cuid())
+  name        String  @unique // tivi, wifi, bếp
+  description String?
+
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
+  roomTypeTags RoomTypeTag[]
+}
+
+model RoomTypeTag {
+  id   String @id @default(cuid())
+  name String @unique
+
+  roomTypeId String
+  roomTagId  String
+
+  roomType RoomType @relation(fields: [roomTypeId], references: [id])
+  roomTag  RoomTag  @relation(fields: [roomTagId], references: [id])
 }
 
 model Room {
   id         String     @id @default(cuid())
   roomNumber String     @unique
   floor      Int
+  code       String     @default("")
   status     RoomStatus @default(AVAILABLE)
   roomTypeId String
 
@@ -374,13 +397,12 @@ model Promotion {
 
   perCustomerLimit Int @default(1)
 
-  isActive Boolean @default(true)
+  disabledAt DateTime?
 
   customerPromotions CustomerPromotion[]
 
-  createdAt  DateTime  @default(now())
-  updatedAt  DateTime  @updatedAt
-  disabledAt DateTime?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   usedPromotions UsedPromotion[]
 }

@@ -1,5 +1,6 @@
 import Joi from 'joi';
 
+// Custom validators
 export const password: Joi.CustomValidator<string> = (value, helpers) => {
   if (value.length < 8) {
     return helpers.error('password must be at least 8 characters');
@@ -41,10 +42,26 @@ export const decimalNumber: Joi.CustomValidator<string> = (value, helpers) => {
 
 // Pagination validators
 export const page = Joi.number().integer().min(1).default(1);
-
 export const perPage = Joi.number().integer().min(1).max(100).default(10);
 
 export const paginationQuery = {
   page: page.optional(),
   perPage: perPage.optional()
+};
+
+// Validation schemas
+const getPromotions = {
+  query: Joi.object().keys({
+    page: Joi.number().integer().min(1).optional(),
+    limit: Joi.number().integer().min(1).max(100).optional(),
+    code: Joi.string().optional(),
+    description: Joi.string().optional(),
+    maxDiscount: Joi.number().positive().optional(),
+    startDate: Joi.date().iso().optional(),
+    endDate: Joi.date().iso().optional()
+  })
+};
+
+export default {
+  getPromotions
 };
