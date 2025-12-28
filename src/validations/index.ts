@@ -7,3 +7,5 @@ export { default as roomValidation } from './room.validation';
 export { default as serviceValidation } from './service.validation';
 export { default as usageServiceValidation } from './usage-service.validation';
 export { default as transactionValidation } from './transaction.validation';
+export { default as promotionValidation } from './promotion.validation';
+export { default as commonValidation } from './common.validation';

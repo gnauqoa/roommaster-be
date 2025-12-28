@@ -374,13 +374,12 @@ model Promotion {
 
   perCustomerLimit Int @default(1)
 
-  isActive Boolean @default(true)
+  disabledAt DateTime?
 
   customerPromotions CustomerPromotion[]
 
-  createdAt  DateTime  @default(now())
-  updatedAt  DateTime  @updatedAt
-  disabledAt DateTime?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   usedPromotions UsedPromotion[]
 }

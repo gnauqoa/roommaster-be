@@ -9,6 +9,7 @@ import employeeManagementRoute from './employeeManagement.route';
 import customerManagementRoute from './customerManagement.route';
 import usageServiceRoute from './usage-service.route';
 import transactionRoute from './transaction.route';
+import promotionRoute from './promotion.route';
 
 const employeeRoute = express.Router();
 
@@ -22,5 +23,6 @@ employeeRoute.use('/employees', employeeManagementRoute);
 employeeRoute.use('/customers', customerManagementRoute);
 employeeRoute.use('/service', usageServiceRoute);
 employeeRoute.use('/transactions', transactionRoute);
+employeeRoute.use('/promotions', promotionRoute);
 
 export default employeeRoute;
