@@ -1,0 +1,4374 @@
+{
+  "openapi": "3.0.0",
+  "info": {
+    "title": "Roommaster API Documentation",
+    "version": "1.0.0",
+    "description": "REST API documentation for Roommaster application",
+    "license": {
+      "name": "ISC",
+      "url": "https://opensource.org/licenses/ISC"
+    },
+    "contact": {
+      "name": "API Support",
+      "email": "support@roommaster.com"
+    }
+  },
+  "servers": [
+    {
+      "url": "http://localhost:3000/v1",
+      "description": "Development server"
+    },
+    {
+      "url": "https://api.roommaster.com/v1",
+      "description": "Production server"
+    }
+  ],
+  "components": {
+    "securitySchemes": {
+      "bearerAuth": {
+        "type": "http",
+        "scheme": "bearer",
+        "bearerFormat": "JWT",
+        "description": "Enter your JWT token"
+      }
+    },
+    "responses": {
+      "Unauthorized": {
+        "description": "Unauthorized - Invalid or missing authentication token",
+        "content": {
+          "application/json": {
+            "schema": {
+              "type": "object",
+              "properties": {
+                "code": {
+                  "type": "number",
+                  "example": 401
+                },
+                "message": {
+                  "type": "string",
+                  "example": "Please authenticate"
+                }
+              }
+            }
+          }
+        }
+      },
+      "Forbidden": {
+        "description": "Forbidden - Insufficient permissions",
+        "content": {
+          "application/json": {
+            "schema": {
+              "type": "object",
+              "properties": {
+                "code": {
+                  "type": "number",
+                  "example": 403
+                },
+                "message": {
+                  "type": "string",
+                  "example": "Forbidden"
+                }
+              }
+            }
+          }
+        }
+      },
+      "NotFound": {
+        "description": "Not Found",
+        "content": {
+          "application/json": {
+            "schema": {
+              "type": "object",
+              "properties": {
+                "code": {
+                  "type": "number",
+                  "example": 404
+                },
+                "message": {
+                  "type": "string",
+                  "example": "Not found"
+                }
+              }
+            }
+          }
+        }
+      },
+      "ValidationError": {
+        "description": "Validation Error",
+        "content": {
+          "application/json": {
+            "schema": {
+              "type": "object",
+              "properties": {
+                "code": {
+                  "type": "number",
+                  "example": 400
+                },
+                "message": {
+                  "type": "string",
+                  "example": "Validation error"
+                },
+                "errors": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "properties": {
+                      "field": {
+                        "type": "string"
+                      },
+                      "message": {
+                        "type": "string"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "security": [
+    {
+      "bearerAuth": []
+    }
+  ],
+  "paths": {
+    "/customer/auth/register": {
+      "post": {
+        "summary": "Customer registration",
+        "description": "Register a new customer account",
+        "tags": [
+          "Customer Auth"
+        ],
+        "security": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "fullName",
+                  "phone",
+                  "password"
+                ],
+                "properties": {
+                  "fullName": {
+                    "type": "string",
+                    "description": "Customer full name"
+                  },
+                  "phone": {
+                    "type": "string",
+                    "description": "Customer phone number (unique)"
+                  },
+                  "email": {
+                    "type": "string",
+                    "format": "email",
+                    "description": "Customer email (optional)"
+                  },
+                  "idNumber": {
+                    "type": "string",
+                    "description": "ID number (CMND/CCCD)"
+                  },
+                  "address": {
+                    "type": "string",
+                    "description": "Customer address"
+                  },
+                  "password": {
+                    "type": "string",
+                    "format": "password",
+                    "minLength": 8,
+                    "description": "Customer password"
+                  }
+                },
+                "example": {
+                  "fullName": "Nguyễn Văn A",
+                  "phone": "0901234567",
+                  "email": "customer@example.com",
+                  "password": "password123"
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Registration successful",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "customer": {
+                          "type": "object",
+                          "properties": {
+                            "id": {
+                              "type": "string"
+                            },
+                            "fullName": {
+                              "type": "string"
+                            },
+                            "phone": {
+                              "type": "string"
+                            },
+                            "email": {
+                              "type": "string"
+                            }
+                          }
+                        },
+                        "tokens": {
+                          "type": "object",
+                          "properties": {
+                            "access": {
+                              "type": "object",
+                              "properties": {
+                                "token": {
+                                  "type": "string"
+                                },
+                                "expires": {
+                                  "type": "string",
+                                  "format": "date-time"
+                                }
+                              }
+                            },
+                            "refresh": {
+                              "type": "object",
+                              "properties": {
+                                "token": {
+                                  "type": "string"
+                                },
+                                "expires": {
+                                  "type": "string",
+                                  "format": "date-time"
+                                }
+                              }
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/ValidationError"
+          }
+        }
+      }
+    },
+    "/customer/auth/login": {
+      "post": {
+        "summary": "Customer login",
+        "description": "Authenticate a customer and return access and refresh tokens",
+        "tags": [
+          "Customer Auth"
+        ],
+        "security": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "phone",
+                  "password"
+                ],
+                "properties": {
+                  "phone": {
+                    "type": "string",
+                    "description": "Customer phone number"
+                  },
+                  "password": {
+                    "type": "string",
+                    "format": "password",
+                    "description": "Customer password"
+                  }
+                },
+                "example": {
+                  "phone": "0901234567",
+                  "password": "password123"
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Login successful",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "customer": {
+                          "type": "object"
+                        },
+                        "tokens": {
+                          "type": "object"
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Incorrect phone or password"
+          }
+        }
+      }
+    },
+    "/customer/auth/logout": {
+      "post": {
+        "summary": "Customer logout",
+        "description": "Logout a customer by invalidating the refresh token",
+        "tags": [
+          "Customer Auth"
+        ],
+        "security": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "refreshToken"
+                ],
+                "properties": {
+                  "refreshToken": {
+                    "type": "string"
+                  }
+                },
+                "example": {
+                  "refreshToken": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "204": {
+            "description": "Logout successful"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          }
+        }
+      }
+    },
+    "/customer/auth/refresh-tokens": {
+      "post": {
+        "summary": "Refresh auth tokens",
+        "description": "Generate new access and refresh tokens using a valid refresh token",
+        "tags": [
+          "Customer Auth"
+        ],
+        "security": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "refreshToken"
+                ],
+                "properties": {
+                  "refreshToken": {
+                    "type": "string"
+                  }
+                },
+                "example": {
+                  "refreshToken": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Tokens refreshed successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "tokens": {
+                          "type": "object"
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          }
+        }
+      }
+    },
+    "/customer/auth/forgot-password": {
+      "post": {
+        "summary": "Forgot password",
+        "description": "Send a password reset token for the customer",
+        "tags": [
+          "Customer Auth"
+        ],
+        "security": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "phone"
+                ],
+                "properties": {
+                  "phone": {
+                    "type": "string",
+                    "description": "Customer phone number"
+                  }
+                },
+                "example": {
+                  "phone": "0901234567"
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Reset token generated successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "resetPasswordToken": {
+                          "type": "string"
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          }
+        }
+      }
+    },
+    "/customer/auth/reset-password": {
+      "post": {
+        "summary": "Reset password",
+        "description": "Reset customer password using a valid reset token",
+        "tags": [
+          "Customer Auth"
+        ],
+        "security": [],
+        "parameters": [
+          {
+            "in": "query",
+            "name": "token",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "description": "Password reset token from forgot-password endpoint"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "password"
+                ],
+                "properties": {
+                  "password": {
+                    "type": "string",
+                    "format": "password",
+                    "minLength": 8,
+                    "description": "New password (minimum 8 characters, must contain letter and number)"
+                  }
+                },
+                "example": {
+                  "password": "newPassword123"
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "204": {
+            "description": "Password reset successful"
+          },
+          "401": {
+            "description": "Invalid or expired reset token"
+          }
+        }
+      }
+    },
+    "/customer/bookings": {
+      "post": {
+        "summary": "Create a new booking",
+        "description": "Create a booking with automatic room allocation based on room type and count",
+        "tags": [
+          "Customer Bookings"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "rooms",
+                  "checkInDate",
+                  "checkOutDate",
+                  "totalGuests"
+                ],
+                "properties": {
+                  "rooms": {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "required": [
+                        "roomTypeId",
+                        "count"
+                      ],
+                      "properties": {
+                        "roomTypeId": {
+                          "type": "string",
+                          "description": "ID of the room type"
+                        },
+                        "count": {
+                          "type": "integer",
+                          "minimum": 1,
+                          "description": "Number of rooms of this type"
+                        }
+                      }
+                    },
+                    "description": "Array of room type requests"
+                  },
+                  "checkInDate": {
+                    "type": "string",
+                    "format": "date-time",
+                    "description": "Check-in date and time"
+                  },
+                  "checkOutDate": {
+                    "type": "string",
+                    "format": "date-time",
+                    "description": "Check-out date and time"
+                  },
+                  "totalGuests": {
+                    "type": "integer",
+                    "minimum": 1,
+                    "description": "Total number of guests"
+                  }
+                },
+                "example": {
+                  "rooms": [
+                    {
+                      "roomTypeId": "room_type_id_1",
+                      "count": 2
+                    },
+                    {
+                      "roomTypeId": "room_type_id_2",
+                      "count": 1
+                    }
+                  ],
+                  "checkInDate": "2025-12-25T14:00:00Z",
+                  "checkOutDate": "2025-12-27T12:00:00Z",
+                  "totalGuests": 4
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Booking created successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "bookingId": {
+                          "type": "string"
+                        },
+                        "bookingCode": {
+                          "type": "string"
+                        },
+                        "expiresAt": {
+                          "type": "string",
+                          "format": "date-time"
+                        },
+                        "totalAmount": {
+                          "type": "number"
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/ValidationError"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "409": {
+            "description": "Not enough available rooms"
+          }
+        }
+      }
+    },
+    "/customer/bookings/{id}": {
+      "get": {
+        "summary": "Get booking details",
+        "description": "Retrieve detailed information about a specific booking",
+        "tags": [
+          "Customer Bookings"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "description": "Booking ID"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Booking details retrieved successfully"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          }
+        }
+      }
+    },
+    "/customer/profile": {
+      "get": {
+        "summary": "Get customer profile",
+        "description": "Retrieve the authenticated customer's profile information",
+        "tags": [
+          "Customer Profile"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Profile retrieved successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "id": {
+                          "type": "string"
+                        },
+                        "fullName": {
+                          "type": "string"
+                        },
+                        "phone": {
+                          "type": "string"
+                        },
+                        "email": {
+                          "type": "string"
+                        },
+                        "idNumber": {
+                          "type": "string"
+                        },
+                        "address": {
+                          "type": "string"
+                        },
+                        "createdAt": {
+                          "type": "string",
+                          "format": "date-time"
+                        },
+                        "updatedAt": {
+                          "type": "string",
+                          "format": "date-time"
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          }
+        }
+      },
+      "patch": {
+        "summary": "Update customer profile",
+        "description": "Update the authenticated customer's profile information",
+        "tags": [
+          "Customer Profile"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "fullName": {
+                    "type": "string",
+                    "description": "Customer full name"
+                  },
+                  "email": {
+                    "type": "string",
+                    "format": "email",
+                    "description": "Customer email"
+                  },
+                  "idNumber": {
+                    "type": "string",
+                    "description": "ID number (CMND/CCCD)"
+                  },
+                  "address": {
+                    "type": "string",
+                    "description": "Customer address"
+                  }
+                },
+                "example": {
+                  "fullName": "Nguyễn Văn B",
+                  "email": "updated@example.com"
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Profile updated successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "id": {
+                          "type": "string"
+                        },
+                        "fullName": {
+                          "type": "string"
+                        },
+                        "phone": {
+                          "type": "string"
+                        },
+                        "email": {
+                          "type": "string"
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/ValidationError"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          }
+        }
+      }
+    },
+    "/customer/profile/change-password": {
+      "post": {
+        "summary": "Change customer password",
+        "description": "Change the authenticated customer's password",
+        "tags": [
+          "Customer Profile"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "currentPassword",
+                  "newPassword"
+                ],
+                "properties": {
+                  "currentPassword": {
+                    "type": "string",
+                    "format": "password",
+                    "description": "Current password"
+                  },
+                  "newPassword": {
+                    "type": "string",
+                    "format": "password",
+                    "minLength": 8,
+                    "description": "New password (minimum 8 characters)"
+                  }
+                },
+                "example": {
+                  "currentPassword": "password123",
+                  "newPassword": "newPassword456"
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "204": {
+            "description": "Password changed successfully"
+          },
+          "400": {
+            "$ref": "#/components/responses/ValidationError"
+          },
+          "401": {
+            "description": "Incorrect current password or unauthorized"
+          }
+        }
+      }
+    },
+    "/employee/auth/login": {
+      "post": {
+        "summary": "Employee login",
+        "description": "Authenticate an employee and return access and refresh tokens",
+        "tags": [
+          "Employee Auth"
+        ],
+        "security": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "username",
+                  "password"
+                ],
+                "properties": {
+                  "username": {
+                    "type": "string",
+                    "description": "Employee username"
+                  },
+                  "password": {
+                    "type": "string",
+                    "format": "password",
+                    "description": "Employee password"
+                  }
+                },
+                "example": {
+                  "username": "admin",
+                  "password": "password123"
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Login successful",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "employee": {
+                          "type": "object",
+                          "properties": {
+                            "id": {
+                              "type": "string",
+                              "example": "clq1234567890abcdef"
+                            },
+                            "name": {
+                              "type": "string",
+                              "example": "Nguyễn Văn Admin"
+                            },
+                            "username": {
+                              "type": "string",
+                              "example": "admin"
+                            },
+                            "role": {
+                              "type": "string",
+                              "example": "ADMIN"
+                            },
+                            "updatedAt": {
+                              "type": "string",
+                              "format": "date-time"
+                            }
+                          }
+                        },
+                        "tokens": {
+                          "type": "object",
+                          "properties": {
+                            "access": {
+                              "type": "object",
+                              "properties": {
+                                "token": {
+                                  "type": "string"
+                                },
+                                "expires": {
+                                  "type": "string",
+                                  "format": "date-time"
+                                }
+                              }
+                            },
+                            "refresh": {
+                              "type": "object",
+                              "properties": {
+                                "token": {
+                                  "type": "string"
+                                },
+                                "expires": {
+                                  "type": "string",
+                                  "format": "date-time"
+                                }
+                              }
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Incorrect username or password",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "code": {
+                      "type": "number",
+                      "example": 401
+                    },
+                    "message": {
+                      "type": "string",
+                      "example": "Incorrect username or password"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/employee/auth/logout": {
+      "post": {
+        "summary": "Employee logout",
+        "description": "Logout an employee by invalidating the refresh token",
+        "tags": [
+          "Employee Auth"
+        ],
+        "security": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "refreshToken"
+                ],
+                "properties": {
+                  "refreshToken": {
+                    "type": "string",
+                    "description": "Refresh token to invalidate"
+                  }
+                },
+                "example": {
+                  "refreshToken": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "204": {
+            "description": "Logout successful"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          }
+        }
+      }
+    },
+    "/employee/auth/refresh-tokens": {
+      "post": {
+        "summary": "Refresh auth tokens",
+        "description": "Generate new access and refresh tokens using a valid refresh token",
+        "tags": [
+          "Employee Auth"
+        ],
+        "security": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "refreshToken"
+                ],
+                "properties": {
+                  "refreshToken": {
+                    "type": "string",
+                    "description": "Valid refresh token"
+                  }
+                },
+                "example": {
+                  "refreshToken": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Tokens refreshed successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "tokens": {
+                          "type": "object",
+                          "properties": {
+                            "access": {
+                              "type": "object",
+                              "properties": {
+                                "token": {
+                                  "type": "string"
+                                },
+                                "expires": {
+                                  "type": "string",
+                                  "format": "date-time"
+                                }
+                              }
+                            },
+                            "refresh": {
+                              "type": "object",
+                              "properties": {
+                                "token": {
+                                  "type": "string"
+                                },
+                                "expires": {
+                                  "type": "string",
+                                  "format": "date-time"
+                                }
+                              }
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          }
+        }
+      }
+    },
+    "/employee/auth/forgot-password": {
+      "post": {
+        "summary": "Forgot password",
+        "description": "Generate a password reset token for the employee",
+        "tags": [
+          "Employee Auth"
+        ],
+        "security": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "username"
+                ],
+                "properties": {
+                  "username": {
+                    "type": "string",
+                    "description": "Employee username"
+                  }
+                },
+                "example": {
+                  "username": "admin"
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Reset token generated successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "resetPasswordToken": {
+                          "type": "string",
+                          "example": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          }
+        }
+      }
+    },
+    "/employee/auth/reset-password": {
+      "post": {
+        "summary": "Reset password",
+        "description": "Reset employee password using a valid reset token",
+        "tags": [
+          "Employee Auth"
+        ],
+        "security": [],
+        "parameters": [
+          {
+            "in": "query",
+            "name": "token",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "description": "Password reset token from forgot-password endpoint"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "password"
+                ],
+                "properties": {
+                  "password": {
+                    "type": "string",
+                    "format": "password",
+                    "minLength": 8,
+                    "description": "New password (minimum 8 characters, must contain letter and number)"
+                  }
+                },
+                "example": {
+                  "password": "newPassword123"
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "204": {
+            "description": "Password reset successful"
+          },
+          "401": {
+            "description": "Invalid or expired reset token",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "code": {
+                      "type": "number",
+                      "example": 401
+                    },
+                    "message": {
+                      "type": "string",
+                      "example": "Password reset failed"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/employee/bookings/check-in": {
+      "patch": {
+        "summary": "Check in guests for a confirmed booking",
+        "description": "Update booking and room status to checked-in, record actual check-in time",
+        "tags": [
+          "Employee Bookings"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "bookingId",
+                  "bookingRoomId",
+                  "guests"
+                ],
+                "properties": {
+                  "bookingId": {
+                    "type": "string",
+                    "description": "Booking ID"
+                  },
+                  "bookingRoomId": {
+                    "type": "string",
+                    "description": "Booking room ID to check in"
+                  },
+                  "guests": {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "required": [
+                        "customerId"
+                      ],
+                      "properties": {
+                        "customerId": {
+                          "type": "string",
+                          "description": "Customer ID"
+                        },
+                        "isPrimary": {
+                          "type": "boolean",
+                          "description": "Whether this guest is the primary contact for the room"
+                        }
+                      }
+                    },
+                    "description": "List of guests checking in"
+                  }
+                },
+                "example": {
+                  "bookingId": "booking_id_123",
+                  "bookingRoomId": "booking_room_id_456",
+                  "guests": [
+                    {
+                      "customerId": "customer_id_1",
+                      "isPrimary": true
+                    },
+                    {
+                      "customerId": "customer_id_2",
+                      "isPrimary": false
+                    }
+                  ]
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Check-in successful",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "booking": {
+                          "type": "object"
+                        },
+                        "bookingRoom": {
+                          "type": "object"
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid booking status or validation error"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          }
+        }
+      }
+    },
+    "/employee/bookings/transaction": {
+      "post": {
+        "summary": "Create a transaction for a booking",
+        "description": "Process various transaction types (deposit, charges, refunds, adjustments) with type-specific business logic",
+        "tags": [
+          "Employee Bookings"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "bookingId",
+                  "transactionType",
+                  "amount",
+                  "method"
+                ],
+                "properties": {
+                  "bookingId": {
+                    "type": "string",
+                    "description": "Booking ID"
+                  },
+                  "transactionType": {
+                    "type": "string",
+                    "enum": [
+                      "DEPOSIT",
+                      "ROOM_CHARGE",
+                      "SERVICE_CHARGE",
+                      "REFUND",
+                      "ADJUSTMENT"
+                    ],
+                    "description": "Type of transaction"
+                  },
+                  "amount": {
+                    "type": "number",
+                    "description": "Transaction amount (can be negative for adjustments)"
+                  },
+                  "method": {
+                    "type": "string",
+                    "enum": [
+                      "CASH",
+                      "CREDIT_CARD",
+                      "BANK_TRANSFER",
+                      "E_WALLET"
+                    ],
+                    "description": "Payment method"
+                  },
+                  "bookingRoomId": {
+                    "type": "string",
+                    "description": "Specific booking room ID (optional, for room-specific charges)"
+                  },
+                  "transactionRef": {
+                    "type": "string",
+                    "description": "External transaction reference (optional)"
+                  },
+                  "description": {
+                    "type": "string",
+                    "description": "Additional notes about the transaction (optional)"
+                  }
+                },
+                "example": {
+                  "bookingId": "booking_id_123",
+                  "transactionType": "DEPOSIT",
+                  "amount": 500000,
+                  "method": "BANK_TRANSFER",
+                  "transactionRef": "TXN123456",
+                  "description": "Initial deposit payment"
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Transaction created successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "transaction": {
+                          "type": "object",
+                          "description": "Created transaction details"
+                        },
+                        "booking": {
+                          "type": "object",
+                          "description": "Updated booking with new totals and status"
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid request or business rule violation"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          }
+        }
+      }
+    },
+    "/employee/bookings/{id}": {
+      "get": {
+        "summary": "Get booking details",
+        "description": "Retrieve detailed information about a specific booking",
+        "tags": [
+          "Employee Bookings"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "description": "Booking ID"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Booking details retrieved successfully"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          }
+        }
+      }
+    },
+    "/employee/customers": {
+      "post": {
+        "summary": "Create a new customer",
+        "description": "Create a new customer account (employee only)",
+        "tags": [
+          "Customer Management"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "fullName",
+                  "phone",
+                  "password"
+                ],
+                "properties": {
+                  "fullName": {
+                    "type": "string",
+                    "maxLength": 100,
+                    "description": "Customer full name"
+                  },
+                  "phone": {
+                    "type": "string",
+                    "maxLength": 20,
+                    "description": "Customer phone number (unique)"
+                  },
+                  "password": {
+                    "type": "string",
+                    "format": "password",
+                    "minLength": 8,
+                    "description": "Customer password (min 8 characters, must contain letter and number)"
+                  },
+                  "email": {
+                    "type": "string",
+                    "format": "email",
+                    "description": "Customer email (optional)"
+                  },
+                  "idNumber": {
+                    "type": "string",
+                    "maxLength": 20,
+                    "description": "ID number (CMND/CCCD)"
+                  },
+                  "address": {
+                    "type": "string",
+                    "description": "Customer address"
+                  }
+                },
+                "example": {
+                  "fullName": "Nguyễn Văn A",
+                  "phone": "0901234567",
+                  "password": "password123",
+                  "email": "nguyenvana@example.com",
+                  "idNumber": "001234567890",
+                  "address": "123 Đường Lê Lợi, Quận 1, TP.HCM"
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Customer created successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "id": {
+                          "type": "string",
+                          "example": "clq1234567890abcdef"
+                        },
+                        "fullName": {
+                          "type": "string",
+                          "example": "Nguyễn Văn A"
+                        },
+                        "phone": {
+                          "type": "string",
+                          "example": "0901234567"
+                        },
+                        "email": {
+                          "type": "string",
+                          "example": "nguyenvana@example.com"
+                        },
+                        "idNumber": {
+                          "type": "string",
+                          "example": "001234567890"
+                        },
+                        "address": {
+                          "type": "string",
+                          "example": "123 Đường Lê Lợi, Quận 1, TP.HCM"
+                        },
+                        "createdAt": {
+                          "type": "string",
+                          "format": "date-time"
+                        },
+                        "updatedAt": {
+                          "type": "string",
+                          "format": "date-time"
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Phone number already registered or validation error"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          }
+        }
+      },
+      "get": {
+        "summary": "Get all customers",
+        "description": "Retrieve a paginated list of customers with optional filters",
+        "tags": [
+          "Customer Management"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "query",
+            "name": "search",
+            "schema": {
+              "type": "string"
+            },
+            "description": "Search by name, phone, or email"
+          },
+          {
+            "in": "query",
+            "name": "page",
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "default": 1
+            },
+            "description": "Page number"
+          },
+          {
+            "in": "query",
+            "name": "limit",
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 100,
+              "default": 10
+            },
+            "description": "Number of items per page"
+          },
+          {
+            "in": "query",
+            "name": "sortBy",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "fullName",
+                "phone",
+                "email",
+                "createdAt",
+                "updatedAt"
+              ],
+              "default": "createdAt"
+            },
+            "description": "Field to sort by"
+          },
+          {
+            "in": "query",
+            "name": "sortOrder",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "asc",
+                "desc"
+              ],
+              "default": "desc"
+            },
+            "description": "Sort order"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Customers retrieved successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "data": {
+                          "type": "array",
+                          "items": {
+                            "type": "object",
+                            "properties": {
+                              "id": {
+                                "type": "string"
+                              },
+                              "fullName": {
+                                "type": "string"
+                              },
+                              "phone": {
+                                "type": "string"
+                              },
+                              "email": {
+                                "type": "string"
+                              },
+                              "idNumber": {
+                                "type": "string"
+                              },
+                              "address": {
+                                "type": "string"
+                              },
+                              "createdAt": {
+                                "type": "string",
+                                "format": "date-time"
+                              },
+                              "updatedAt": {
+                                "type": "string",
+                                "format": "date-time"
+                              },
+                              "_count": {
+                                "type": "object",
+                                "properties": {
+                                  "bookings": {
+                                    "type": "integer"
+                                  }
+                                }
+                              }
+                            }
+                          }
+                        },
+                        "total": {
+                          "type": "integer",
+                          "example": 50
+                        },
+                        "page": {
+                          "type": "integer",
+                          "example": 1
+                        },
+                        "limit": {
+                          "type": "integer",
+                          "example": 10
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          }
+        }
+      }
+    },
+    "/employee/customers/{customerId}": {
+      "get": {
+        "summary": "Get customer by ID",
+        "description": "Retrieve a specific customer's details",
+        "tags": [
+          "Customer Management"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "customerId",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "description": "Customer ID"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Customer retrieved successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "id": {
+                          "type": "string",
+                          "example": "clq1234567890abcdef"
+                        },
+                        "fullName": {
+                          "type": "string",
+                          "example": "Nguyễn Văn A"
+                        },
+                        "phone": {
+                          "type": "string",
+                          "example": "0901234567"
+                        },
+                        "email": {
+                          "type": "string",
+                          "example": "nguyenvana@example.com"
+                        },
+                        "idNumber": {
+                          "type": "string",
+                          "example": "001234567890"
+                        },
+                        "address": {
+                          "type": "string",
+                          "example": "123 Đường Lê Lợi, Quận 1, TP.HCM"
+                        },
+                        "createdAt": {
+                          "type": "string",
+                          "format": "date-time"
+                        },
+                        "updatedAt": {
+                          "type": "string",
+                          "format": "date-time"
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          }
+        }
+      },
+      "put": {
+        "summary": "Update customer",
+        "description": "Update a customer's information",
+        "tags": [
+          "Customer Management"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "customerId",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "description": "Customer ID"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "minProperties": 1,
+                "properties": {
+                  "fullName": {
+                    "type": "string",
+                    "maxLength": 100,
+                    "description": "Customer full name"
+                  },
+                  "email": {
+                    "type": "string",
+                    "format": "email",
+                    "description": "Customer email"
+                  },
+                  "idNumber": {
+                    "type": "string",
+                    "maxLength": 20,
+                    "description": "ID number (CMND/CCCD)"
+                  },
+                  "address": {
+                    "type": "string",
+                    "description": "Customer address"
+                  }
+                },
+                "example": {
+                  "fullName": "Nguyễn Văn B",
+                  "email": "nguyenvanb@example.com"
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Customer updated successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "id": {
+                          "type": "string"
+                        },
+                        "fullName": {
+                          "type": "string"
+                        },
+                        "phone": {
+                          "type": "string"
+                        },
+                        "email": {
+                          "type": "string"
+                        },
+                        "idNumber": {
+                          "type": "string"
+                        },
+                        "address": {
+                          "type": "string"
+                        },
+                        "createdAt": {
+                          "type": "string",
+                          "format": "date-time"
+                        },
+                        "updatedAt": {
+                          "type": "string",
+                          "format": "date-time"
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Email already in use or validation error"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          }
+        }
+      },
+      "delete": {
+        "summary": "Delete customer",
+        "description": "Delete a customer from the system",
+        "tags": [
+          "Customer Management"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "customerId",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "description": "Customer ID"
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Customer deleted successfully"
+          },
+          "400": {
+            "description": "Cannot delete customer with booking history"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          }
+        }
+      }
+    },
+    "/employee/employees": {
+      "post": {
+        "summary": "Create a new employee",
+        "description": "Create a new employee account (admin only)",
+        "tags": [
+          "Employee Management"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "name",
+                  "username",
+                  "password"
+                ],
+                "properties": {
+                  "name": {
+                    "type": "string",
+                    "maxLength": 100,
+                    "description": "Employee name"
+                  },
+                  "username": {
+                    "type": "string",
+                    "maxLength": 50,
+                    "description": "Employee username (unique)"
+                  },
+                  "password": {
+                    "type": "string",
+                    "format": "password",
+                    "minLength": 8,
+                    "description": "Employee password (min 8 characters, must contain letter and number)"
+                  },
+                  "role": {
+                    "type": "string",
+                    "enum": [
+                      "ADMIN",
+                      "RECEPTIONIST",
+                      "HOUSEKEEPING",
+                      "STAFF"
+                    ],
+                    "default": "STAFF",
+                    "description": "Employee role"
+                  }
+                },
+                "example": {
+                  "name": "Trần Văn B",
+                  "username": "tranvanb",
+                  "password": "password123",
+                  "role": "RECEPTIONIST"
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Employee created successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "id": {
+                          "type": "string",
+                          "example": "clq1234567890abcdef"
+                        },
+                        "name": {
+                          "type": "string",
+                          "example": "Trần Văn B"
+                        },
+                        "username": {
+                          "type": "string",
+                          "example": "tranvanb"
+                        },
+                        "role": {
+                          "type": "string",
+                          "example": "RECEPTIONIST"
+                        },
+                        "updatedAt": {
+                          "type": "string",
+                          "format": "date-time"
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Username already exists or validation error"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          }
+        }
+      },
+      "get": {
+        "summary": "Get all employees",
+        "description": "Retrieve a paginated list of employees with optional filters",
+        "tags": [
+          "Employee Management"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "query",
+            "name": "search",
+            "schema": {
+              "type": "string"
+            },
+            "description": "Search by name or username"
+          },
+          {
+            "in": "query",
+            "name": "role",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "ADMIN",
+                "RECEPTIONIST",
+                "HOUSEKEEPING",
+                "STAFF"
+              ]
+            },
+            "description": "Filter by role"
+          },
+          {
+            "in": "query",
+            "name": "page",
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "default": 1
+            },
+            "description": "Page number"
+          },
+          {
+            "in": "query",
+            "name": "limit",
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 100,
+              "default": 10
+            },
+            "description": "Number of items per page"
+          },
+          {
+            "in": "query",
+            "name": "sortBy",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "name",
+                "username",
+                "role",
+                "createdAt",
+                "updatedAt"
+              ],
+              "default": "createdAt"
+            },
+            "description": "Field to sort by"
+          },
+          {
+            "in": "query",
+            "name": "sortOrder",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "asc",
+                "desc"
+              ],
+              "default": "desc"
+            },
+            "description": "Sort order"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Employees retrieved successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "data": {
+                          "type": "array",
+                          "items": {
+                            "type": "object",
+                            "properties": {
+                              "id": {
+                                "type": "string"
+                              },
+                              "name": {
+                                "type": "string"
+                              },
+                              "username": {
+                                "type": "string"
+                              },
+                              "role": {
+                                "type": "string"
+                              },
+                              "updatedAt": {
+                                "type": "string",
+                                "format": "date-time"
+                              }
+                            }
+                          }
+                        },
+                        "total": {
+                          "type": "integer",
+                          "example": 20
+                        },
+                        "page": {
+                          "type": "integer",
+                          "example": 1
+                        },
+                        "limit": {
+                          "type": "integer",
+                          "example": 10
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          }
+        }
+      }
+    },
+    "/employee/employees/{employeeId}": {
+      "get": {
+        "summary": "Get employee by ID",
+        "description": "Retrieve a specific employee's details",
+        "tags": [
+          "Employee Management"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "employeeId",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "description": "Employee ID"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Employee retrieved successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "id": {
+                          "type": "string",
+                          "example": "clq1234567890abcdef"
+                        },
+                        "name": {
+                          "type": "string",
+                          "example": "Trần Văn B"
+                        },
+                        "username": {
+                          "type": "string",
+                          "example": "tranvanb"
+                        },
+                        "role": {
+                          "type": "string",
+                          "example": "RECEPTIONIST"
+                        },
+                        "updatedAt": {
+                          "type": "string",
+                          "format": "date-time"
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          }
+        }
+      },
+      "put": {
+        "summary": "Update employee",
+        "description": "Update an employee's information",
+        "tags": [
+          "Employee Management"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "employeeId",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "description": "Employee ID"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "minProperties": 1,
+                "properties": {
+                  "name": {
+                    "type": "string",
+                    "maxLength": 100,
+                    "description": "Employee name"
+                  },
+                  "role": {
+                    "type": "string",
+                    "enum": [
+                      "ADMIN",
+                      "RECEPTIONIST",
+                      "HOUSEKEEPING",
+                      "STAFF"
+                    ],
+                    "description": "Employee role"
+                  }
+                },
+                "example": {
+                  "name": "Trần Văn C",
+                  "role": "ADMIN"
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Employee updated successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "id": {
+                          "type": "string"
+                        },
+                        "name": {
+                          "type": "string"
+                        },
+                        "username": {
+                          "type": "string"
+                        },
+                        "role": {
+                          "type": "string"
+                        },
+                        "updatedAt": {
+                          "type": "string",
+                          "format": "date-time"
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/ValidationError"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          }
+        }
+      },
+      "delete": {
+        "summary": "Delete employee",
+        "description": "Delete an employee from the system",
+        "tags": [
+          "Employee Management"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "employeeId",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "description": "Employee ID"
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Employee deleted successfully"
+          },
+          "400": {
+            "description": "Cannot delete employee with transaction history"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          }
+        }
+      }
+    },
+    "/employee/profile": {
+      "get": {
+        "summary": "Get employee profile",
+        "description": "Retrieve the authenticated employee's profile information",
+        "tags": [
+          "Employee Profile"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Profile retrieved successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "id": {
+                          "type": "string"
+                        },
+                        "name": {
+                          "type": "string"
+                        },
+                        "username": {
+                          "type": "string"
+                        },
+                        "role": {
+                          "type": "string",
+                          "enum": [
+                            "ADMIN",
+                            "RECEPTIONIST",
+                            "HOUSEKEEPING",
+                            "STAFF"
+                          ]
+                        },
+                        "updatedAt": {
+                          "type": "string",
+                          "format": "date-time"
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          }
+        }
+      },
+      "patch": {
+        "summary": "Update employee profile",
+        "description": "Update the authenticated employee's profile information",
+        "tags": [
+          "Employee Profile"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "name": {
+                    "type": "string",
+                    "description": "Employee name"
+                  }
+                },
+                "example": {
+                  "name": "Nguyễn Văn Updated"
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Profile updated successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "id": {
+                          "type": "string"
+                        },
+                        "name": {
+                          "type": "string"
+                        },
+                        "username": {
+                          "type": "string"
+                        },
+                        "role": {
+                          "type": "string"
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/ValidationError"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          }
+        }
+      }
+    },
+    "/employee/profile/change-password": {
+      "post": {
+        "summary": "Change employee password",
+        "description": "Change the authenticated employee's password",
+        "tags": [
+          "Employee Profile"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "currentPassword",
+                  "newPassword"
+                ],
+                "properties": {
+                  "currentPassword": {
+                    "type": "string",
+                    "format": "password",
+                    "description": "Current password"
+                  },
+                  "newPassword": {
+                    "type": "string",
+                    "format": "password",
+                    "minLength": 8,
+                    "description": "New password (minimum 8 characters)"
+                  }
+                },
+                "example": {
+                  "currentPassword": "password123",
+                  "newPassword": "newPassword456"
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "204": {
+            "description": "Password changed successfully"
+          },
+          "400": {
+            "$ref": "#/components/responses/ValidationError"
+          },
+          "401": {
+            "description": "Incorrect current password or unauthorized"
+          }
+        }
+      }
+    },
+    "/employee/rooms": {
+      "post": {
+        "summary": "Create a new room",
+        "description": "Create a new room assigned to a room type",
+        "tags": [
+          "Rooms"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "roomNumber",
+                  "floor",
+                  "roomTypeId"
+                ],
+                "properties": {
+                  "roomNumber": {
+                    "type": "string",
+                    "maxLength": 50,
+                    "description": "Unique room number"
+                  },
+                  "floor": {
+                    "type": "integer",
+                    "description": "Floor number"
+                  },
+                  "roomTypeId": {
+                    "type": "string",
+                    "description": "ID of the room type"
+                  },
+                  "status": {
+                    "type": "string",
+                    "enum": [
+                      "AVAILABLE",
+                      "RESERVED",
+                      "OCCUPIED",
+                      "CLEANING",
+                      "MAINTENANCE",
+                      "OUT_OF_SERVICE"
+                    ],
+                    "default": "AVAILABLE",
+                    "description": "Room status"
+                  }
+                },
+                "example": {
+                  "roomNumber": "101",
+                  "floor": 1,
+                  "roomTypeId": "clq1234567890abcdef",
+                  "status": "AVAILABLE"
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Room created successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "id": {
+                          "type": "string",
+                          "example": "clq1234567890abcdef"
+                        },
+                        "roomNumber": {
+                          "type": "string",
+                          "example": "101"
+                        },
+                        "floor": {
+                          "type": "integer",
+                          "example": 1
+                        },
+                        "status": {
+                          "type": "string",
+                          "example": "AVAILABLE"
+                        },
+                        "roomTypeId": {
+                          "type": "string"
+                        },
+                        "roomType": {
+                          "type": "object",
+                          "properties": {
+                            "id": {
+                              "type": "string"
+                            },
+                            "name": {
+                              "type": "string"
+                            },
+                            "capacity": {
+                              "type": "integer"
+                            },
+                            "pricePerNight": {
+                              "type": "string"
+                            }
+                          }
+                        },
+                        "createdAt": {
+                          "type": "string",
+                          "format": "date-time"
+                        },
+                        "updatedAt": {
+                          "type": "string",
+                          "format": "date-time"
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Room number already exists or room type not found"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "404": {
+            "description": "Room type not found"
+          }
+        }
+      },
+      "get": {
+        "summary": "Get all rooms",
+        "description": "Retrieve a paginated list of rooms with optional filters",
+        "tags": [
+          "Rooms"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "query",
+            "name": "search",
+            "schema": {
+              "type": "string"
+            },
+            "description": "Search by room number"
+          },
+          {
+            "in": "query",
+            "name": "status",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "AVAILABLE",
+                "RESERVED",
+                "OCCUPIED",
+                "CLEANING",
+                "MAINTENANCE",
+                "OUT_OF_SERVICE"
+              ]
+            },
+            "description": "Filter by status"
+          },
+          {
+            "in": "query",
+            "name": "floor",
+            "schema": {
+              "type": "integer"
+            },
+            "description": "Filter by floor number"
+          },
+          {
+            "in": "query",
+            "name": "roomTypeId",
+            "schema": {
+              "type": "string"
+            },
+            "description": "Filter by room type ID"
+          },
+          {
+            "in": "query",
+            "name": "page",
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "default": 1
+            },
+            "description": "Page number"
+          },
+          {
+            "in": "query",
+            "name": "limit",
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 100,
+              "default": 10
+            },
+            "description": "Number of items per page"
+          },
+          {
+            "in": "query",
+            "name": "sortBy",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "roomNumber",
+                "floor",
+                "status",
+                "createdAt",
+                "updatedAt"
+              ],
+              "default": "roomNumber"
+            },
+            "description": "Field to sort by"
+          },
+          {
+            "in": "query",
+            "name": "sortOrder",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "asc",
+                "desc"
+              ],
+              "default": "asc"
+            },
+            "description": "Sort order"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Rooms retrieved successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "data": {
+                          "type": "array",
+                          "items": {
+                            "type": "object",
+                            "properties": {
+                              "id": {
+                                "type": "string"
+                              },
+                              "roomNumber": {
+                                "type": "string"
+                              },
+                              "floor": {
+                                "type": "integer"
+                              },
+                              "status": {
+                                "type": "string"
+                              },
+                              "roomTypeId": {
+                                "type": "string"
+                              },
+                              "roomType": {
+                                "type": "object",
+                                "properties": {
+                                  "id": {
+                                    "type": "string"
+                                  },
+                                  "name": {
+                                    "type": "string"
+                                  },
+                                  "capacity": {
+                                    "type": "integer"
+                                  },
+                                  "pricePerNight": {
+                                    "type": "string"
+                                  }
+                                }
+                              },
+                              "createdAt": {
+                                "type": "string",
+                                "format": "date-time"
+                              },
+                              "updatedAt": {
+                                "type": "string",
+                                "format": "date-time"
+                              },
+                              "_count": {
+                                "type": "object",
+                                "properties": {
+                                  "bookingRooms": {
+                                    "type": "integer"
+                                  }
+                                }
+                              }
+                            }
+                          }
+                        },
+                        "total": {
+                          "type": "integer",
+                          "example": 50
+                        },
+                        "page": {
+                          "type": "integer",
+                          "example": 1
+                        },
+                        "limit": {
+                          "type": "integer",
+                          "example": 10
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          }
+        }
+      }
+    },
+    "/employee/rooms/{roomId}": {
+      "get": {
+        "summary": "Get room by ID",
+        "description": "Retrieve a specific room's details",
+        "tags": [
+          "Rooms"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "roomId",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "description": "Room ID"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Room retrieved successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "id": {
+                          "type": "string",
+                          "example": "clq1234567890abcdef"
+                        },
+                        "roomNumber": {
+                          "type": "string",
+                          "example": "101"
+                        },
+                        "floor": {
+                          "type": "integer",
+                          "example": 1
+                        },
+                        "status": {
+                          "type": "string",
+                          "example": "AVAILABLE"
+                        },
+                        "roomTypeId": {
+                          "type": "string"
+                        },
+                        "roomType": {
+                          "type": "object",
+                          "properties": {
+                            "id": {
+                              "type": "string"
+                            },
+                            "name": {
+                              "type": "string"
+                            },
+                            "capacity": {
+                              "type": "integer"
+                            },
+                            "pricePerNight": {
+                              "type": "string"
+                            }
+                          }
+                        },
+                        "createdAt": {
+                          "type": "string",
+                          "format": "date-time"
+                        },
+                        "updatedAt": {
+                          "type": "string",
+                          "format": "date-time"
+                        },
+                        "_count": {
+                          "type": "object",
+                          "properties": {
+                            "bookingRooms": {
+                              "type": "integer"
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          }
+        }
+      },
+      "put": {
+        "summary": "Update room",
+        "description": "Update a room's information",
+        "tags": [
+          "Rooms"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "roomId",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "description": "Room ID"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "minProperties": 1,
+                "properties": {
+                  "roomNumber": {
+                    "type": "string",
+                    "maxLength": 50,
+                    "description": "Unique room number"
+                  },
+                  "floor": {
+                    "type": "integer",
+                    "description": "Floor number"
+                  },
+                  "roomTypeId": {
+                    "type": "string",
+                    "description": "ID of the room type"
+                  },
+                  "status": {
+                    "type": "string",
+                    "enum": [
+                      "AVAILABLE",
+                      "RESERVED",
+                      "OCCUPIED",
+                      "CLEANING",
+                      "MAINTENANCE",
+                      "OUT_OF_SERVICE"
+                    ],
+                    "description": "Room status"
+                  }
+                },
+                "example": {
+                  "status": "MAINTENANCE",
+                  "floor": 2
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Room updated successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "id": {
+                          "type": "string"
+                        },
+                        "roomNumber": {
+                          "type": "string"
+                        },
+                        "floor": {
+                          "type": "integer"
+                        },
+                        "status": {
+                          "type": "string"
+                        },
+                        "roomTypeId": {
+                          "type": "string"
+                        },
+                        "roomType": {
+                          "type": "object"
+                        },
+                        "createdAt": {
+                          "type": "string",
+                          "format": "date-time"
+                        },
+                        "updatedAt": {
+                          "type": "string",
+                          "format": "date-time"
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Room number already exists or room type not found"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          }
+        }
+      },
+      "delete": {
+        "summary": "Delete room",
+        "description": "Delete a room from the system",
+        "tags": [
+          "Rooms"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "roomId",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "description": "Room ID"
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Room deleted successfully"
+          },
+          "400": {
+            "description": "Cannot delete room with booking history"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          }
+        }
+      }
+    },
+    "/employee/room-types": {
+      "post": {
+        "summary": "Create a new room type",
+        "description": "Create a new room type with pricing and amenities",
+        "tags": [
+          "Room Types"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "name",
+                  "capacity",
+                  "pricePerNight"
+                ],
+                "properties": {
+                  "name": {
+                    "type": "string",
+                    "maxLength": 100,
+                    "description": "Room type name"
+                  },
+                  "capacity": {
+                    "type": "integer",
+                    "minimum": 1,
+                    "description": "Maximum number of guests"
+                  },
+                  "pricePerNight": {
+                    "type": "number",
+                    "minimum": 0,
+                    "description": "Price per night (VND)"
+                  },
+                  "amenities": {
+                    "type": "object",
+                    "description": "Room amenities (JSON object)"
+                  }
+                },
+                "example": {
+                  "name": "Phòng Deluxe",
+                  "capacity": 2,
+                  "pricePerNight": 1500000,
+                  "amenities": {
+                    "wifi": true,
+                    "airConditioner": true,
+                    "minibar": true,
+                    "balcony": false
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Room type created successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "id": {
+                          "type": "string",
+                          "example": "clq1234567890abcdef"
+                        },
+                        "name": {
+                          "type": "string",
+                          "example": "Phòng Deluxe"
+                        },
+                        "capacity": {
+                          "type": "integer",
+                          "example": 2
+                        },
+                        "pricePerNight": {
+                          "type": "string",
+                          "example": "1500000"
+                        },
+                        "amenities": {
+                          "type": "object",
+                          "example": {
+                            "wifi": true,
+                            "airConditioner": true
+                          }
+                        },
+                        "createdAt": {
+                          "type": "string",
+                          "format": "date-time"
+                        },
+                        "updatedAt": {
+                          "type": "string",
+                          "format": "date-time"
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Room type with this name already exists"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          }
+        }
+      },
+      "get": {
+        "summary": "Get all room types",
+        "description": "Retrieve a paginated list of room types with optional filters",
+        "tags": [
+          "Room Types"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "query",
+            "name": "search",
+            "schema": {
+              "type": "string"
+            },
+            "description": "Search by room type name"
+          },
+          {
+            "in": "query",
+            "name": "minCapacity",
+            "schema": {
+              "type": "integer",
+              "minimum": 1
+            },
+            "description": "Minimum capacity filter"
+          },
+          {
+            "in": "query",
+            "name": "maxCapacity",
+            "schema": {
+              "type": "integer",
+              "minimum": 1
+            },
+            "description": "Maximum capacity filter"
+          },
+          {
+            "in": "query",
+            "name": "minPrice",
+            "schema": {
+              "type": "number",
+              "minimum": 0
+            },
+            "description": "Minimum price filter"
+          },
+          {
+            "in": "query",
+            "name": "maxPrice",
+            "schema": {
+              "type": "number",
+              "minimum": 0
+            },
+            "description": "Maximum price filter"
+          },
+          {
+            "in": "query",
+            "name": "page",
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "default": 1
+            },
+            "description": "Page number"
+          },
+          {
+            "in": "query",
+            "name": "limit",
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 100,
+              "default": 10
+            },
+            "description": "Number of items per page"
+          },
+          {
+            "in": "query",
+            "name": "sortBy",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "name",
+                "capacity",
+                "pricePerNight",
+                "createdAt",
+                "updatedAt"
+              ],
+              "default": "createdAt"
+            },
+            "description": "Field to sort by"
+          },
+          {
+            "in": "query",
+            "name": "sortOrder",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "asc",
+                "desc"
+              ],
+              "default": "desc"
+            },
+            "description": "Sort order"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Room types retrieved successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "data": {
+                          "type": "array",
+                          "items": {
+                            "type": "object",
+                            "properties": {
+                              "id": {
+                                "type": "string"
+                              },
+                              "name": {
+                                "type": "string"
+                              },
+                              "capacity": {
+                                "type": "integer"
+                              },
+                              "pricePerNight": {
+                                "type": "string"
+                              },
+                              "amenities": {
+                                "type": "object"
+                              },
+                              "createdAt": {
+                                "type": "string",
+                                "format": "date-time"
+                              },
+                              "updatedAt": {
+                                "type": "string",
+                                "format": "date-time"
+                              },
+                              "_count": {
+                                "type": "object",
+                                "properties": {
+                                  "rooms": {
+                                    "type": "integer"
+                                  },
+                                  "bookingRooms": {
+                                    "type": "integer"
+                                  }
+                                }
+                              }
+                            }
+                          }
+                        },
+                        "total": {
+                          "type": "integer",
+                          "example": 5
+                        },
+                        "page": {
+                          "type": "integer",
+                          "example": 1
+                        },
+                        "limit": {
+                          "type": "integer",
+                          "example": 10
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          }
+        }
+      }
+    },
+    "/employee/room-types/{roomTypeId}": {
+      "get": {
+        "summary": "Get room type by ID",
+        "description": "Retrieve a specific room type's details",
+        "tags": [
+          "Room Types"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "roomTypeId",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "description": "Room type ID"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Room type retrieved successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "id": {
+                          "type": "string",
+                          "example": "clq1234567890abcdef"
+                        },
+                        "name": {
+                          "type": "string",
+                          "example": "Phòng Deluxe"
+                        },
+                        "capacity": {
+                          "type": "integer",
+                          "example": 2
+                        },
+                        "pricePerNight": {
+                          "type": "string",
+                          "example": "1500000"
+                        },
+                        "amenities": {
+                          "type": "object"
+                        },
+                        "createdAt": {
+                          "type": "string",
+                          "format": "date-time"
+                        },
+                        "updatedAt": {
+                          "type": "string",
+                          "format": "date-time"
+                        },
+                        "_count": {
+                          "type": "object",
+                          "properties": {
+                            "rooms": {
+                              "type": "integer"
+                            },
+                            "bookingRooms": {
+                              "type": "integer"
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          }
+        }
+      },
+      "put": {
+        "summary": "Update room type",
+        "description": "Update a room type's information",
+        "tags": [
+          "Room Types"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "roomTypeId",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "description": "Room type ID"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "minProperties": 1,
+                "properties": {
+                  "name": {
+                    "type": "string",
+                    "maxLength": 100,
+                    "description": "Room type name"
+                  },
+                  "capacity": {
+                    "type": "integer",
+                    "minimum": 1,
+                    "description": "Maximum number of guests"
+                  },
+                  "pricePerNight": {
+                    "type": "number",
+                    "minimum": 0,
+                    "description": "Price per night (VND)"
+                  },
+                  "amenities": {
+                    "type": "object",
+                    "description": "Room amenities"
+                  }
+                },
+                "example": {
+                  "name": "Phòng Superior",
+                  "pricePerNight": 1800000
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Room type updated successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "id": {
+                          "type": "string"
+                        },
+                        "name": {
+                          "type": "string"
+                        },
+                        "capacity": {
+                          "type": "integer"
+                        },
+                        "pricePerNight": {
+                          "type": "string"
+                        },
+                        "amenities": {
+                          "type": "object"
+                        },
+                        "createdAt": {
+                          "type": "string",
+                          "format": "date-time"
+                        },
+                        "updatedAt": {
+                          "type": "string",
+                          "format": "date-time"
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Room type with this name already exists"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          }
+        }
+      },
+      "delete": {
+        "summary": "Delete room type",
+        "description": "Delete a room type from the system",
+        "tags": [
+          "Room Types"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "roomTypeId",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "description": "Room type ID"
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Room type deleted successfully"
+          },
+          "400": {
+            "description": "Cannot delete room type with associated rooms"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          }
+        }
+      }
+    },
+    "/employee/services": {
+      "post": {
+        "summary": "Create a new service",
+        "description": "Create a new hotel service with pricing",
+        "tags": [
+          "Services"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "name",
+                  "price"
+                ],
+                "properties": {
+                  "name": {
+                    "type": "string",
+                    "maxLength": 100,
+                    "description": "Service name"
+                  },
+                  "price": {
+                    "type": "number",
+                    "minimum": 0,
+                    "description": "Service price (VND)"
+                  },
+                  "unit": {
+                    "type": "string",
+                    "maxLength": 50,
+                    "default": "lần",
+                    "description": "Unit of service (e.g., \"lần\", \"giờ\", \"phần\")"
+                  },
+                  "isActive": {
+                    "type": "boolean",
+                    "default": true,
+                    "description": "Whether the service is active"
+                  }
+                },
+                "example": {
+                  "name": "Giặt ủi",
+                  "price": 50000,
+                  "unit": "kg",
+                  "isActive": true
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Service created successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "id": {
+                          "type": "string",
+                          "example": "clq1234567890abcdef"
+                        },
+                        "name": {
+                          "type": "string",
+                          "example": "Giặt ủi"
+                        },
+                        "price": {
+                          "type": "string",
+                          "example": "50000"
+                        },
+                        "unit": {
+                          "type": "string",
+                          "example": "kg"
+                        },
+                        "isActive": {
+                          "type": "boolean",
+                          "example": true
+                        },
+                        "createdAt": {
+                          "type": "string",
+                          "format": "date-time"
+                        },
+                        "updatedAt": {
+                          "type": "string",
+                          "format": "date-time"
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Service with this name already exists"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          }
+        }
+      },
+      "get": {
+        "summary": "Get all services",
+        "description": "Retrieve a paginated list of services with optional filters",
+        "tags": [
+          "Services"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "query",
+            "name": "search",
+            "schema": {
+              "type": "string"
+            },
+            "description": "Search by service name"
+          },
+          {
+            "in": "query",
+            "name": "isActive",
+            "schema": {
+              "type": "boolean"
+            },
+            "description": "Filter by active status"
+          },
+          {
+            "in": "query",
+            "name": "minPrice",
+            "schema": {
+              "type": "number",
+              "minimum": 0
+            },
+            "description": "Minimum price filter"
+          },
+          {
+            "in": "query",
+            "name": "maxPrice",
+            "schema": {
+              "type": "number",
+              "minimum": 0
+            },
+            "description": "Maximum price filter"
+          },
+          {
+            "in": "query",
+            "name": "page",
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "default": 1
+            },
+            "description": "Page number"
+          },
+          {
+            "in": "query",
+            "name": "limit",
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 100,
+              "default": 10
+            },
+            "description": "Number of items per page"
+          },
+          {
+            "in": "query",
+            "name": "sortBy",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "name",
+                "price",
+                "unit",
+                "isActive",
+                "createdAt",
+                "updatedAt"
+              ],
+              "default": "name"
+            },
+            "description": "Field to sort by"
+          },
+          {
+            "in": "query",
+            "name": "sortOrder",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "asc",
+                "desc"
+              ],
+              "default": "asc"
+            },
+            "description": "Sort order"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Services retrieved successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "data": {
+                          "type": "array",
+                          "items": {
+                            "type": "object",
+                            "properties": {
+                              "id": {
+                                "type": "string"
+                              },
+                              "name": {
+                                "type": "string"
+                              },
+                              "price": {
+                                "type": "string"
+                              },
+                              "unit": {
+                                "type": "string"
+                              },
+                              "isActive": {
+                                "type": "boolean"
+                              },
+                              "createdAt": {
+                                "type": "string",
+                                "format": "date-time"
+                              },
+                              "updatedAt": {
+                                "type": "string",
+                                "format": "date-time"
+                              },
+                              "_count": {
+                                "type": "object",
+                                "properties": {
+                                  "serviceUsages": {
+                                    "type": "integer"
+                                  }
+                                }
+                              }
+                            }
+                          }
+                        },
+                        "total": {
+                          "type": "integer",
+                          "example": 15
+                        },
+                        "page": {
+                          "type": "integer",
+                          "example": 1
+                        },
+                        "limit": {
+                          "type": "integer",
+                          "example": 10
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          }
+        }
+      }
+    },
+    "/employee/services/{serviceId}": {
+      "get": {
+        "summary": "Get service by ID",
+        "description": "Retrieve a specific service's details",
+        "tags": [
+          "Services"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "serviceId",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "description": "Service ID"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Service retrieved successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "id": {
+                          "type": "string",
+                          "example": "clq1234567890abcdef"
+                        },
+                        "name": {
+                          "type": "string",
+                          "example": "Giặt ủi"
+                        },
+                        "price": {
+                          "type": "string",
+                          "example": "50000"
+                        },
+                        "unit": {
+                          "type": "string",
+                          "example": "kg"
+                        },
+                        "isActive": {
+                          "type": "boolean",
+                          "example": true
+                        },
+                        "createdAt": {
+                          "type": "string",
+                          "format": "date-time"
+                        },
+                        "updatedAt": {
+                          "type": "string",
+                          "format": "date-time"
+                        },
+                        "_count": {
+                          "type": "object",
+                          "properties": {
+                            "serviceUsages": {
+                              "type": "integer"
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          }
+        }
+      },
+      "put": {
+        "summary": "Update service",
+        "description": "Update a service's information",
+        "tags": [
+          "Services"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "serviceId",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "description": "Service ID"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "minProperties": 1,
+                "properties": {
+                  "name": {
+                    "type": "string",
+                    "maxLength": 100,
+                    "description": "Service name"
+                  },
+                  "price": {
+                    "type": "number",
+                    "minimum": 0,
+                    "description": "Service price (VND)"
+                  },
+                  "unit": {
+                    "type": "string",
+                    "maxLength": 50,
+                    "description": "Unit of service"
+                  },
+                  "isActive": {
+                    "type": "boolean",
+                    "description": "Whether the service is active"
+                  }
+                },
+                "example": {
+                  "price": 60000,
+                  "isActive": false
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Service updated successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "id": {
+                          "type": "string"
+                        },
+                        "name": {
+                          "type": "string"
+                        },
+                        "price": {
+                          "type": "string"
+                        },
+                        "unit": {
+                          "type": "string"
+                        },
+                        "isActive": {
+                          "type": "boolean"
+                        },
+                        "createdAt": {
+                          "type": "string",
+                          "format": "date-time"
+                        },
+                        "updatedAt": {
+                          "type": "string",
+                          "format": "date-time"
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Service with this name already exists"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          }
+        }
+      },
+      "delete": {
+        "summary": "Delete service",
+        "description": "Delete a service from the system",
+        "tags": [
+          "Services"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "serviceId",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "description": "Service ID"
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Service deleted successfully"
+          },
+          "400": {
+            "description": "Cannot delete service with usage history"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          }
+        }
+      }
+    }
+  },
+  "tags": [
+    {
+      "name": "Customer Auth",
+      "description": "Customer authentication endpoints"
+    },
+    {
+      "name": "Customer Bookings",
+      "description": "Customer booking management endpoints"
+    },
+    {
+      "name": "Customer Profile",
+      "description": "Customer profile management endpoints"
+    },
+    {
+      "name": "Employee Auth",
+      "description": "Employee authentication endpoints"
+    },
+    {
+      "name": "Employee Bookings",
+      "description": "Employee booking management endpoints"
+    },
+    {
+      "name": "Customer Management",
+      "description": "Customer management endpoints for employees"
+    },
+    {
+      "name": "Employee Management",
+      "description": "Employee management endpoints for administrators"
+    },
+    {
+      "name": "Employee Profile",
+      "description": "Employee profile management endpoints"
+    },
+    {
+      "name": "Rooms",
+      "description": "Room management endpoints"
+    },
+    {
+      "name": "Room Types",
+      "description": "Room type management endpoints"
+    },
+    {
+      "name": "Services",
+      "description": "Hotel service management endpoints"
+    }
+  ]
+}

@@ -35,19 +35,18 @@ const employeeController = new EmployeeController(authService, employeeService, 
  *           schema:
  *             type: object
  *             required:
- *               - email
+ *               - username
  *               - password
  *             properties:
- *               email:
+ *               username:
  *                 type: string
- *                 format: email
- *                 description: Employee email address
+ *                 description: Employee username
  *               password:
  *                 type: string
  *                 format: password
  *                 description: Employee password
  *             example:
- *               email: employee@example.com
+ *               username: admin
  *               password: password123
  *     responses:
  *       200:
@@ -64,11 +63,20 @@ const employeeController = new EmployeeController(authService, employeeService, 
  *                       type: object
  *                       properties:
  *                         id:
- *                           type: integer
- *                         email:
  *                           type: string
+ *                           example: "clq1234567890abcdef"
  *                         name:
  *                           type: string
+ *                           example: "Nguyễn Văn Admin"
+ *                         username:
+ *                           type: string
+ *                           example: "admin"
+ *                         role:
+ *                           type: string
+ *                           example: "ADMIN"
+ *                         updatedAt:
+ *                           type: string
+ *                           format: date-time
  *                     tokens:
  *                       type: object
  *                       properties:
@@ -89,7 +97,7 @@ const employeeController = new EmployeeController(authService, employeeService, 
  *                               type: string
  *                               format: date-time
  *       401:
- *         description: Incorrect email or password
+ *         description: Incorrect username or password
  *         content:
  *           application/json:
  *             schema:
@@ -100,7 +108,7 @@ const employeeController = new EmployeeController(authService, employeeService, 
  *                   example: 401
  *                 message:
  *                   type: string
- *                   example: Incorrect email or password
+ *                   example: Incorrect username or password
  */
 router.post('/login', validate(employeeValidation.login), employeeController.login);
 
@@ -200,7 +208,7 @@ router.post(
  * /employee/auth/forgot-password:
  *   post:
  *     summary: Forgot password
- *     description: Send a password reset email to the employee
+ *     description: Generate a password reset token for the employee
  *     tags: [Employee Auth]
  *     security: []
  *     requestBody:
@@ -210,17 +218,27 @@ router.post(
  *           schema:
  *             type: object
  *             required:
- *               - email
+ *               - username
  *             properties:
- *               email:
+ *               username:
  *                 type: string
- *                 format: email
- *                 description: Employee email address
+ *                 description: Employee username
  *             example:
- *               email: employee@example.com
+ *               username: admin
  *     responses:
- *       204:
- *         description: Password reset email sent successfully
+ *       200:
+ *         description: Reset token generated successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 data:
+ *                   type: object
+ *                   properties:
+ *                     resetPasswordToken:
+ *                       type: string
+ *                       example: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
  *       404:
  *         $ref: '#/components/responses/NotFound'
  */
@@ -238,6 +256,13 @@ router.post(
  *     description: Reset employee password using a valid reset token
  *     tags: [Employee Auth]
  *     security: []
+ *     parameters:
+ *       - in: query
+ *         name: token
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: Password reset token from forgot-password endpoint
  *     requestBody:
  *       required: true
  *       content:
@@ -245,19 +270,14 @@ router.post(
  *           schema:
  *             type: object
  *             required:
- *               - token
  *               - password
  *             properties:
- *               token:
- *                 type: string
- *                 description: Password reset token from email
  *               password:
  *                 type: string
  *                 format: password
  *                 minLength: 8
- *                 description: New password (minimum 8 characters)
+ *                 description: New password (minimum 8 characters, must contain letter and number)
  *             example:
- *               token: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
  *               password: newPassword123
  *     responses:
  *       204:
