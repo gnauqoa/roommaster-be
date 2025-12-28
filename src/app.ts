@@ -5,6 +5,7 @@ import cors from 'cors';
 import passport from 'passport';
 import httpStatus from 'http-status';
 import swaggerUi from 'swagger-ui-express';
+import basicAuth from 'express-basic-auth';
 import config from './config/env';
 import morgan from './config/morgan';
 import xss from './middlewares/xss';
@@ -61,9 +62,14 @@ if (config.env === 'production') {
   app.use('/v1/auth', authLimiter);
 }
 
-// Swagger API documentation
+// Swagger API documentation with basic authentication
 app.use(
   '/api-docs',
+  basicAuth({
+    users: { [config.swagger.username]: config.swagger.password },
+    challenge: true,
+    realm: 'Roommaster API Documentation'
+  }),
   swaggerUi.serve,
   swaggerUi.setup(swaggerSpec, {
     explorer: true,

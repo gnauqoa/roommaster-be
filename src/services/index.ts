@@ -6,6 +6,7 @@ export { EmployeeService } from './employee.service';
 export { BookingService } from './booking.service';
 export { RoomTypeService } from './roomType.service';
 export { RoomService } from './room.service';
+export { RoomTagService } from './roomTag.service';
 export { ServiceService } from './service.service';
 export { UsageServiceService } from './usage-service.service';
 export { TransactionService } from './transaction';
