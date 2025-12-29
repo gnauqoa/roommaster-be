@@ -1,7 +1,10 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { describe, it, expect, beforeEach } from '@jest/globals';
+import { describe, it, expect } from '@jest/globals';
 import { Prisma, TransactionType } from '@prisma/client';
-import { updateBookingTotals, getDefaultDescription } from '@/services/transaction/helpers/booking-updater';
+import {
+  updateBookingTotals,
+  getDefaultDescription
+} from '@/services/transaction/helpers/booking-updater';
 import ApiError from '@/utils/ApiError';
 
 describe('Booking Updater', () => {
