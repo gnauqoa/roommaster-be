@@ -139,9 +139,7 @@
       "post": {
         "summary": "Customer registration",
         "description": "Register a new customer account",
-        "tags": [
-          "Customer Auth"
-        ],
+        "tags": ["Customer Auth"],
         "security": [],
         "requestBody": {
           "required": true,
@@ -149,11 +147,7 @@
             "application/json": {
               "schema": {
                 "type": "object",
-                "required": [
-                  "fullName",
-                  "phone",
-                  "password"
-                ],
+                "required": ["fullName", "phone", "password"],
                 "properties": {
                   "fullName": {
                     "type": "string",
@@ -267,9 +261,7 @@
       "post": {
         "summary": "Customer login",
         "description": "Authenticate a customer and return access and refresh tokens",
-        "tags": [
-          "Customer Auth"
-        ],
+        "tags": ["Customer Auth"],
         "security": [],
         "requestBody": {
           "required": true,
@@ -277,10 +269,7 @@
             "application/json": {
               "schema": {
                 "type": "object",
-                "required": [
-                  "phone",
-                  "password"
-                ],
+                "required": ["phone", "password"],
                 "properties": {
                   "phone": {
                     "type": "string",
@@ -334,9 +323,7 @@
       "post": {
         "summary": "Customer logout",
         "description": "Logout a customer by invalidating the refresh token",
-        "tags": [
-          "Customer Auth"
-        ],
+        "tags": ["Customer Auth"],
         "security": [],
         "requestBody": {
           "required": true,
@@ -344,9 +331,7 @@
             "application/json": {
               "schema": {
                 "type": "object",
-                "required": [
-                  "refreshToken"
-                ],
+                "required": ["refreshToken"],
                 "properties": {
                   "refreshToken": {
                     "type": "string"
@@ -373,9 +358,7 @@
       "post": {
         "summary": "Refresh auth tokens",
         "description": "Generate new access and refresh tokens using a valid refresh token",
-        "tags": [
-          "Customer Auth"
-        ],
+        "tags": ["Customer Auth"],
         "security": [],
         "requestBody": {
           "required": true,
@@ -383,9 +366,7 @@
             "application/json": {
               "schema": {
                 "type": "object",
-                "required": [
-                  "refreshToken"
-                ],
+                "required": ["refreshToken"],
                 "properties": {
                   "refreshToken": {
                     "type": "string"
@@ -429,9 +410,7 @@
       "post": {
         "summary": "Forgot password",
         "description": "Send a password reset token for the customer",
-        "tags": [
-          "Customer Auth"
-        ],
+        "tags": ["Customer Auth"],
         "security": [],
         "requestBody": {
           "required": true,
@@ -439,9 +418,7 @@
             "application/json": {
               "schema": {
                 "type": "object",
-                "required": [
-                  "phone"
-                ],
+                "required": ["phone"],
                 "properties": {
                   "phone": {
                     "type": "string",
@@ -486,9 +463,7 @@
       "post": {
         "summary": "Reset password",
         "description": "Reset customer password using a valid reset token",
-        "tags": [
-          "Customer Auth"
-        ],
+        "tags": ["Customer Auth"],
         "security": [],
         "parameters": [
           {
@@ -507,9 +482,7 @@
             "application/json": {
               "schema": {
                 "type": "object",
-                "required": [
-                  "password"
-                ],
+                "required": ["password"],
                 "properties": {
                   "password": {
                     "type": "string",
@@ -539,9 +512,7 @@
       "post": {
         "summary": "Create a new booking",
         "description": "Create a booking with automatic room allocation based on room type and count",
-        "tags": [
-          "Customer Bookings"
-        ],
+        "tags": ["Customer Bookings"],
         "security": [
           {
             "bearerAuth": []
@@ -553,21 +524,13 @@
             "application/json": {
               "schema": {
                 "type": "object",
-                "required": [
-                  "rooms",
-                  "checkInDate",
-                  "checkOutDate",
-                  "totalGuests"
-                ],
+                "required": ["rooms", "checkInDate", "checkOutDate", "totalGuests"],
                 "properties": {
                   "rooms": {
                     "type": "array",
                     "items": {
                       "type": "object",
-                      "required": [
-                        "roomTypeId",
-                        "count"
-                      ],
+                      "required": ["roomTypeId", "count"],
                       "properties": {
                         "roomTypeId": {
                           "type": "string",
@@ -664,9 +627,7 @@
       "get": {
         "summary": "Get booking details",
         "description": "Retrieve detailed information about a specific booking",
-        "tags": [
-          "Customer Bookings"
-        ],
+        "tags": ["Customer Bookings"],
         "security": [
           {
             "bearerAuth": []
@@ -700,9 +661,7 @@
       "get": {
         "summary": "Get customer profile",
         "description": "Retrieve the authenticated customer's profile information",
-        "tags": [
-          "Customer Profile"
-        ],
+        "tags": ["Customer Profile"],
         "security": [
           {
             "bearerAuth": []
@@ -760,9 +719,7 @@
       "patch": {
         "summary": "Update customer profile",
         "description": "Update the authenticated customer's profile information",
-        "tags": [
-          "Customer Profile"
-        ],
+        "tags": ["Customer Profile"],
         "security": [
           {
             "bearerAuth": []
@@ -844,9 +801,7 @@
       "post": {
         "summary": "Change customer password",
         "description": "Change the authenticated customer's password",
-        "tags": [
-          "Customer Profile"
-        ],
+        "tags": ["Customer Profile"],
         "security": [
           {
             "bearerAuth": []
@@ -858,10 +813,7 @@
             "application/json": {
               "schema": {
                 "type": "object",
-                "required": [
-                  "currentPassword",
-                  "newPassword"
-                ],
+                "required": ["currentPassword", "newPassword"],
                 "properties": {
                   "currentPassword": {
                     "type": "string",
@@ -896,13 +848,386 @@
         }
       }
     },
+    "/customer/promotions/available": {
+      "get": {
+        "summary": "Get all available promotions (public listing)",
+        "tags": ["Customer Promotions"],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      }
+    },
+    "/customer/promotions/my-promotions": {
+      "get": {
+        "summary": "Get customer's claimed promotions",
+        "tags": ["Customer Promotions"],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      }
+    },
+    "/customer/promotions/claim": {
+      "post": {
+        "summary": "Claim a promotion by code",
+        "tags": ["Customer Promotions"],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      }
+    },
+    "/customer/rooms": {
+      "get": {
+        "summary": "Search available rooms",
+        "description": "Search and filter available rooms with pagination",
+        "tags": ["Customer Rooms"],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "query",
+            "name": "search",
+            "schema": {
+              "type": "string"
+            },
+            "description": "Search by room number"
+          },
+          {
+            "in": "query",
+            "name": "floor",
+            "schema": {
+              "type": "integer"
+            },
+            "description": "Filter by floor number"
+          },
+          {
+            "in": "query",
+            "name": "roomTypeId",
+            "schema": {
+              "type": "string"
+            },
+            "description": "Filter by room type ID"
+          },
+          {
+            "in": "query",
+            "name": "minCapacity",
+            "schema": {
+              "type": "integer"
+            },
+            "description": "Minimum capacity"
+          },
+          {
+            "in": "query",
+            "name": "maxCapacity",
+            "schema": {
+              "type": "integer"
+            },
+            "description": "Maximum capacity"
+          },
+          {
+            "in": "query",
+            "name": "minPrice",
+            "schema": {
+              "type": "number"
+            },
+            "description": "Minimum price per night"
+          },
+          {
+            "in": "query",
+            "name": "maxPrice",
+            "schema": {
+              "type": "number"
+            },
+            "description": "Maximum price per night"
+          },
+          {
+            "in": "query",
+            "name": "page",
+            "schema": {
+              "type": "integer",
+              "default": 1
+            },
+            "description": "Page number"
+          },
+          {
+            "in": "query",
+            "name": "limit",
+            "schema": {
+              "type": "integer",
+              "default": 10
+            },
+            "description": "Items per page"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "List of available rooms"
+          },
+          "401": {
+            "description": "Unauthorized"
+          }
+        }
+      }
+    },
+    "/customer/rooms/{roomId}": {
+      "get": {
+        "summary": "Get room details",
+        "description": "Get detailed information about a specific room",
+        "tags": ["Customer Rooms"],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "roomId",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "description": "Room ID"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Room details"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "404": {
+            "description": "Room not found"
+          }
+        }
+      }
+    },
+    "/customer/service/service-usage": {
+      "post": {
+        "summary": "Create a service usage record (DEPRECATED)",
+        "description": "Service usage creation is now employee-only. Customers should contact staff.",
+        "deprecated": true,
+        "tags": ["Customer Services"],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "responses": {
+          "501": {
+            "description": "Service usage is now employee-only"
+          }
+        }
+      }
+    },
+    "/customer/service/service-usage/{id}": {
+      "patch": {
+        "summary": "Update own service usage (DEPRECATED)",
+        "description": "Service usage updates are now employee-only. Customers should contact staff.",
+        "deprecated": true,
+        "tags": ["Customer Services"],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "responses": {
+          "501": {
+            "description": "Service usage updates are now employee-only"
+          }
+        }
+      }
+    },
+    "/employee/activities": {
+      "get": {
+        "summary": "Get all activities",
+        "description": "Retrieve activity logs with filtering and pagination",
+        "tags": ["Employee Activities"],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "query",
+            "name": "type",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "CREATE_BOOKING",
+                "UPDATE_BOOKING",
+                "CREATE_BOOKING_ROOM",
+                "UPDATE_BOOKING_ROOM",
+                "CREATE_SERVICE_USAGE",
+                "UPDATE_SERVICE_USAGE",
+                "CREATE_TRANSACTION",
+                "UPDATE_TRANSACTION",
+                "CREATE_CUSTOMER",
+                "CHECKED_IN",
+                "CHECKED_OUT",
+                "CREATE_PROMOTION",
+                "UPDATE_PROMOTION",
+                "CLAIM_PROMOTION"
+              ]
+            },
+            "description": "Filter by activity type"
+          },
+          {
+            "in": "query",
+            "name": "customerId",
+            "schema": {
+              "type": "string"
+            },
+            "description": "Filter by customer ID"
+          },
+          {
+            "in": "query",
+            "name": "employeeId",
+            "schema": {
+              "type": "string"
+            },
+            "description": "Filter by employee ID"
+          },
+          {
+            "in": "query",
+            "name": "bookingRoomId",
+            "schema": {
+              "type": "string"
+            },
+            "description": "Filter by booking room ID"
+          },
+          {
+            "in": "query",
+            "name": "serviceUsageId",
+            "schema": {
+              "type": "string"
+            },
+            "description": "Filter by service usage ID"
+          },
+          {
+            "in": "query",
+            "name": "startDate",
+            "schema": {
+              "type": "string",
+              "format": "date-time"
+            },
+            "description": "Filter activities from this date"
+          },
+          {
+            "in": "query",
+            "name": "endDate",
+            "schema": {
+              "type": "string",
+              "format": "date-time"
+            },
+            "description": "Filter activities until this date"
+          },
+          {
+            "in": "query",
+            "name": "search",
+            "schema": {
+              "type": "string"
+            },
+            "description": "Search in activity description"
+          },
+          {
+            "in": "query",
+            "name": "page",
+            "schema": {
+              "type": "integer",
+              "default": 1
+            },
+            "description": "Page number"
+          },
+          {
+            "in": "query",
+            "name": "limit",
+            "schema": {
+              "type": "integer",
+              "default": 20
+            },
+            "description": "Items per page"
+          },
+          {
+            "in": "query",
+            "name": "sortBy",
+            "schema": {
+              "type": "string",
+              "enum": ["createdAt", "type", "updatedAt"],
+              "default": "createdAt"
+            },
+            "description": "Sort by field"
+          },
+          {
+            "in": "query",
+            "name": "sortOrder",
+            "schema": {
+              "type": "string",
+              "enum": ["asc", "desc"],
+              "default": "desc"
+            },
+            "description": "Sort order"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "List of activities"
+          },
+          "401": {
+            "description": "Unauthorized"
+          }
+        }
+      }
+    },
+    "/employee/activities/{activityId}": {
+      "get": {
+        "summary": "Get activity by ID",
+        "description": "Get detailed information about a specific activity",
+        "tags": ["Employee Activities"],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "activityId",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "description": "Activity ID"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Activity details"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "404": {
+            "description": "Activity not found"
+          }
+        }
+      }
+    },
     "/employee/auth/login": {
       "post": {
         "summary": "Employee login",
         "description": "Authenticate an employee and return access and refresh tokens",
-        "tags": [
-          "Employee Auth"
-        ],
+        "tags": ["Employee Auth"],
         "security": [],
         "requestBody": {
           "required": true,
@@ -910,10 +1235,7 @@
             "application/json": {
               "schema": {
                 "type": "object",
-                "required": [
-                  "username",
-                  "password"
-                ],
+                "required": ["username", "password"],
                 "properties": {
                   "username": {
                     "type": "string",
@@ -1032,9 +1354,7 @@
       "post": {
         "summary": "Employee logout",
         "description": "Logout an employee by invalidating the refresh token",
-        "tags": [
-          "Employee Auth"
-        ],
+        "tags": ["Employee Auth"],
         "security": [],
         "requestBody": {
           "required": true,
@@ -1042,9 +1362,7 @@
             "application/json": {
               "schema": {
                 "type": "object",
-                "required": [
-                  "refreshToken"
-                ],
+                "required": ["refreshToken"],
                 "properties": {
                   "refreshToken": {
                     "type": "string",
@@ -1072,9 +1390,7 @@
       "post": {
         "summary": "Refresh auth tokens",
         "description": "Generate new access and refresh tokens using a valid refresh token",
-        "tags": [
-          "Employee Auth"
-        ],
+        "tags": ["Employee Auth"],
         "security": [],
         "requestBody": {
           "required": true,
@@ -1082,9 +1398,7 @@
             "application/json": {
               "schema": {
                 "type": "object",
-                "required": [
-                  "refreshToken"
-                ],
+                "required": ["refreshToken"],
                 "properties": {
                   "refreshToken": {
                     "type": "string",
@@ -1155,9 +1469,7 @@
       "post": {
         "summary": "Forgot password",
         "description": "Generate a password reset token for the employee",
-        "tags": [
-          "Employee Auth"
-        ],
+        "tags": ["Employee Auth"],
         "security": [],
         "requestBody": {
           "required": true,
@@ -1165,9 +1477,7 @@
             "application/json": {
               "schema": {
                 "type": "object",
-                "required": [
-                  "username"
-                ],
+                "required": ["username"],
                 "properties": {
                   "username": {
                     "type": "string",
@@ -1213,9 +1523,7 @@
       "post": {
         "summary": "Reset password",
         "description": "Reset employee password using a valid reset token",
-        "tags": [
-          "Employee Auth"
-        ],
+        "tags": ["Employee Auth"],
         "security": [],
         "parameters": [
           {
@@ -1234,9 +1542,7 @@
             "application/json": {
               "schema": {
                 "type": "object",
-                "required": [
-                  "password"
-                ],
+                "required": ["password"],
                 "properties": {
                   "password": {
                     "type": "string",
@@ -1280,12 +1586,10 @@
       }
     },
     "/employee/bookings/check-in": {
-      "patch": {
-        "summary": "Check in guests for a confirmed booking",
-        "description": "Update booking and room status to checked-in, record actual check-in time",
-        "tags": [
-          "Employee Bookings"
-        ],
+      "post": {
+        "summary": "Check in specific booking rooms with customer assignments",
+        "description": "Check in one or more booking rooms and assign customers to each room",
+        "tags": ["Employee Bookings"],
         "security": [
           {
             "bearerAuth": []
@@ -1297,52 +1601,38 @@
             "application/json": {
               "schema": {
                 "type": "object",
-                "required": [
-                  "bookingId",
-                  "bookingRoomId",
-                  "guests"
-                ],
+                "required": ["checkInInfo"],
                 "properties": {
-                  "bookingId": {
-                    "type": "string",
-                    "description": "Booking ID"
-                  },
-                  "bookingRoomId": {
-                    "type": "string",
-                    "description": "Booking room ID to check in"
-                  },
-                  "guests": {
+                  "checkInInfo": {
                     "type": "array",
                     "items": {
                       "type": "object",
-                      "required": [
-                        "customerId"
-                      ],
+                      "required": ["bookingRoomId", "customerIds"],
                       "properties": {
-                        "customerId": {
+                        "bookingRoomId": {
                           "type": "string",
-                          "description": "Customer ID"
+                          "description": "Booking room ID to check in"
                         },
-                        "isPrimary": {
-                          "type": "boolean",
-                          "description": "Whether this guest is the primary contact for the room"
+                        "customerIds": {
+                          "type": "array",
+                          "items": {
+                            "type": "string"
+                          },
+                          "description": "List of customer IDs staying in this room"
                         }
                       }
-                    },
-                    "description": "List of guests checking in"
+                    }
                   }
                 },
                 "example": {
-                  "bookingId": "booking_id_123",
-                  "bookingRoomId": "booking_room_id_456",
-                  "guests": [
+                  "checkInInfo": [
                     {
-                      "customerId": "customer_id_1",
-                      "isPrimary": true
+                      "bookingRoomId": "booking_room_id_1",
+                      "customerIds": ["customer_id_1", "customer_id_2"]
                     },
                     {
-                      "customerId": "customer_id_2",
-                      "isPrimary": false
+                      "bookingRoomId": "booking_room_id_2",
+                      "customerIds": ["customer_id_3"]
                     }
                   ]
                 }
@@ -1361,11 +1651,9 @@
                     "data": {
                       "type": "object",
                       "properties": {
-                        "booking": {
-                          "type": "object"
-                        },
-                        "bookingRoom": {
-                          "type": "object"
+                        "bookingRooms": {
+                          "type": "array",
+                          "description": "Updated booking rooms with customer assignments"
                         }
                       }
                     }
@@ -1386,13 +1674,11 @@
         }
       }
     },
-    "/employee/bookings/transaction": {
+    "/employee/bookings/check-out": {
       "post": {
-        "summary": "Create a transaction for a booking",
-        "description": "Process various transaction types (deposit, charges, refunds, adjustments) with type-specific business logic",
-        "tags": [
-          "Employee Bookings"
-        ],
+        "summary": "Check out specific booking rooms",
+        "description": "Check out one or more booking rooms and update room status to available",
+        "tags": ["Employee Bookings"],
         "security": [
           {
             "bearerAuth": []
@@ -1404,70 +1690,26 @@
             "application/json": {
               "schema": {
                 "type": "object",
-                "required": [
-                  "bookingId",
-                  "transactionType",
-                  "amount",
-                  "method"
-                ],
+                "required": ["bookingRoomIds"],
                 "properties": {
-                  "bookingId": {
-                    "type": "string",
-                    "description": "Booking ID"
-                  },
-                  "transactionType": {
-                    "type": "string",
-                    "enum": [
-                      "DEPOSIT",
-                      "ROOM_CHARGE",
-                      "SERVICE_CHARGE",
-                      "REFUND",
-                      "ADJUSTMENT"
-                    ],
-                    "description": "Type of transaction"
-                  },
-                  "amount": {
-                    "type": "number",
-                    "description": "Transaction amount (can be negative for adjustments)"
-                  },
-                  "method": {
-                    "type": "string",
-                    "enum": [
-                      "CASH",
-                      "CREDIT_CARD",
-                      "BANK_TRANSFER",
-                      "E_WALLET"
-                    ],
-                    "description": "Payment method"
-                  },
-                  "bookingRoomId": {
-                    "type": "string",
-                    "description": "Specific booking room ID (optional, for room-specific charges)"
-                  },
-                  "transactionRef": {
-                    "type": "string",
-                    "description": "External transaction reference (optional)"
-                  },
-                  "description": {
-                    "type": "string",
-                    "description": "Additional notes about the transaction (optional)"
+                  "bookingRoomIds": {
+                    "type": "array",
+                    "items": {
+                      "type": "string"
+                    },
+                    "description": "List of booking room IDs to check out"
                   }
                 },
                 "example": {
-                  "bookingId": "booking_id_123",
-                  "transactionType": "DEPOSIT",
-                  "amount": 500000,
-                  "method": "BANK_TRANSFER",
-                  "transactionRef": "TXN123456",
-                  "description": "Initial deposit payment"
+                  "bookingRoomIds": ["booking_room_id_1", "booking_room_id_2"]
                 }
               }
             }
           }
         },
         "responses": {
-          "201": {
-            "description": "Transaction created successfully",
+          "200": {
+            "description": "Check-out successful",
             "content": {
               "application/json": {
                 "schema": {
@@ -1476,13 +1718,9 @@
                     "data": {
                       "type": "object",
                       "properties": {
-                        "transaction": {
-                          "type": "object",
-                          "description": "Created transaction details"
-                        },
-                        "booking": {
-                          "type": "object",
-                          "description": "Updated booking with new totals and status"
+                        "bookingRooms": {
+                          "type": "array",
+                          "description": "Updated booking rooms after check-out"
                         }
                       }
                     }
@@ -1492,7 +1730,7 @@
             }
           },
           "400": {
-            "description": "Invalid request or business rule violation"
+            "description": "Invalid booking status or validation error"
           },
           "401": {
             "$ref": "#/components/responses/Unauthorized"
@@ -1507,9 +1745,7 @@
       "get": {
         "summary": "Get booking details",
         "description": "Retrieve detailed information about a specific booking",
-        "tags": [
-          "Employee Bookings"
-        ],
+        "tags": ["Employee Bookings"],
         "security": [
           {
             "bearerAuth": []
@@ -1543,9 +1779,7 @@
       "post": {
         "summary": "Create a new customer",
         "description": "Create a new customer account (employee only)",
-        "tags": [
-          "Customer Management"
-        ],
+        "tags": ["Customer Management"],
         "security": [
           {
             "bearerAuth": []
@@ -1557,11 +1791,7 @@
             "application/json": {
               "schema": {
                 "type": "object",
-                "required": [
-                  "fullName",
-                  "phone",
-                  "password"
-                ],
+                "required": ["fullName", "phone", "password"],
                 "properties": {
                   "fullName": {
                     "type": "string",
@@ -1667,9 +1897,7 @@
       "get": {
         "summary": "Get all customers",
         "description": "Retrieve a paginated list of customers with optional filters",
-        "tags": [
-          "Customer Management"
-        ],
+        "tags": ["Customer Management"],
         "security": [
           {
             "bearerAuth": []
@@ -1710,13 +1938,7 @@
             "name": "sortBy",
             "schema": {
               "type": "string",
-              "enum": [
-                "fullName",
-                "phone",
-                "email",
-                "createdAt",
-                "updatedAt"
-              ],
+              "enum": ["fullName", "phone", "email", "createdAt", "updatedAt"],
               "default": "createdAt"
             },
             "description": "Field to sort by"
@@ -1726,10 +1948,7 @@
             "name": "sortOrder",
             "schema": {
               "type": "string",
-              "enum": [
-                "asc",
-                "desc"
-              ],
+              "enum": ["asc", "desc"],
               "default": "desc"
             },
             "description": "Sort order"
@@ -1817,9 +2036,7 @@
       "get": {
         "summary": "Get customer by ID",
         "description": "Retrieve a specific customer's details",
-        "tags": [
-          "Customer Management"
-        ],
+        "tags": ["Customer Management"],
         "security": [
           {
             "bearerAuth": []
@@ -1897,9 +2114,7 @@
       "put": {
         "summary": "Update customer",
         "description": "Update a customer's information",
-        "tags": [
-          "Customer Management"
-        ],
+        "tags": ["Customer Management"],
         "security": [
           {
             "bearerAuth": []
@@ -2010,9 +2225,7 @@
       "delete": {
         "summary": "Delete customer",
         "description": "Delete a customer from the system",
-        "tags": [
-          "Customer Management"
-        ],
+        "tags": ["Customer Management"],
         "security": [
           {
             "bearerAuth": []
@@ -2049,9 +2262,7 @@
       "post": {
         "summary": "Create a new employee",
         "description": "Create a new employee account (admin only)",
-        "tags": [
-          "Employee Management"
-        ],
+        "tags": ["Employee Management"],
         "security": [
           {
             "bearerAuth": []
@@ -2063,11 +2274,7 @@
             "application/json": {
               "schema": {
                 "type": "object",
-                "required": [
-                  "name",
-                  "username",
-                  "password"
-                ],
+                "required": ["name", "username", "password"],
                 "properties": {
                   "name": {
                     "type": "string",
@@ -2087,12 +2294,7 @@
                   },
                   "role": {
                     "type": "string",
-                    "enum": [
-                      "ADMIN",
-                      "RECEPTIONIST",
-                      "HOUSEKEEPING",
-                      "STAFF"
-                    ],
+                    "enum": ["ADMIN", "RECEPTIONIST", "HOUSEKEEPING", "STAFF"],
                     "default": "STAFF",
                     "description": "Employee role"
                   }
@@ -2156,9 +2358,7 @@
       "get": {
         "summary": "Get all employees",
         "description": "Retrieve a paginated list of employees with optional filters",
-        "tags": [
-          "Employee Management"
-        ],
+        "tags": ["Employee Management"],
         "security": [
           {
             "bearerAuth": []
@@ -2178,12 +2378,7 @@
             "name": "role",
             "schema": {
               "type": "string",
-              "enum": [
-                "ADMIN",
-                "RECEPTIONIST",
-                "HOUSEKEEPING",
-                "STAFF"
-              ]
+              "enum": ["ADMIN", "RECEPTIONIST", "HOUSEKEEPING", "STAFF"]
             },
             "description": "Filter by role"
           },
@@ -2213,13 +2408,7 @@
             "name": "sortBy",
             "schema": {
               "type": "string",
-              "enum": [
-                "name",
-                "username",
-                "role",
-                "createdAt",
-                "updatedAt"
-              ],
+              "enum": ["name", "username", "role", "createdAt", "updatedAt"],
               "default": "createdAt"
             },
             "description": "Field to sort by"
@@ -2229,10 +2418,7 @@
             "name": "sortOrder",
             "schema": {
               "type": "string",
-              "enum": [
-                "asc",
-                "desc"
-              ],
+              "enum": ["asc", "desc"],
               "default": "desc"
             },
             "description": "Sort order"
@@ -2302,9 +2488,7 @@
       "get": {
         "summary": "Get employee by ID",
         "description": "Retrieve a specific employee's details",
-        "tags": [
-          "Employee Management"
-        ],
+        "tags": ["Employee Management"],
         "security": [
           {
             "bearerAuth": []
@@ -2370,9 +2554,7 @@
       "put": {
         "summary": "Update employee",
         "description": "Update an employee's information",
-        "tags": [
-          "Employee Management"
-        ],
+        "tags": ["Employee Management"],
         "security": [
           {
             "bearerAuth": []
@@ -2404,12 +2586,7 @@
                   },
                   "role": {
                     "type": "string",
-                    "enum": [
-                      "ADMIN",
-                      "RECEPTIONIST",
-                      "HOUSEKEEPING",
-                      "STAFF"
-                    ],
+                    "enum": ["ADMIN", "RECEPTIONIST", "HOUSEKEEPING", "STAFF"],
                     "description": "Employee role"
                   }
                 },
@@ -2469,9 +2646,7 @@
       "delete": {
         "summary": "Delete employee",
         "description": "Delete an employee from the system",
-        "tags": [
-          "Employee Management"
-        ],
+        "tags": ["Employee Management"],
         "security": [
           {
             "bearerAuth": []
@@ -2508,9 +2683,7 @@
       "get": {
         "summary": "Get employee profile",
         "description": "Retrieve the authenticated employee's profile information",
-        "tags": [
-          "Employee Profile"
-        ],
+        "tags": ["Employee Profile"],
         "security": [
           {
             "bearerAuth": []
@@ -2538,12 +2711,7 @@
                         },
                         "role": {
                           "type": "string",
-                          "enum": [
-                            "ADMIN",
-                            "RECEPTIONIST",
-                            "HOUSEKEEPING",
-                            "STAFF"
-                          ]
+                          "enum": ["ADMIN", "RECEPTIONIST", "HOUSEKEEPING", "STAFF"]
                         },
                         "updatedAt": {
                           "type": "string",
@@ -2564,9 +2732,7 @@
       "patch": {
         "summary": "Update employee profile",
         "description": "Update the authenticated employee's profile information",
-        "tags": [
-          "Employee Profile"
-        ],
+        "tags": ["Employee Profile"],
         "security": [
           {
             "bearerAuth": []
@@ -2634,9 +2800,7 @@
       "post": {
         "summary": "Change employee password",
         "description": "Change the authenticated employee's password",
-        "tags": [
-          "Employee Profile"
-        ],
+        "tags": ["Employee Profile"],
         "security": [
           {
             "bearerAuth": []
@@ -2648,10 +2812,7 @@
             "application/json": {
               "schema": {
                 "type": "object",
-                "required": [
-                  "currentPassword",
-                  "newPassword"
-                ],
+                "required": ["currentPassword", "newPassword"],
                 "properties": {
                   "currentPassword": {
                     "type": "string",
@@ -2686,13 +2847,42 @@
         }
       }
     },
+    "/employee/promotions": {
+      "post": {
+        "summary": "Create a new promotion",
+        "tags": ["Employee Promotions"],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      },
+      "get": {
+        "summary": "Get all promotions",
+        "tags": ["Employee Promotions"],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      }
+    },
+    "/employee/promotions/{id}": {
+      "patch": {
+        "summary": "Update a promotion",
+        "tags": ["Employee Promotions"],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      }
+    },
     "/employee/rooms": {
       "post": {
         "summary": "Create a new room",
         "description": "Create a new room assigned to a room type",
-        "tags": [
-          "Rooms"
-        ],
+        "tags": ["Rooms"],
         "security": [
           {
             "bearerAuth": []
@@ -2704,11 +2894,7 @@
             "application/json": {
               "schema": {
                 "type": "object",
-                "required": [
-                  "roomNumber",
-                  "floor",
-                  "roomTypeId"
-                ],
+                "required": ["roomNumber", "floor", "roomTypeId"],
                 "properties": {
                   "roomNumber": {
                     "type": "string",
@@ -2823,9 +3009,7 @@
       "get": {
         "summary": "Get all rooms",
         "description": "Retrieve a paginated list of rooms with optional filters",
-        "tags": [
-          "Rooms"
-        ],
+        "tags": ["Rooms"],
         "security": [
           {
             "bearerAuth": []
@@ -2898,13 +3082,7 @@
             "name": "sortBy",
             "schema": {
               "type": "string",
-              "enum": [
-                "roomNumber",
-                "floor",
-                "status",
-                "createdAt",
-                "updatedAt"
-              ],
+              "enum": ["roomNumber", "floor", "status", "createdAt", "updatedAt"],
               "default": "roomNumber"
             },
             "description": "Field to sort by"
@@ -2914,10 +3092,7 @@
             "name": "sortOrder",
             "schema": {
               "type": "string",
-              "enum": [
-                "asc",
-                "desc"
-              ],
+              "enum": ["asc", "desc"],
               "default": "asc"
             },
             "description": "Sort order"
@@ -3019,9 +3194,7 @@
       "get": {
         "summary": "Get room by ID",
         "description": "Retrieve a specific room's details",
-        "tags": [
-          "Rooms"
-        ],
+        "tags": ["Rooms"],
         "security": [
           {
             "bearerAuth": []
@@ -3119,9 +3292,7 @@
       "put": {
         "summary": "Update room",
         "description": "Update a room's information",
-        "tags": [
-          "Rooms"
-        ],
+        "tags": ["Rooms"],
         "security": [
           {
             "bearerAuth": []
@@ -3238,9 +3409,7 @@
       "delete": {
         "summary": "Delete room",
         "description": "Delete a room from the system",
-        "tags": [
-          "Rooms"
-        ],
+        "tags": ["Rooms"],
         "security": [
           {
             "bearerAuth": []
@@ -3273,13 +3442,10 @@
         }
       }
     },
-    "/employee/room-types": {
+    "/employee/room-tags": {
       "post": {
-        "summary": "Create a new room type",
-        "description": "Create a new room type with pricing and amenities",
-        "tags": [
-          "Room Types"
-        ],
+        "summary": "Create a new room tag",
+        "tags": ["Employee Room Tags"],
         "security": [
           {
             "bearerAuth": []
@@ -3291,11 +3457,170 @@
             "application/json": {
               "schema": {
                 "type": "object",
-                "required": [
-                  "name",
-                  "capacity",
-                  "pricePerNight"
-                ],
+                "required": ["name"],
+                "properties": {
+                  "name": {
+                    "type": "string"
+                  },
+                  "description": {
+                    "type": "string"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Room tag created"
+          },
+          "400": {
+            "description": "Bad request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          }
+        }
+      },
+      "get": {
+        "summary": "Get all room tags",
+        "tags": ["Employee Room Tags"],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "List of room tags"
+          },
+          "401": {
+            "description": "Unauthorized"
+          }
+        }
+      }
+    },
+    "/employee/room-tags/{tagId}": {
+      "get": {
+        "summary": "Get room tag by ID",
+        "tags": ["Employee Room Tags"],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "tagId",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Room tag details"
+          },
+          "404": {
+            "description": "Room tag not found"
+          }
+        }
+      },
+      "patch": {
+        "summary": "Update room tag",
+        "tags": ["Employee Room Tags"],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "tagId",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "name": {
+                    "type": "string"
+                  },
+                  "description": {
+                    "type": "string"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Room tag updated"
+          },
+          "404": {
+            "description": "Room tag not found"
+          }
+        }
+      },
+      "delete": {
+        "summary": "Delete room tag",
+        "tags": ["Employee Room Tags"],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "tagId",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Room tag deleted"
+          },
+          "400": {
+            "description": "Cannot delete tag in use"
+          },
+          "404": {
+            "description": "Room tag not found"
+          }
+        }
+      }
+    },
+    "/employee/room-types": {
+      "post": {
+        "summary": "Create a new room type",
+        "description": "Create a new room type with pricing and amenities",
+        "tags": ["Room Types"],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["name", "capacity", "pricePerNight"],
                 "properties": {
                   "name": {
                     "type": "string",
@@ -3392,9 +3717,7 @@
       "get": {
         "summary": "Get all room types",
         "description": "Retrieve a paginated list of room types with optional filters",
-        "tags": [
-          "Room Types"
-        ],
+        "tags": ["Room Types"],
         "security": [
           {
             "bearerAuth": []
@@ -3471,13 +3794,7 @@
             "name": "sortBy",
             "schema": {
               "type": "string",
-              "enum": [
-                "name",
-                "capacity",
-                "pricePerNight",
-                "createdAt",
-                "updatedAt"
-              ],
+              "enum": ["name", "capacity", "pricePerNight", "createdAt", "updatedAt"],
               "default": "createdAt"
             },
             "description": "Field to sort by"
@@ -3487,10 +3804,7 @@
             "name": "sortOrder",
             "schema": {
               "type": "string",
-              "enum": [
-                "asc",
-                "desc"
-              ],
+              "enum": ["asc", "desc"],
               "default": "desc"
             },
             "description": "Sort order"
@@ -3578,9 +3892,7 @@
       "get": {
         "summary": "Get room type by ID",
         "description": "Retrieve a specific room type's details",
-        "tags": [
-          "Room Types"
-        ],
+        "tags": ["Room Types"],
         "security": [
           {
             "bearerAuth": []
@@ -3664,9 +3976,7 @@
       "put": {
         "summary": "Update room type",
         "description": "Update a room type's information",
-        "tags": [
-          "Room Types"
-        ],
+        "tags": ["Room Types"],
         "security": [
           {
             "bearerAuth": []
@@ -3774,9 +4084,7 @@
       "delete": {
         "summary": "Delete room type",
         "description": "Delete a room type from the system",
-        "tags": [
-          "Room Types"
-        ],
+        "tags": ["Room Types"],
         "security": [
           {
             "bearerAuth": []
@@ -3813,9 +4121,7 @@
       "post": {
         "summary": "Create a new service",
         "description": "Create a new hotel service with pricing",
-        "tags": [
-          "Services"
-        ],
+        "tags": ["Services"],
         "security": [
           {
             "bearerAuth": []
@@ -3827,10 +4133,7 @@
             "application/json": {
               "schema": {
                 "type": "object",
-                "required": [
-                  "name",
-                  "price"
-                ],
+                "required": ["name", "price"],
                 "properties": {
                   "name": {
                     "type": "string",
@@ -3921,9 +4224,7 @@
       "get": {
         "summary": "Get all services",
         "description": "Retrieve a paginated list of services with optional filters",
-        "tags": [
-          "Services"
-        ],
+        "tags": ["Services"],
         "security": [
           {
             "bearerAuth": []
@@ -3990,14 +4291,7 @@
             "name": "sortBy",
             "schema": {
               "type": "string",
-              "enum": [
-                "name",
-                "price",
-                "unit",
-                "isActive",
-                "createdAt",
-                "updatedAt"
-              ],
+              "enum": ["name", "price", "unit", "isActive", "createdAt", "updatedAt"],
               "default": "name"
             },
             "description": "Field to sort by"
@@ -4007,10 +4301,7 @@
             "name": "sortOrder",
             "schema": {
               "type": "string",
-              "enum": [
-                "asc",
-                "desc"
-              ],
+              "enum": ["asc", "desc"],
               "default": "asc"
             },
             "description": "Sort order"
@@ -4095,9 +4386,7 @@
       "get": {
         "summary": "Get service by ID",
         "description": "Retrieve a specific service's details",
-        "tags": [
-          "Services"
-        ],
+        "tags": ["Services"],
         "security": [
           {
             "bearerAuth": []
@@ -4179,9 +4468,7 @@
       "put": {
         "summary": "Update service",
         "description": "Update a service's information",
-        "tags": [
-          "Services"
-        ],
+        "tags": ["Services"],
         "security": [
           {
             "bearerAuth": []
@@ -4289,9 +4576,7 @@
       "delete": {
         "summary": "Delete service",
         "description": "Delete a service from the system",
-        "tags": [
-          "Services"
-        ],
+        "tags": ["Services"],
         "security": [
           {
             "bearerAuth": []
@@ -4323,6 +4608,723 @@
           }
         }
       }
+    },
+    "/employee/transaction-details": {
+      "get": {
+        "summary": "Search transaction details",
+        "description": "Search and filter transaction details by various criteria including amounts, rooms, services, and dates",
+        "tags": ["Employee Transaction Details"],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "query",
+            "name": "page",
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "default": 1
+            },
+            "description": "Page number"
+          },
+          {
+            "in": "query",
+            "name": "limit",
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 100,
+              "default": 10
+            },
+            "description": "Number of items per page"
+          },
+          {
+            "in": "query",
+            "name": "sortBy",
+            "schema": {
+              "type": "string",
+              "enum": ["createdAt", "baseAmount", "amount", "discountAmount"],
+              "default": "createdAt"
+            },
+            "description": "Field to sort by"
+          },
+          {
+            "in": "query",
+            "name": "sortOrder",
+            "schema": {
+              "type": "string",
+              "enum": ["asc", "desc"],
+              "default": "desc"
+            },
+            "description": "Sort order"
+          },
+          {
+            "in": "query",
+            "name": "transactionId",
+            "schema": {
+              "type": "string"
+            },
+            "description": "Filter by transaction ID"
+          },
+          {
+            "in": "query",
+            "name": "bookingRoomId",
+            "schema": {
+              "type": "string"
+            },
+            "description": "Filter by booking room ID"
+          },
+          {
+            "in": "query",
+            "name": "serviceUsageId",
+            "schema": {
+              "type": "string"
+            },
+            "description": "Filter by service usage ID"
+          },
+          {
+            "in": "query",
+            "name": "minBaseAmount",
+            "schema": {
+              "type": "number"
+            },
+            "description": "Minimum base amount"
+          },
+          {
+            "in": "query",
+            "name": "maxBaseAmount",
+            "schema": {
+              "type": "number"
+            },
+            "description": "Maximum base amount"
+          },
+          {
+            "in": "query",
+            "name": "minAmount",
+            "schema": {
+              "type": "number"
+            },
+            "description": "Minimum final amount"
+          },
+          {
+            "in": "query",
+            "name": "maxAmount",
+            "schema": {
+              "type": "number"
+            },
+            "description": "Maximum final amount"
+          },
+          {
+            "in": "query",
+            "name": "minDiscountAmount",
+            "schema": {
+              "type": "number"
+            },
+            "description": "Minimum discount amount"
+          },
+          {
+            "in": "query",
+            "name": "maxDiscountAmount",
+            "schema": {
+              "type": "number"
+            },
+            "description": "Maximum discount amount"
+          },
+          {
+            "in": "query",
+            "name": "startDate",
+            "schema": {
+              "type": "string",
+              "format": "date-time"
+            },
+            "description": "Filter from this date"
+          },
+          {
+            "in": "query",
+            "name": "endDate",
+            "schema": {
+              "type": "string",
+              "format": "date-time"
+            },
+            "description": "Filter until this date"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Transaction details retrieved successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "details": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "id": {
+                            "type": "string"
+                          },
+                          "transactionId": {
+                            "type": "string"
+                          },
+                          "baseAmount": {
+                            "type": "number"
+                          },
+                          "discountAmount": {
+                            "type": "number"
+                          },
+                          "amount": {
+                            "type": "number"
+                          },
+                          "transaction": {
+                            "type": "object"
+                          },
+                          "bookingRoom": {
+                            "type": "object"
+                          },
+                          "serviceUsage": {
+                            "type": "object"
+                          },
+                          "usedPromotions": {
+                            "type": "array"
+                          }
+                        }
+                      }
+                    },
+                    "pagination": {
+                      "type": "object",
+                      "properties": {
+                        "page": {
+                          "type": "integer"
+                        },
+                        "limit": {
+                          "type": "integer"
+                        },
+                        "total": {
+                          "type": "integer"
+                        },
+                        "totalPages": {
+                          "type": "integer"
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized"
+          }
+        }
+      }
+    },
+    "/employee/transactions": {
+      "get": {
+        "summary": "Get transactions with pagination",
+        "description": "Retrieve a paginated list of transactions with optional filters",
+        "tags": ["Employee Transactions"],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "query",
+            "name": "page",
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "default": 1
+            },
+            "description": "Page number"
+          },
+          {
+            "in": "query",
+            "name": "limit",
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 100,
+              "default": 10
+            },
+            "description": "Number of items per page"
+          },
+          {
+            "in": "query",
+            "name": "sortBy",
+            "schema": {
+              "type": "string",
+              "enum": ["createdAt", "occurredAt", "amount"],
+              "default": "createdAt"
+            },
+            "description": "Field to sort by"
+          },
+          {
+            "in": "query",
+            "name": "sortOrder",
+            "schema": {
+              "type": "string",
+              "enum": ["asc", "desc"],
+              "default": "desc"
+            },
+            "description": "Sort order"
+          },
+          {
+            "in": "query",
+            "name": "bookingId",
+            "schema": {
+              "type": "string"
+            },
+            "description": "Filter by booking ID"
+          },
+          {
+            "in": "query",
+            "name": "status",
+            "schema": {
+              "type": "string",
+              "enum": ["PENDING", "COMPLETED", "FAILED", "REFUNDED"]
+            },
+            "description": "Filter by transaction status"
+          },
+          {
+            "in": "query",
+            "name": "type",
+            "schema": {
+              "type": "string",
+              "enum": ["DEPOSIT", "ROOM_CHARGE", "SERVICE_CHARGE", "REFUND", "ADJUSTMENT"]
+            },
+            "description": "Filter by transaction type"
+          },
+          {
+            "in": "query",
+            "name": "method",
+            "schema": {
+              "type": "string",
+              "enum": ["CASH", "CREDIT_CARD", "BANK_TRANSFER", "E_WALLET"]
+            },
+            "description": "Filter by payment method"
+          },
+          {
+            "in": "query",
+            "name": "startDate",
+            "schema": {
+              "type": "string",
+              "format": "date-time"
+            },
+            "description": "Filter transactions from this date"
+          },
+          {
+            "in": "query",
+            "name": "endDate",
+            "schema": {
+              "type": "string",
+              "format": "date-time"
+            },
+            "description": "Filter transactions until this date"
+          },
+          {
+            "in": "query",
+            "name": "search",
+            "schema": {
+              "type": "string"
+            },
+            "description": "Search in transaction reference or description"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Transactions retrieved successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "transactions": {
+                      "type": "array",
+                      "items": {
+                        "type": "object"
+                      }
+                    },
+                    "pagination": {
+                      "type": "object",
+                      "properties": {
+                        "page": {
+                          "type": "integer"
+                        },
+                        "limit": {
+                          "type": "integer"
+                        },
+                        "total": {
+                          "type": "integer"
+                        },
+                        "totalPages": {
+                          "type": "integer"
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized"
+          }
+        }
+      },
+      "post": {
+        "summary": "Create a transaction",
+        "description": "Create a transaction for booking payment (full, split room, or service) with optional promotions",
+        "tags": ["Employee Transactions"],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["paymentMethod", "transactionType"],
+                "properties": {
+                  "bookingId": {
+                    "type": "string",
+                    "description": "Booking ID (required for booking-related payments)"
+                  },
+                  "bookingRoomIds": {
+                    "type": "array",
+                    "items": {
+                      "type": "string"
+                    },
+                    "description": "Specific room IDs for split payment"
+                  },
+                  "serviceUsageId": {
+                    "type": "string",
+                    "description": "Service usage ID for service payment"
+                  },
+                  "paymentMethod": {
+                    "type": "string",
+                    "enum": [
+                      "CASH",
+                      "CREDIT_CARD",
+                      "DEBIT_CARD",
+                      "BANK_TRANSFER",
+                      "MOMO",
+                      "ZALOPAY"
+                    ]
+                  },
+                  "transactionType": {
+                    "type": "string",
+                    "enum": ["DEPOSIT", "ROOM_CHARGE", "SERVICE_CHARGE", "REFUND", "ADJUSTMENT"]
+                  },
+                  "transactionRef": {
+                    "type": "string",
+                    "description": "External transaction reference"
+                  },
+                  "description": {
+                    "type": "string",
+                    "description": "Custom transaction description"
+                  },
+                  "promotionApplications": {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "required": ["customerPromotionId"],
+                      "properties": {
+                        "customerPromotionId": {
+                          "type": "string"
+                        },
+                        "bookingRoomId": {
+                          "type": "string",
+                          "description": "Apply promotion to specific room"
+                        },
+                        "serviceUsageId": {
+                          "type": "string",
+                          "description": "Apply promotion to specific service"
+                        }
+                      }
+                    }
+                  }
+                }
+              },
+              "examples": {
+                "fullBooking": {
+                  "summary": "Full booking payment",
+                  "value": {
+                    "bookingId": "booking_123",
+                    "paymentMethod": "CASH",
+                    "transactionType": "DEPOSIT"
+                  }
+                },
+                "splitRoom": {
+                  "summary": "Split room payment",
+                  "value": {
+                    "bookingId": "booking_123",
+                    "bookingRoomIds": ["room_1", "room_2"],
+                    "paymentMethod": "CREDIT_CARD",
+                    "transactionType": "ROOM_CHARGE"
+                  }
+                },
+                "withPromotion": {
+                  "summary": "Payment with promotion",
+                  "value": {
+                    "bookingId": "booking_123",
+                    "paymentMethod": "CASH",
+                    "transactionType": "DEPOSIT",
+                    "promotionApplications": [
+                      {
+                        "customerPromotionId": "cp_123",
+                        "bookingRoomId": "room_1"
+                      }
+                    ]
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Transaction created successfully"
+          },
+          "400": {
+            "description": "Invalid request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "404": {
+            "description": "Booking or service not found"
+          }
+        }
+      }
+    },
+    "/employee/transactions/{transactionId}": {
+      "get": {
+        "summary": "Get transaction details by ID",
+        "description": "Retrieve detailed information about a specific transaction",
+        "tags": ["Employee Transactions"],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "transactionId",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "description": "Transaction ID"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Transaction details retrieved successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "id": {
+                      "type": "string"
+                    },
+                    "type": {
+                      "type": "string"
+                    },
+                    "status": {
+                      "type": "string"
+                    },
+                    "method": {
+                      "type": "string"
+                    },
+                    "baseAmount": {
+                      "type": "number"
+                    },
+                    "discountAmount": {
+                      "type": "number"
+                    },
+                    "amount": {
+                      "type": "number"
+                    },
+                    "booking": {
+                      "type": "object"
+                    },
+                    "processedBy": {
+                      "type": "object"
+                    },
+                    "details": {
+                      "type": "array",
+                      "items": {
+                        "type": "object"
+                      }
+                    },
+                    "usedPromotions": {
+                      "type": "array",
+                      "items": {
+                        "type": "object"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "404": {
+            "description": "Transaction not found"
+          }
+        }
+      }
+    },
+    "/employee/service/service-usage": {
+      "post": {
+        "summary": "Create a service usage record",
+        "description": "Record service consumption for a booking or guest user. BookingId and bookingRoomId are optional for guest users.",
+        "tags": ["Employee Services"],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["serviceId", "quantity"],
+                "properties": {
+                  "bookingId": {
+                    "type": "string",
+                    "description": "Booking ID (optional - omit for guest users)"
+                  },
+                  "bookingRoomId": {
+                    "type": "string",
+                    "description": "Specific booking room ID (optional)"
+                  },
+                  "serviceId": {
+                    "type": "string",
+                    "description": "Service ID"
+                  },
+                  "quantity": {
+                    "type": "integer",
+                    "minimum": 1,
+                    "description": "Quantity of service consumed"
+                  }
+                },
+                "example": {
+                  "bookingId": "booking_id_123",
+                  "bookingRoomId": "booking_room_id_456",
+                  "serviceId": "service_id_789",
+                  "quantity": 2
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Service usage created successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "object",
+                      "description": "Created service usage record"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid request or validation error"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          }
+        }
+      }
+    },
+    "/employee/service/service-usage/{id}": {
+      "patch": {
+        "summary": "Update a service usage record",
+        "description": "Update quantity or status of a service usage",
+        "tags": ["Employee Services"],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "description": "Service usage ID"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "quantity": {
+                    "type": "integer",
+                    "minimum": 1,
+                    "description": "New quantity (optional)"
+                  },
+                  "status": {
+                    "type": "string",
+                    "enum": ["PENDING", "COMPLETED", "CANCELLED"],
+                    "description": "New status (optional)"
+                  }
+                },
+                "example": {
+                  "quantity": 3
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Service usage updated successfully"
+          },
+          "400": {
+            "description": "Cannot update paid service usage"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          }
+        }
+      }
     }
   },
   "tags": [
@@ -4337,6 +5339,22 @@
     {
       "name": "Customer Profile",
       "description": "Customer profile management endpoints"
+    },
+    {
+      "name": "Customer Promotions",
+      "description": "Customer promotion endpoints"
+    },
+    {
+      "name": "Customer Rooms",
+      "description": "Customer room search endpoints"
+    },
+    {
+      "name": "Customer Services",
+      "description": "Customer service usage management endpoints (DEPRECATED - Employee only)"
+    },
+    {
+      "name": "Employee Activities",
+      "description": "Employee activity log endpoints"
     },
     {
       "name": "Employee Auth",
@@ -4359,8 +5377,16 @@
       "description": "Employee profile management endpoints"
     },
     {
+      "name": "Employee Promotions",
+      "description": "Employee promotion management endpoints"
+    },
+    {
       "name": "Rooms",
       "description": "Room management endpoints"
+    },
+    {
+      "name": "Employee Room Tags",
+      "description": "Room tag management endpoints"
     },
     {
       "name": "Room Types",
@@ -4369,6 +5395,18 @@
     {
       "name": "Services",
       "description": "Hotel service management endpoints"
+    },
+    {
+      "name": "Employee Transaction Details",
+      "description": "Employee transaction details search endpoints"
+    },
+    {
+      "name": "Employee Transactions",
+      "description": "Employee transaction management endpoints"
+    },
+    {
+      "name": "Employee Services",
+      "description": "Employee service usage management endpoints"
     }
   ]
 }
