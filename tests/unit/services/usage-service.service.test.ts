@@ -432,7 +432,7 @@ describe('UsageServiceService', () => {
         }
       };
 
-      const result = await usageServiceService.updateServiceUsagePayment(
+      await usageServiceService.updateServiceUsagePayment(
         'usage-1',
         paidAmount,
         employeeId,
@@ -463,7 +463,7 @@ describe('UsageServiceService', () => {
         }
       };
 
-      const result = await usageServiceService.updateServiceUsagePayment(
+      await usageServiceService.updateServiceUsagePayment(
         'usage-1',
         paidAmount,
         employeeId,
@@ -731,7 +731,12 @@ describe('UsageServiceService', () => {
         }
       };
 
-      await usageServiceService.updateServiceUsagePayment('usage-1', paidAmount, employeeId, mockTx);
+      await usageServiceService.updateServiceUsagePayment(
+        'usage-1',
+        paidAmount,
+        employeeId,
+        mockTx
+      );
 
       expect(mockActivityService.createActivity).toHaveBeenCalledWith(
         expect.objectContaining({
@@ -756,7 +761,12 @@ describe('UsageServiceService', () => {
         }
       };
 
-      await usageServiceService.updateServiceUsagePayment('usage-1', paidAmount, employeeId, mockTx);
+      await usageServiceService.updateServiceUsagePayment(
+        'usage-1',
+        paidAmount,
+        employeeId,
+        mockTx
+      );
 
       // Should create 2 activities: one for payment, one for status change
       expect(mockActivityService.createActivity).toHaveBeenCalledTimes(2);

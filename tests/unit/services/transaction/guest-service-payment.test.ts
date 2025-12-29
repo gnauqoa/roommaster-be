@@ -2,8 +2,7 @@
 import { describe, expect, it, beforeEach, jest } from '@jest/globals';
 import { processGuestServicePayment } from '../../../../src/services/transaction/handlers/guest-service-payment';
 import { createMockPrismaClient } from '../../../utils/testContainer';
-import { PrismaClient, Prisma, ActivityType, PaymentMethod, TransactionType } from '@prisma/client';
-import ApiError from '../../../../src/utils/ApiError';
+import { Prisma, ActivityType, PaymentMethod, TransactionType } from '@prisma/client';
 
 describe('processGuestServicePayment', () => {
   let mockPrisma: any;
@@ -13,7 +12,7 @@ describe('processGuestServicePayment', () => {
 
   beforeEach(() => {
     mockPrisma = createMockPrismaClient();
-    
+
     mockTx = {
       serviceUsage: {
         findUnique: jest.fn()
@@ -65,12 +64,7 @@ describe('processGuestServicePayment', () => {
     mockTx.serviceUsage.findUnique.mockResolvedValue(null);
 
     await expect(
-      processGuestServicePayment(
-        payload,
-        mockPrisma,
-        mockActivityService,
-        mockUsageServiceService
-      )
+      processGuestServicePayment(payload, mockPrisma, mockActivityService, mockUsageServiceService)
     ).rejects.toThrow('Service usage not found');
   });
 
@@ -93,12 +87,7 @@ describe('processGuestServicePayment', () => {
     mockTx.serviceUsage.findUnique.mockResolvedValue(serviceUsage);
 
     await expect(
-      processGuestServicePayment(
-        payload,
-        mockPrisma,
-        mockActivityService,
-        mockUsageServiceService
-      )
+      processGuestServicePayment(payload, mockPrisma, mockActivityService, mockUsageServiceService)
     ).rejects.toThrow('This service belongs to a booking. Use booking service payment instead.');
   });
 
@@ -121,12 +110,7 @@ describe('processGuestServicePayment', () => {
     mockTx.serviceUsage.findUnique.mockResolvedValue(serviceUsage);
 
     await expect(
-      processGuestServicePayment(
-        payload,
-        mockPrisma,
-        mockActivityService,
-        mockUsageServiceService
-      )
+      processGuestServicePayment(payload, mockPrisma, mockActivityService, mockUsageServiceService)
     ).rejects.toThrow('Service is already fully paid');
   });
 
@@ -261,7 +245,7 @@ describe('processGuestServicePayment', () => {
 
     const serviceUsage = {
       id: 'service-123',
-      totalPrice: new Prisma.Decimal(75.50),
+      totalPrice: new Prisma.Decimal(75.5),
       totalPaid: new Prisma.Decimal(0),
       bookingRoomId: null,
       service: { name: 'Spa Treatment' }

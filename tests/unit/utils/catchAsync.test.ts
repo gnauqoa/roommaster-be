@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { describe, expect, it, jest, beforeEach } from '@jest/globals';
 import catchAsync from '../../../src/utils/catchAsync';
-import { Request, Response, NextFunction } from 'express';
+import { Request, Response } from 'express';
 
 describe('catchAsync', () => {
   let mockRequest: Partial<Request>;
@@ -56,7 +56,7 @@ describe('catchAsync', () => {
     expect(() => {
       wrappedFn(mockRequest as Request, mockResponse as Response, mockNext);
     }).toThrow('Sync error');
-    
+
     // next should not be called since the error was thrown synchronously
     expect(mockNext).not.toHaveBeenCalled();
   });
