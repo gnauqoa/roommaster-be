@@ -40,3 +40,41 @@ export interface DiscountInfo {
   amount: number;
   target: PromotionApplication;
 }
+
+export interface GetTransactionsFilters {
+  bookingId?: string;
+  status?: import('@prisma/client').TransactionStatus;
+  type?: import('@prisma/client').TransactionType;
+  method?: import('@prisma/client').PaymentMethod;
+  startDate?: string;
+  endDate?: string;
+  search?: string;
+}
+
+export interface GetTransactionsOptions {
+  page?: number;
+  limit?: number;
+  sortBy?: 'createdAt' | 'occurredAt' | 'amount';
+  sortOrder?: 'asc' | 'desc';
+}
+
+export interface GetTransactionDetailsFilters {
+  transactionId?: string;
+  bookingRoomId?: string;
+  serviceUsageId?: string;
+  minBaseAmount?: number;
+  maxBaseAmount?: number;
+  minAmount?: number;
+  maxAmount?: number;
+  minDiscountAmount?: number;
+  maxDiscountAmount?: number;
+  startDate?: string;
+  endDate?: string;
+}
+
+export interface GetTransactionDetailsOptions {
+  page?: number;
+  limit?: number;
+  sortBy?: 'createdAt' | 'baseAmount' | 'amount' | 'discountAmount';
+  sortOrder?: 'asc' | 'desc';
+}
