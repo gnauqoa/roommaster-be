@@ -4,8 +4,8 @@ import { Prisma, TransactionType } from '@prisma/client';
 import {
   updateBookingTotals,
   getDefaultDescription
-} from '../../../src/services/transaction/helpers/booking-updater';
-import ApiError from '../../../src/utils/ApiError';
+} from '@/services/transaction/helpers/booking-updater';
+import ApiError from '@/utils/ApiError';
 
 describe('Booking Updater', () => {
   describe('updateBookingTotals', () => {
