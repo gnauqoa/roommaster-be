@@ -2,11 +2,11 @@
   "name": "prisma-express-typescript-boilerplate",
   "version": "1.0.0",
   "description": "REST API Boilerplate with Node JS, TypeScript, Express and Prisma",
-  "main": "src/index.ts",
   "repository": "https://github.com/antonio-lazaro/prisma-express-typescript-boilerplate.git",
   "scripts": {
-    "start": "yarn build && pm2 start ecosystem.config.json --no-daemon",
-    "dev": "cross-env NODE_ENV=development nodemon src/index.ts",
+    "start": "pm2 start ecosystem.config.json --no-daemon",
+    "dev": "cross-env NODE_ENV=development nodemon --exec \"node -r ts-node/register -r tsconfig-paths/register\" src/index.ts",
+    "build": "rimraf build && tsc -p tsconfig.json && tsc-alias",
     "test": "docker compose -f docker-compose.only-db-test.yml up -d && yarn db:push && jest -i --colors --verbose --detectOpenHandles && docker-compose -f docker-compose.only-db-test.yml down",
     "test:watch": "docker compose -f docker-compose.only-db-test.yml up -d && yarn db:push && jest -i --watchAll && docker-compose -f docker-compose.only-db-test.yml down",
     "test:coverage": "docker compose -f docker-compose.only-db-test.yml up -d && yarn db:push && jest -i --coverage --colors --verbose && docker-compose -f docker-compose.only-db-test.yml down",
@@ -22,7 +22,6 @@
     "docker:dev-db:start": "docker compose -f docker-compose.only-db-dev.yml up -d",
     "docker:dev-db:stop": "docker compose -f docker-compose.only-db-dev.yml down",
     "prepare": "husky install",
-    "build": "rimraf build && tsc -p tsconfig.json",
     "generate:swagger": "node scripts/generate-swagger.js"
   },
   "prisma": {
@@ -62,7 +61,6 @@
     "@types/express-serve-static-core": "^5.1.0",
     "@types/jest": "^29.2.5",
     "@types/jsonwebtoken": "^9.0.10",
-    "@types/module-alias": "^2.0.4",
     "@types/morgan": "^1.9.3",
     "@types/node": "^18.11.13",
     "@types/passport": "^1.0.11",
@@ -90,6 +88,8 @@
     "swagger-ui-express": "^4.6.0",
     "ts-jest": "^29.0.3",
     "ts-node": "^10.9.1",
+    "tsc-alias": "^1.8.16",
+    "tsconfig-paths": "^4.2.0",
     "typescript": "^4.9.4"
   },
   "dependencies": {
@@ -108,14 +108,12 @@
     "helmet": "^6.0.1",
     "http-status": "^1.5.3",
     "joi": "^17.7.0",
-    "module-alias": "^2.2.3",
     "moment": "^2.29.4",
     "morgan": "^1.10.0",
     "nodemailer": "^6.8.0",
     "passport": "^0.6.0",
     "passport-jwt": "^4.0.0",
     "pm2": "^5.2.2",
-    "tsconfig-paths": "^4.2.0",
     "winston": "^3.8.2",
     "xss-filters": "^1.2.7"
   },
