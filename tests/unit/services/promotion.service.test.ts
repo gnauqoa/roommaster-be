@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/no-non-null-assertion */
 import { describe, expect, it, beforeEach, jest } from '@jest/globals';
-import { PromotionService } from '../../../src/services/promotion.service';
+import { PromotionService } from '@/services/promotion.service';
 import { createMockPrismaClient } from '../../utils/testContainer';
 import {
   PrismaClient,
@@ -9,7 +9,7 @@ import {
   PromotionScope,
   CustomerPromotionStatus
 } from '@prisma/client';
-import ApiError from '../../../src/utils/ApiError';
+import ApiError from '@/utils/ApiError';
 
 const resolvedPromiseMock = <T>(value: T) => jest.fn<() => Promise<T>>().mockResolvedValue(value);
 

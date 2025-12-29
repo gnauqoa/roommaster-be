@@ -1,9 +1,9 @@
 import { PrismaClient, Prisma, ActivityType } from '@prisma/client';
 import httpStatus from 'http-status';
-import ApiError from 'utils/ApiError';
-import { ActivityService } from '../../activity.service';
-import { UsageServiceService } from '../../usage-service.service';
-import { CreateTransactionPayload } from '../types';
+import ApiError from '@/utils/ApiError';
+import { ActivityService } from '@/services/activity.service';
+import { UsageServiceService } from '@/services/usage-service.service';
+import { CreateTransactionPayload } from '@/services/transaction/types';
 
 /**
  * Scenario 4: Guest service payment

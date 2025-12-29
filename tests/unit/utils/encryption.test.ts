@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { describe, expect, it, jest, beforeEach } from '@jest/globals';
-import * as encryption from '../../../src/utils/encryption';
+import * as encryption from '@/utils/encryption';
 import bcrypt from 'bcryptjs';
 
 jest.mock('bcryptjs');

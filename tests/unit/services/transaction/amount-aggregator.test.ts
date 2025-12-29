@@ -1,5 +1,5 @@
 import { describe, expect, it } from '@jest/globals';
-import { aggregateTransactionAmounts } from '../../../../src/services/transaction/calculators/amount-aggregator';
+import { aggregateTransactionAmounts } from '@/services/transaction/calculators/amount-aggregator';
 
 describe('amount-aggregator', () => {
   describe('aggregateTransactionAmounts', () => {

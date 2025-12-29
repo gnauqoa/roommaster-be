@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { describe, expect, it, jest, beforeEach } from '@jest/globals';
-import { validatePromotions } from '../../../../src/services/transaction/validators/promotion-validator';
-import ApiError from '../../../../src/utils/ApiError';
+import { validatePromotions } from '@/services/transaction/validators/promotion-validator';
+import ApiError from '@/utils/ApiError';
 
 const createMockPromotionService = () => ({
   validatePromotionApplicability: jest.fn() as any

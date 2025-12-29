@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/no-non-null-assertion */
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { describe, expect, it, beforeEach, jest } from '@jest/globals';
-import { ActivityService } from '../../../src/services/activity.service';
+import { ActivityService } from '@/services/activity.service';
 import { ActivityType } from '@prisma/client';
 
 const createMockPrisma = () => ({

@@ -1,4 +1,4 @@
-import prisma from '../../src/prisma';
+import prisma from '@/prisma';
 import { beforeAll, beforeEach, afterAll } from '@jest/globals';
 
 const setupTestDB = () => {

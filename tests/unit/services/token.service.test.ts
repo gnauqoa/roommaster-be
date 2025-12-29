@@ -1,11 +1,11 @@
 /* eslint-disable @typescript-eslint/no-non-null-assertion */
 import { describe, expect, it, beforeEach, jest } from '@jest/globals';
-import { TokenService } from '../../../src/services/token.service';
+import { TokenService } from '@/services/token.service';
 
 import moment from 'moment';
 import jwt from 'jsonwebtoken';
-import config from '../../../src/config/env';
-import ApiError from '../../../src/utils/ApiError';
+import config from '@/config/env';
+import ApiError from '@/utils/ApiError';
 
 // Create a simple mock Prisma client for this test
 const createMockPrisma = () => ({

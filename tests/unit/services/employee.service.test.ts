@@ -1,13 +1,13 @@
 /* eslint-disable @typescript-eslint/no-non-null-assertion */
 import { describe, expect, it, beforeEach, jest } from '@jest/globals';
-import { EmployeeService } from '../../../src/services/employee.service';
+import { EmployeeService } from '@/services/employee.service';
 import { createMockPrismaClient } from '../../utils/testContainer';
 import { PrismaClient } from '@prisma/client';
-import ApiError from '../../../src/utils/ApiError';
-import * as encryption from '../../../src/utils/encryption';
+import ApiError from '@/utils/ApiError';
+import * as encryption from '@/utils/encryption';
 
 // Mock the encryption utilities
-jest.mock('../../../src/utils/encryption');
+jest.mock('@/utils/encryption');
 
 describe('EmployeeService', () => {
   let employeeService: EmployeeService;

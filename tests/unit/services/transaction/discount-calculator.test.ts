@@ -4,8 +4,8 @@ import {
   calculateDiscounts,
   getBaseAmountForPromotion,
   applyDiscountsToDetails
-} from '../../../../src/services/transaction/calculators/discount-calculator';
-import ApiError from '../../../../src/utils/ApiError';
+} from '@/services/transaction/calculators/discount-calculator';
+import ApiError from '@/utils/ApiError';
 
 const createMockPromotionService = () => ({
   calculateDiscount: jest.fn() as any

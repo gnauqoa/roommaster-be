@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/no-non-null-assertion */
 import { describe, expect, it, beforeEach, jest } from '@jest/globals';
-import { processGuestServicePayment } from '../../../../src/services/transaction/handlers/guest-service-payment';
+import { processGuestServicePayment } from '@/services/transaction/handlers/guest-service-payment';
 import { createMockPrismaClient } from '../../../utils/testContainer';
 import { Prisma, ActivityType, PaymentMethod, TransactionType } from '@prisma/client';
 

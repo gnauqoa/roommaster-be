@@ -1,9 +1,9 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { describe, expect, it, jest, beforeEach } from '@jest/globals';
-import validate from '../../../src/middlewares/validate';
+import validate from '@/middlewares/validate';
 import { Request, Response, NextFunction } from 'express';
 import Joi from 'joi';
-import ApiError from '../../../src/utils/ApiError';
+import ApiError from '@/utils/ApiError';
 import httpStatus from 'http-status';
 
 describe('validate middleware', () => {

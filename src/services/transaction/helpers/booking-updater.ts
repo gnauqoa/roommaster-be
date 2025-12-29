@@ -1,6 +1,6 @@
 import { Prisma, TransactionType } from '@prisma/client';
 import httpStatus from 'http-status';
-import ApiError from 'utils/ApiError';
+import ApiError from '@/utils/ApiError';
 
 /**
  * Update booking totals from all booking rooms

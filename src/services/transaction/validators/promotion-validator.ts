@@ -1,7 +1,7 @@
-import { PromotionService } from '../../promotion.service';
-import { PromotionApplication } from '../types';
+import { PromotionService } from '@/services/promotion.service';
+import { PromotionApplication } from '@/services/transaction/types';
 import httpStatus from 'http-status';
-import ApiError from 'utils/ApiError';
+import ApiError from '@/utils/ApiError';
 
 /**
  * Validate all promotion applications

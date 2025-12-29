@@ -5,7 +5,7 @@ import {
   sendPaginatedData,
   sendNoContent,
   calculatePagination
-} from '../../../src/utils/responseWrapper';
+} from '@/utils/responseWrapper';
 import { Response } from 'express';
 import httpStatus from 'http-status';
 

@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/no-non-null-assertion */
 import { describe, expect, it, beforeEach, jest } from '@jest/globals';
-import { processFullBookingPayment } from '../../../../src/services/transaction/handlers/full-booking-payment';
+import { processFullBookingPayment } from '@/services/transaction/handlers/full-booking-payment';
 import { createMockPrismaClient } from '../../../utils/testContainer';
 import {
   Prisma,
@@ -9,16 +9,16 @@ import {
   PaymentMethod,
   TransactionType
 } from '@prisma/client';
-import * as promotionValidator from '../../../../src/services/transaction/validators/promotion-validator';
-import * as discountCalculator from '../../../../src/services/transaction/calculators/discount-calculator';
-import * as amountAggregator from '../../../../src/services/transaction/calculators/amount-aggregator';
-import * as bookingUpdater from '../../../../src/services/transaction/helpers/booking-updater';
+import * as promotionValidator from '@/services/transaction/validators/promotion-validator';
+import * as discountCalculator from '@/services/transaction/calculators/discount-calculator';
+import * as amountAggregator from '@/services/transaction/calculators/amount-aggregator';
+import * as bookingUpdater from '@/services/transaction/helpers/booking-updater';
 
 // Mock dependencies
-jest.mock('../../../../src/services/transaction/validators/promotion-validator');
-jest.mock('../../../../src/services/transaction/calculators/discount-calculator');
-jest.mock('../../../../src/services/transaction/calculators/amount-aggregator');
-jest.mock('../../../../src/services/transaction/helpers/booking-updater');
+jest.mock('@/services/transaction/validators/promotion-validator');
+jest.mock('@/services/transaction/calculators/discount-calculator');
+jest.mock('@/services/transaction/calculators/amount-aggregator');
+jest.mock('@/services/transaction/helpers/booking-updater');
 
 describe('processFullBookingPayment', () => {
   let mockPrisma: any;

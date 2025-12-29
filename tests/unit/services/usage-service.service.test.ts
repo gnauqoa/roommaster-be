@@ -1,9 +1,9 @@
 /* eslint-disable @typescript-eslint/no-non-null-assertion */
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { describe, expect, it, beforeEach, jest } from '@jest/globals';
-import { UsageServiceService } from '../../../src/services/usage-service.service';
+import { UsageServiceService } from '@/services/usage-service.service';
 import { ServiceUsageStatus } from '@prisma/client';
-import ApiError from '../../../src/utils/ApiError';
+import ApiError from '@/utils/ApiError';
 import { Prisma } from '@prisma/client';
 
 const createMockPrisma = () => ({

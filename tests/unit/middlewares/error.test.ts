@@ -1,13 +1,13 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { describe, expect, it, jest, beforeEach } from '@jest/globals';
-import { errorConverter, errorHandler } from '../../../src/middlewares/error';
-import ApiError from '../../../src/utils/ApiError';
+import { errorConverter, errorHandler } from '@/middlewares/error';
+import ApiError from '@/utils/ApiError';
 import { Request, Response, NextFunction } from 'express';
 import httpStatus from 'http-status';
 import { Prisma } from '@prisma/client';
 
 // Mock config and logger
-jest.mock('../../../src/config/env', () => ({
+jest.mock('@/config/env', () => ({
   default: {
     env: 'test'
   }

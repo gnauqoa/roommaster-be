@@ -1,5 +1,5 @@
 import { describe, expect, it } from '@jest/globals';
-import ApiError from '../../../src/utils/ApiError';
+import ApiError from '@/utils/ApiError';
 import httpStatus from 'http-status';
 
 describe('ApiError', () => {

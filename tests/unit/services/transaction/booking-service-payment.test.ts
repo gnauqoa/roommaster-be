@@ -1,19 +1,19 @@
 /* eslint-disable @typescript-eslint/no-non-null-assertion */
 import { describe, expect, it, beforeEach, jest } from '@jest/globals';
-import { processBookingServicePayment } from '../../../../src/services/transaction/handlers/booking-service-payment';
+import { processBookingServicePayment } from '@/services/transaction/handlers/booking-service-payment';
 import { createMockPrismaClient } from '../../../utils/testContainer';
 import { Prisma, TransactionStatus, PaymentMethod, TransactionType } from '@prisma/client';
-import ApiError from '../../../../src/utils/ApiError';
-import * as promotionValidator from '../../../../src/services/transaction/validators/promotion-validator';
-import * as discountCalculator from '../../../../src/services/transaction/calculators/discount-calculator';
-import * as amountAggregator from '../../../../src/services/transaction/calculators/amount-aggregator';
-import * as bookingUpdater from '../../../../src/services/transaction/helpers/booking-updater';
+import ApiError from '@/utils/ApiError';
+import * as promotionValidator from '@/services/transaction/validators/promotion-validator';
+import * as discountCalculator from '@/services/transaction/calculators/discount-calculator';
+import * as amountAggregator from '@/services/transaction/calculators/amount-aggregator';
+import * as bookingUpdater from '@/services/transaction/helpers/booking-updater';
 
 // Mock dependencies
-jest.mock('../../../../src/services/transaction/validators/promotion-validator');
-jest.mock('../../../../src/services/transaction/calculators/discount-calculator');
-jest.mock('../../../../src/services/transaction/calculators/amount-aggregator');
-jest.mock('../../../../src/services/transaction/helpers/booking-updater');
+jest.mock('@/services/transaction/validators/promotion-validator');
+jest.mock('@/services/transaction/calculators/discount-calculator');
+jest.mock('@/services/transaction/calculators/amount-aggregator');
+jest.mock('@/services/transaction/helpers/booking-updater');
 
 describe('processBookingServicePayment', () => {
   let mockPrisma: any;

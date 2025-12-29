@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { describe, expect, it, jest, beforeEach } from '@jest/globals';
-import catchAsync from '../../../src/utils/catchAsync';
+import catchAsync from '@/utils/catchAsync';
 import { Request, Response } from 'express';
 
 describe('catchAsync', () => {

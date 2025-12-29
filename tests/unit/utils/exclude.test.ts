@@ -1,5 +1,5 @@
 import { describe, expect, it } from '@jest/globals';
-import exclude from '../../../src/utils/exclude';
+import exclude from '@/utils/exclude';
 
 describe('exclude', () => {
   it('should exclude specified keys from object', () => {

@@ -1,7 +1,7 @@
 import httpStatus from 'http-status';
-import ApiError from 'utils/ApiError';
+import ApiError from '@/utils/ApiError';
 import { NextFunction, Request, Response } from 'express';
-import pick from 'utils/pick';
+import pick from '@/utils/pick';
 import Joi from 'joi';
 
 const validate = (schema: object) => (req: Request, res: Response, next: NextFunction) => {

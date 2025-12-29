@@ -1,8 +1,8 @@
 import { PrismaClient } from '@prisma/client';
-import { Injectable } from 'core/decorators';
+import { Injectable } from '@/core/decorators';
 import httpStatus from 'http-status';
-import ApiError from 'utils/ApiError';
-import { encryptPassword, isPasswordMatch } from 'utils/encryption';
+import ApiError from '@/utils/ApiError';
+import { encryptPassword, isPasswordMatch } from '@/utils/encryption';
 import { TokenService, UserType } from './token.service';
 import { CustomerService } from './customer.service';
 import { EmployeeService } from './employee.service';

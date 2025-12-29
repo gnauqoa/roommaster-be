@@ -1,8 +1,8 @@
 import { PrismaClient, Customer, Prisma } from '@prisma/client';
-import { Injectable } from 'core/decorators';
+import { Injectable } from '@/core/decorators';
 import httpStatus from 'http-status';
-import ApiError from 'utils/ApiError';
-import { encryptPassword } from 'utils/encryption';
+import ApiError from '@/utils/ApiError';
+import { encryptPassword } from '@/utils/encryption';
 
 export interface CreateCustomerData {
   fullName: string;

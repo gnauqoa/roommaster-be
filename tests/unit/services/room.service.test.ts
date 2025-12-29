@@ -1,9 +1,9 @@
 /* eslint-disable @typescript-eslint/no-non-null-assertion */
 import { describe, expect, it, beforeEach, jest } from '@jest/globals';
-import { RoomService } from '../../../src/services/room.service';
+import { RoomService } from '@/services/room.service';
 import { createMockPrismaClient } from '../../utils/testContainer';
 import { PrismaClient, RoomStatus } from '@prisma/client';
-import ApiError from '../../../src/utils/ApiError';
+import ApiError from '@/utils/ApiError';
 
 describe('RoomService', () => {
   let roomService: RoomService;

@@ -1,5 +1,5 @@
 import { describe, expect, it } from '@jest/globals';
-import pick from '../../../src/utils/pick';
+import pick from '@/utils/pick';
 
 describe('pick', () => {
   it('should pick specified keys from object', () => {
