@@ -227,13 +227,11 @@ describe('discount-calculator', () => {
         { serviceUsageId: 'service-1', baseAmount: 500, discountAmount: 0, amount: 500 }
       ];
 
-      mockPrisma.customerPromotion.findUnique = (jest
-        .fn() as any)
+      mockPrisma.customerPromotion.findUnique = (jest.fn() as any)
         .mockResolvedValueOnce({ id: 'cp-1', promotionId: 'promo-1' })
         .mockResolvedValueOnce({ id: 'cp-2', promotionId: 'promo-2' });
 
-      mockPromotionService.calculateDiscount = (jest
-        .fn() as any)
+      mockPromotionService.calculateDiscount = (jest.fn() as any)
         .mockResolvedValueOnce(100)
         .mockResolvedValueOnce(50);
 

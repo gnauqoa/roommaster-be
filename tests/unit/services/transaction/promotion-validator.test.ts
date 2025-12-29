@@ -118,8 +118,7 @@ describe('promotion-validator', () => {
         { customerPromotionId: 'cp-2', serviceUsageId: 'service-1' }
       ];
 
-      mockPromotionService.validatePromotionApplicability = (jest
-        .fn() as any)
+      mockPromotionService.validatePromotionApplicability = (jest.fn() as any)
         .mockResolvedValueOnce({ valid: true })
         .mockResolvedValueOnce({ valid: false, reason: 'Invalid scope' });
 

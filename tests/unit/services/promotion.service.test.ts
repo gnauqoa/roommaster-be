@@ -15,14 +15,13 @@ const resolvedPromiseMock = <T>(value: T) => jest.fn<() => Promise<T>>().mockRes
 
 describe('PromotionService', () => {
   let promotionService: PromotionService;
-  let mockPrisma: jest.Mocked<Partial<PrismaClient>>;
+  let mockPrisma: any;
   let mockActivityService: any;
 
   beforeEach(() => {
     mockPrisma = createMockPrismaClient();
 
     // Initialize promotion and customerPromotion mocks
-    // @ts-expect-error - Mock setup
     mockPrisma.promotion = {
       findUnique: jest.fn(),
       findMany: jest.fn(),
@@ -31,7 +30,6 @@ describe('PromotionService', () => {
       delete: jest.fn()
     } as any;
 
-    // @ts-expect-error - Mock setup
     mockPrisma.customerPromotion = {
       findUnique: jest.fn(),
       findMany: jest.fn(),
@@ -389,7 +387,9 @@ describe('PromotionService', () => {
       // @ts-expect-error - Mock setup
       mockPrisma.promotion!.findUnique = jest.fn().mockResolvedValue(null);
 
-      await expect(promotionService.updatePromotion(payload)).rejects.toThrow('Promotion not found');
+      await expect(promotionService.updatePromotion(payload)).rejects.toThrow(
+        'Promotion not found'
+      );
     });
 
     it('should throw error if new code already exists', async () => {
@@ -793,13 +793,9 @@ describe('PromotionService', () => {
         transactionDetailId: 'detail-123'
       };
 
-      // @ts-ignore
-      mockPrisma.customerPromotion!.findUnique = jest.fn().mockResolvedValue(customerPromotion) as any;
-      // @ts-ignore
-      mockPrisma.customerPromotion!.update = jest.fn() as any;
-      // @ts-ignore
-      mockPrisma.promotion!.findUnique = jest.fn().mockResolvedValue(customerPromotion.promotion);
-      // @ts-ignore
+      mockPrisma.customerPromotion!.findUnique.mockResolvedValue(customerPromotion);
+      mockPrisma.customerPromotion!.update.mockResolvedValue(customerPromotion);
+      mockPrisma.promotion!.findUnique.mockResolvedValue(customerPromotion.promotion);
       mockPrisma.usedPromotion = {
         create: resolvedPromiseMock(usedPromotion) as any
       } as any;
