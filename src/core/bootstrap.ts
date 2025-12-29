@@ -19,8 +19,9 @@ import {
   UsageServiceService,
   TransactionService,
   ActivityService,
-  PromotionService
-} from 'services';
+  PromotionService,
+  TransactionDetailsService
+} from '@/services';
 
 /**
  * Bootstrap the application by registering all dependencies
@@ -100,6 +101,12 @@ export function bootstrap(): void {
       TOKENS.UsageServiceService,
       TOKENS.PromotionService
     ]
+  );
+
+  container.registerFactory(
+    TOKENS.TransactionDetailsService,
+    (...args: unknown[]) => new TransactionDetailsService(args[0] as PrismaClient),
+    [TOKENS.PrismaClient]
   );
 
   container.registerFactory(

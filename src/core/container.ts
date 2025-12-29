@@ -127,6 +127,7 @@ export const TOKENS = {
   ServiceService: Symbol('ServiceService'),
   UsageServiceService: Symbol('UsageServiceService'),
   TransactionService: Symbol('TransactionService'),
+  TransactionDetailsService: Symbol('TransactionDetailsService'),
   ActivityService: Symbol('ActivityService'),
   PromotionService: Symbol('PromotionService')
 } as const;
