@@ -2,8 +2,17 @@
 import { describe, expect, it, beforeEach, jest } from '@jest/globals';
 import { processSplitRoomPayment } from '../../../../src/services/transaction/handlers/split-room-payment';
 import { createMockPrismaClient } from '../../../utils/testContainer';
-import { PrismaClient, Prisma, TransactionStatus, BookingStatus, PaymentMethod, TransactionType } from '@prisma/client';
-import ApiError from '../../../../src/utils/ApiError';
+import {
+  Prisma,
+  TransactionStatus,
+  BookingStatus,
+  PaymentMethod,
+  TransactionType
+} from '@prisma/client';
+import * as promotionValidator from '../../../../src/services/transaction/validators/promotion-validator';
+import * as discountCalculator from '../../../../src/services/transaction/calculators/discount-calculator';
+import * as amountAggregator from '../../../../src/services/transaction/calculators/amount-aggregator';
+import * as bookingUpdater from '../../../../src/services/transaction/helpers/booking-updater';
 
 // Mock dependencies
 jest.mock('../../../../src/services/transaction/validators/promotion-validator');
@@ -20,7 +29,7 @@ describe('processSplitRoomPayment', () => {
 
   beforeEach(() => {
     mockPrisma = createMockPrismaClient();
-    
+
     mockTx = {
       booking: {
         findUnique: jest.fn(),
@@ -62,23 +71,20 @@ describe('processSplitRoomPayment', () => {
 
     jest.clearAllMocks();
 
-    // Setup mock implementations
-    const { validatePromotions } = require('../../../../src/services/transaction/validators/promotion-validator');
-    validatePromotions.mockResolvedValue(undefined);
+    jest.mocked(promotionValidator.validatePromotions).mockResolvedValue(undefined);
 
-    const { calculateDiscounts, applyDiscountsToDetails } = require('../../../../src/services/transaction/calculators/discount-calculator');
-    calculateDiscounts.mockResolvedValue(new Map());
-    applyDiscountsToDetails.mockImplementation((details: any) => details);
+    jest.mocked(discountCalculator.calculateDiscounts).mockResolvedValue(new Map());
+    jest
+      .mocked(discountCalculator.applyDiscountsToDetails)
+      .mockImplementation((details: any) => details);
 
-    const { aggregateTransactionAmounts } = require('../../../../src/services/transaction/calculators/amount-aggregator');
-    aggregateTransactionAmounts.mockReturnValue({
+    jest.mocked(amountAggregator.aggregateTransactionAmounts).mockReturnValue({
       baseAmount: 100,
       discountAmount: 0,
       amount: 100
     });
 
-    const { updateBookingTotals } = require('../../../../src/services/transaction/helpers/booking-updater');
-    updateBookingTotals.mockResolvedValue(undefined);
+    jest.mocked(bookingUpdater.updateBookingTotals).mockResolvedValue(undefined);
   });
 
   it('should throw error if bookingId is missing', async () => {
@@ -421,11 +427,10 @@ describe('processSplitRoomPayment', () => {
     };
 
     // Mock discount calculation
-    const { calculateDiscounts, applyDiscountsToDetails } = require('../../../../src/services/transaction/calculators/discount-calculator');
     const discountMap = new Map();
     discountMap.set('customer-promo-1', { amount: 10, customerPromotionId: 'customer-promo-1' });
-    calculateDiscounts.mockResolvedValue(discountMap);
-    applyDiscountsToDetails.mockReturnValue([
+    jest.mocked(discountCalculator.calculateDiscounts).mockResolvedValue(discountMap);
+    jest.mocked(discountCalculator.applyDiscountsToDetails).mockReturnValue([
       {
         bookingRoomId: 'room-1',
         baseAmount: 100,
@@ -489,11 +494,9 @@ describe('processSplitRoomPayment', () => {
       }
     ];
 
-    const { applyDiscountsToDetails } = require('../../../../src/services/transaction/calculators/discount-calculator');
-    applyDiscountsToDetails.mockReturnValue([]);
+    jest.mocked(discountCalculator.applyDiscountsToDetails).mockReturnValue([]);
 
-    const { aggregateTransactionAmounts } = require('../../../../src/services/transaction/calculators/amount-aggregator');
-    aggregateTransactionAmounts.mockReturnValue({
+    jest.mocked(amountAggregator.aggregateTransactionAmounts).mockReturnValue({
       baseAmount: 0,
       discountAmount: 0,
       amount: 0
