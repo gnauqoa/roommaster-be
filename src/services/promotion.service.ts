@@ -496,17 +496,30 @@ export class PromotionService {
 
     const where: any = {
       disabledAt: null,
-      startDate: { lte: endDate || now },
-      endDate: { gte: startDate || now },
       OR: [{ remainingQty: null }, { remainingQty: { gt: 0 } }]
     };
 
-    // Add filters
-    if (code) {
-      where.code = { contains: code, mode: 'insensitive' };
+    // Filter by date range if provided
+    // startDate: filter promotions that end after this date
+    // endDate: filter promotions that start before this date
+    if (startDate) {
+      where.endDate = { gte: startDate };
     }
-    if (description) {
-      where.description = { contains: description, mode: 'insensitive' };
+    if (endDate) {
+      where.startDate = { lte: endDate };
+    }
+
+    // Add search filters - search in both code and description
+    if (code || description) {
+      const searchTerm = code || description;
+      where.AND = [
+        {
+          OR: [
+            { code: { contains: searchTerm, mode: 'insensitive' } },
+            { description: { contains: searchTerm, mode: 'insensitive' } }
+          ]
+        }
+      ];
     }
     if (maxDiscount !== undefined) {
       where.maxDiscount = { lte: maxDiscount };
