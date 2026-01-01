@@ -78,6 +78,16 @@ app.use(
   })
 );
 
+// Health check endpoint (for Container Apps probes)
+app.get('/health', (req, res) => {
+  res.status(200).json({
+    status: 'ok',
+    timestamp: new Date().toISOString(),
+    uptime: process.uptime(),
+    environment: config.env
+  });
+});
+
 // v1 api routes
 app.use('/v1', routes);
 
