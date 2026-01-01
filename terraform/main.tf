@@ -72,7 +72,7 @@ resource "azurerm_linux_web_app" "main" {
     # Azure App Service Configuration
     "WEBSITE_NODE_DEFAULT_VERSION" = "~20"
     # Let Azure build install dependencies instead of shipping node_modules
-    "SCM_DO_BUILD_DURING_DEPLOYMENT" = "true"
+    # "SCM_DO_BUILD_DURING_DEPLOYMENT" = "true"
   }
 
   # Configure HTTPS only
