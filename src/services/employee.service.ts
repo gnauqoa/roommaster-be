@@ -74,7 +74,7 @@ export class EmployeeService {
     options: PaginationOptions = {}
   ): Promise<{ data: any[]; total: number; page: number; limit: number }> {
     const { search, role } = filters;
-    const { page = 1, limit = 10, sortBy = 'createdAt', sortOrder = 'desc' } = options;
+    const { page = 1, limit = 10, sortBy = 'updatedAt', sortOrder = 'desc' } = options;
 
     const where: Prisma.EmployeeWhereInput = {};
 
