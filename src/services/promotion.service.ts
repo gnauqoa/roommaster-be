@@ -492,7 +492,6 @@ export class PromotionService {
       endDate
     } = query || {};
     const skip = (page - 1) * limit;
-    const now = new Date();
 
     const where: any = {
       disabledAt: null,
