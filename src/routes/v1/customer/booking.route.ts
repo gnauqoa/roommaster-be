@@ -113,6 +113,47 @@ router.post(
 
 /**
  * @swagger
+ * /customer/bookings:
+ *   get:
+ *     summary: Get all bookings
+ *     description: Retrieve a paginated list of bookings for the logged-in customer
+ *     tags: [Customer Bookings]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: query
+ *         name: page
+ *         schema:
+ *           type: integer
+ *           default: 1
+ *         description: Page number
+ *       - in: query
+ *         name: limit
+ *         schema:
+ *           type: integer
+ *           default: 10
+ *         description: Items per page
+ *       - in: query
+ *         name: status
+ *         schema:
+ *           type: string
+ *           enum: [PENDING, CONFIRMED, CHECKED_IN, CHECKED_OUT, CANCELLED]
+ *         description: Filter by status
+ *     responses:
+ *       200:
+ *         description: List of bookings
+ *       401:
+ *         description: Unauthorized
+ */
+router.get(
+  '/',
+  authCustomer,
+  validate(bookingValidation.getBookings),
+  customerBookingController.getBookings
+);
+
+/**
+ * @swagger
  * /customer/bookings/{id}:
  *   get:
  *     summary: Get booking details
@@ -136,5 +177,38 @@ router.post(
  *         $ref: '#/components/responses/NotFound'
  */
 router.get('/:id', authCustomer, customerBookingController.getBooking);
+
+/**
+ * @swagger
+ * /customer/bookings/{id}/cancel:
+ *   post:
+ *     summary: Cancel booking
+ *     description: Cancel a pending booking
+ *     tags: [Customer Bookings]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: Booking ID
+ *     responses:
+ *       200:
+ *         description: Booking cancelled successfully
+ *       400:
+ *         description: Cannot cancel booking
+ *       401:
+ *         description: Unauthorized
+ *       404:
+ *         description: Booking not found
+ */
+router.post(
+  '/:id/cancel',
+  authCustomer,
+  validate(bookingValidation.cancelBooking),
+  customerBookingController.cancelBooking
+);
 
 export default router;

@@ -553,6 +553,183 @@ export class BookingService {
 
     return booking;
   }
+
+  /**
+   * Get bookings with pagination and filters
+   */
+  async getBookings(filter: any, options: any) {
+    const { page = 1, limit = 10, sortBy = 'createdAt', sortOrder = 'desc' } = options;
+    const skip = (page - 1) * limit;
+
+    const where: any = {};
+
+    if (filter.search) {
+      where.OR = [
+        { bookingCode: { contains: filter.search, mode: 'insensitive' } },
+        { primaryCustomer: { fullName: { contains: filter.search, mode: 'insensitive' } } },
+        { primaryCustomer: { phone: { contains: filter.search, mode: 'insensitive' } } }
+      ];
+    }
+
+    if (filter.status) {
+      where.status = filter.status;
+    }
+
+    if (filter.customerId) {
+      where.primaryCustomerId = filter.customerId;
+    }
+
+    if (filter.startDate && filter.endDate) {
+      where.checkInDate = {
+        gte: new Date(filter.startDate),
+        lte: new Date(filter.endDate)
+      };
+    }
+
+    const [bookings, total] = await Promise.all([
+      this.prisma.booking.findMany({
+        where,
+        include: {
+          primaryCustomer: {
+            select: {
+              id: true,
+              fullName: true,
+              phone: true,
+              email: true
+            }
+          },
+          bookingRooms: {
+            include: {
+              roomType: true,
+              room: true
+            }
+          }
+        },
+        orderBy: {
+          [sortBy]: sortOrder
+        },
+        skip,
+        take: limit
+      }),
+      this.prisma.booking.count({ where })
+    ]);
+
+    return {
+      data: bookings,
+      pagination: {
+        page,
+        limit,
+        total,
+        totalPages: Math.ceil(total / limit)
+      }
+    };
+  }
+
+  /**
+   * Cancel booking
+   */
+  async cancelBooking(id: string) {
+    const booking = await this.getBookingById(id);
+
+    if (booking.status === BookingStatus.CANCELLED) {
+      throw new ApiError(httpStatus.BAD_REQUEST, 'Booking is already cancelled');
+    }
+
+    if (
+      booking.status === BookingStatus.CHECKED_IN ||
+      booking.status === BookingStatus.CHECKED_OUT
+    ) {
+      throw new ApiError(httpStatus.BAD_REQUEST, 'Cannot cancel checked-in or checked-out booking');
+    }
+
+    // Update booking status and release rooms
+    await this.prisma.$transaction(async (tx) => {
+      await tx.booking.update({
+        where: { id },
+        data: {
+          status: BookingStatus.CANCELLED
+        }
+      });
+
+      // Update booking rooms status
+      await tx.bookingRoom.updateMany({
+        where: { bookingId: id },
+        data: {
+          status: BookingStatus.CANCELLED
+        }
+      });
+
+      // Release rooms
+      const roomIds = booking.bookingRooms.map((br: any) => br.roomId);
+      await tx.room.updateMany({
+        where: { id: { in: roomIds } },
+        data: {
+          status: RoomStatus.AVAILABLE
+        }
+      });
+    });
+
+    return { message: 'Booking cancelled successfully' };
+  }
+
+  /**
+   * Update booking details
+   */
+  async updateBooking(id: string, updateBody: any) {
+    const booking = await this.getBookingById(id);
+
+    if (
+      booking.status === BookingStatus.CANCELLED ||
+      booking.status === BookingStatus.CHECKED_OUT
+    ) {
+      throw new ApiError(httpStatus.BAD_REQUEST, 'Cannot update cancelled or checked-out booking');
+    }
+
+    const updatedBooking = await this.prisma.booking.update({
+      where: { id },
+      data: updateBody,
+      include: {
+        bookingRooms: true
+      }
+    });
+
+    return updatedBooking;
+  }
+
+  /**
+   * Create booking by employee (walk-in/phone)
+   */
+  async createBookingEmployee(input: any) {
+    let customerId = input.customerId;
+
+    // If new customer, create them
+    if (!customerId && input.customer) {
+      const existingCustomer = await this.prisma.customer.findUnique({
+        where: { phone: input.customer.phone }
+      });
+
+      if (existingCustomer) {
+        customerId = existingCustomer.id;
+      } else {
+        const newCustomer = await this.prisma.customer.create({
+          data: {
+            ...input.customer,
+            password: await import('bcryptjs').then((m) => m.hash('12345678', 8)) // Default password
+          }
+        });
+        customerId = newCustomer.id;
+      }
+    }
+
+    if (!customerId) {
+      throw new ApiError(httpStatus.BAD_REQUEST, 'Customer information is required');
+    }
+
+    return this.createBooking({
+      ...input,
+      customerId
+    });
+  }
 }
 
 export default BookingService;

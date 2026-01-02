@@ -61,6 +61,45 @@ export class CustomerBookingController {
 
     sendData(res, booking);
   });
+
+  /**
+   * Get all bookings for the logged-in customer
+   * GET /customer-api/v1/bookings
+   */
+  getBookings = catchAsync(async (req: Request, res: Response) => {
+    if (!req.customer?.id) {
+      throw new Error('Customer not authenticated');
+    }
+
+    const filter = {
+      customerId: req.customer.id,
+      ...req.query
+    };
+    const options = req.query;
+
+    const result = await this.bookingService.getBookings(filter, options);
+    sendData(res, result);
+  });
+
+  /**
+   * Cancel a booking
+   * POST /customer-api/v1/bookings/:id/cancel
+   */
+  cancelBooking = catchAsync(async (req: Request, res: Response) => {
+    if (!req.customer?.id) {
+      throw new Error('Customer not authenticated');
+    }
+
+    const booking = await this.bookingService.getBookingById(req.params.id);
+
+    // Verify the booking belongs to the authenticated customer
+    if (booking.primaryCustomerId !== req.customer.id) {
+      throw new Error('Unauthorized to cancel this booking');
+    }
+
+    const result = await this.bookingService.cancelBooking(req.params.id);
+    sendData(res, result);
+  });
 }
 
 export default CustomerBookingController;
