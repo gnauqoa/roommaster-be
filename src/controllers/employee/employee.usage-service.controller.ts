@@ -54,6 +54,35 @@ export class EmployeeUsageServiceController {
 
     sendData(res, result);
   });
+
+  /**
+   * Get service usages with filters
+   * GET /employee-api/v1/service/service-usage
+   */
+  getServiceUsages = catchAsync(async (req: Request, res: Response) => {
+    if (!req.employee?.id) {
+      throw new Error('Employee not authenticated');
+    }
+
+    const filter = req.query;
+    const options = req.query;
+
+    const result = await this.usageServiceService.getServiceUsages(filter, options);
+    sendData(res, result);
+  });
+
+  /**
+   * Delete service usage
+   * DELETE /employee-api/v1/service/service-usage/:id
+   */
+  deleteServiceUsage = catchAsync(async (req: Request, res: Response) => {
+    if (!req.employee?.id) {
+      throw new Error('Employee not authenticated');
+    }
+
+    const result = await this.usageServiceService.deleteServiceUsage(req.params.id);
+    sendData(res, result);
+  });
 }
 
 export default EmployeeUsageServiceController;
