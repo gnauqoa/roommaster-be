@@ -6,7 +6,10 @@ import { UsageServiceService } from '@/services/usage-service.service';
 import { PromotionService } from '@/services/promotion.service';
 import { CreateTransactionPayload, TransactionDetailData } from '@/services/transaction/types';
 import { validatePromotions } from '@/services/transaction/validators/promotion-validator';
-import { calculateDiscounts, applyDiscountsToDetails } from '@/services/transaction/calculators/discount-calculator';
+import {
+  calculateDiscounts,
+  applyDiscountsToDetails
+} from '@/services/transaction/calculators/discount-calculator';
 import { aggregateTransactionAmounts } from '@/services/transaction/calculators/amount-aggregator';
 import { updateBookingTotals } from '@/services/transaction/helpers/booking-updater';
 

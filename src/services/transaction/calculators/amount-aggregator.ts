@@ -1,4 +1,8 @@
-import { TransactionDetailData, TransactionAmounts, DiscountInfo } from '@/services/transaction/types';
+import {
+  TransactionDetailData,
+  TransactionAmounts,
+  DiscountInfo
+} from '@/services/transaction/types';
 
 /**
  * Aggregate transaction amounts from details

@@ -1,6 +1,10 @@
 import { PrismaClient } from '@prisma/client';
 import { PromotionService } from '@/services/promotion.service';
-import { PromotionApplication, TransactionDetailData, DiscountInfo } from '@/services/transaction/types';
+import {
+  PromotionApplication,
+  TransactionDetailData,
+  DiscountInfo
+} from '@/services/transaction/types';
 import httpStatus from 'http-status';
 import ApiError from '@/utils/ApiError';
 
