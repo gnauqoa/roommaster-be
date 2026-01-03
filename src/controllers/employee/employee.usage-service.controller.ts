@@ -3,9 +3,9 @@
 import { Injectable } from '@/core/decorators';
 import { Request, Response } from 'express';
 import httpStatus from 'http-status';
-import catchAsync from 'utils/catchAsync';
-import { UsageServiceService } from 'services/usage-service.service';
-import { sendData } from 'utils/responseWrapper';
+import catchAsync from '@/utils/catchAsync';
+import { UsageServiceService } from '@/services/usage-service.service';
+import { sendData } from '@/utils/responseWrapper';
 
 @Injectable()
 export class EmployeeUsageServiceController {

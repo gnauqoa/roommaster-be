@@ -15,4 +15,4 @@ export { PromotionService } from './promotion.service';
 export { TransactionDetailsService } from './transaction-details.service';
 
 // Re-export getters from bootstrap for convenience
-export {} from 'core/bootstrap';
+export {} from '@/core/bootstrap';

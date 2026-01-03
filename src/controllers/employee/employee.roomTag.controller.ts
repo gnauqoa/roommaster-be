@@ -1,8 +1,8 @@
 import { Injectable } from '@/core/decorators';
 import { Request, Response } from 'express';
-import catchAsync from 'utils/catchAsync';
-import { RoomTagService } from 'services/roomTag.service';
-import { sendData } from 'utils/responseWrapper';
+import catchAsync from '@/utils/catchAsync';
+import { RoomTagService } from '@/services/roomTag.service';
+import { sendData } from '@/utils/responseWrapper';
 
 @Injectable()
 export class EmployeeRoomTagController {

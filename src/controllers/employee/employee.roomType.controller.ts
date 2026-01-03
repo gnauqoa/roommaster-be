@@ -3,9 +3,9 @@
 import { Injectable } from '@/core/decorators';
 import { Request, Response } from 'express';
 import httpStatus from 'http-status';
-import catchAsync from 'utils/catchAsync';
-import { RoomTypeService } from 'services';
-import { sendData, sendNoContent } from 'utils/responseWrapper';
+import catchAsync from '@/utils/catchAsync';
+import { RoomTypeService } from '@/services';
+import { sendData, sendNoContent } from '@/utils/responseWrapper';
 import pick from '@/utils/pick';
 
 @Injectable()

@@ -1,8 +1,8 @@
 import { Injectable } from '@/core/decorators';
 import { Request, Response } from 'express';
-import catchAsync from 'utils/catchAsync';
-import { ActivityService } from 'services/activity.service';
-import { sendData } from 'utils/responseWrapper';
+import catchAsync from '@/utils/catchAsync';
+import { ActivityService } from '@/services/activity.service';
+import { sendData } from '@/utils/responseWrapper';
 import { ActivityType } from '@prisma/client';
 
 @Injectable()

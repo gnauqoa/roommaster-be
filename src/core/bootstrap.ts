@@ -4,7 +4,7 @@
  */
 
 import { container, TOKENS } from './container';
-import prisma from 'prisma';
+import prisma from '@/prisma';
 import { PrismaClient } from '@prisma/client';
 import {
   TokenService,

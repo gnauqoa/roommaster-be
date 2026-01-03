@@ -2,9 +2,9 @@
 /// <reference path="../../types/express.d.ts" />
 import { Injectable } from '@/core/decorators';
 import { Request, Response } from 'express';
-import catchAsync from 'utils/catchAsync';
-import { BookingService } from 'services/booking.service';
-import { sendData } from 'utils/responseWrapper';
+import catchAsync from '@/utils/catchAsync';
+import { BookingService } from '@/services/booking.service';
+import { sendData } from '@/utils/responseWrapper';
 
 @Injectable()
 export class EmployeeBookingController {

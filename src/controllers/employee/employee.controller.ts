@@ -3,10 +3,10 @@
 import { Injectable } from '@/core/decorators';
 import { Request, Response } from 'express';
 import httpStatus from 'http-status';
-import catchAsync from 'utils/catchAsync';
-import { AuthService, EmployeeService, TokenService } from 'services';
-import exclude from 'utils/exclude';
-import { sendData, sendNoContent } from 'utils/responseWrapper';
+import catchAsync from '@/utils/catchAsync';
+import { AuthService, EmployeeService, TokenService } from '@/services';
+import exclude from '@/utils/exclude';
+import { sendData, sendNoContent } from '@/utils/responseWrapper';
 
 @Injectable()
 export class EmployeeController {
