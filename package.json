@@ -1,8 +1,6 @@
 {
-  "name": "prisma-express-typescript-boilerplate",
+  "name": "room-master-backend",
   "version": "1.0.0",
-  "description": "REST API Boilerplate with Node JS, TypeScript, Express and Prisma",
-  "repository": "https://github.com/antonio-lazaro/prisma-express-typescript-boilerplate.git",
   "scripts": {
     "start": "pm2 start ecosystem.config.json --no-daemon",
     "dev": "cross-env NODE_ENV=development nodemon --exec \"node -r ts-node/register -r tsconfig-paths/register\" src/index.ts",
