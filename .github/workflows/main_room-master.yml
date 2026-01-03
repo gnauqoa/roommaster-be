@@ -36,6 +36,8 @@ jobs:
 
       - name: Generate Prisma Client
         run: yarn prisma generate
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
 
       - name: Verify build output
         run: |
@@ -53,6 +55,8 @@ jobs:
 
       - name: Verify Prisma schema
         run: yarn prisma validate
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
 
       - name: Clean node_modules for production
         run: |
