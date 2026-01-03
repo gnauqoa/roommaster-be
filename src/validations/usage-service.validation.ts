@@ -49,8 +49,29 @@ const createTransactionWithAllocation = {
   })
 };
 
+const getServiceUsages = {
+  query: Joi.object().keys({
+    bookingId: Joi.string(),
+    bookingRoomId: Joi.string(),
+    startDate: Joi.date().iso(),
+    endDate: Joi.date().iso(),
+    page: Joi.number().integer(),
+    limit: Joi.number().integer(),
+    sortBy: Joi.string(),
+    sortOrder: Joi.string()
+  })
+};
+
+const deleteServiceUsage = {
+  params: Joi.object().keys({
+    id: Joi.string().required()
+  })
+};
+
 export default {
   createServiceUsage,
   updateServiceUsage,
-  createTransactionWithAllocation
+  createTransactionWithAllocation,
+  getServiceUsages,
+  deleteServiceUsage
 };

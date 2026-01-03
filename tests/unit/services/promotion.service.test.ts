@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/no-non-null-assertion */
 import { describe, expect, it, beforeEach, jest } from '@jest/globals';
-import { PromotionService } from '../../../src/services/promotion.service';
+import { PromotionService } from '@/services/promotion.service';
 import { createMockPrismaClient } from '../../utils/testContainer';
 import {
   PrismaClient,
@@ -9,32 +9,32 @@ import {
   PromotionScope,
   CustomerPromotionStatus
 } from '@prisma/client';
-import ApiError from '../../../src/utils/ApiError';
+import ApiError from '@/utils/ApiError';
+
+const resolvedPromiseMock = <T>(value: T) => jest.fn<() => Promise<T>>().mockResolvedValue(value);
 
 describe('PromotionService', () => {
   let promotionService: PromotionService;
-  let mockPrisma: jest.Mocked<Partial<PrismaClient>>;
+  let mockPrisma: any;
   let mockActivityService: any;
 
   beforeEach(() => {
     mockPrisma = createMockPrismaClient();
 
     // Initialize promotion and customerPromotion mocks
-    // @ts-expect-error - Mock setup
     mockPrisma.promotion = {
       findUnique: jest.fn(),
       findMany: jest.fn(),
       create: jest.fn(),
-      update: jest.fn(),
+      update: jest.fn() as any,
       delete: jest.fn()
     } as any;
 
-    // @ts-expect-error - Mock setup
     mockPrisma.customerPromotion = {
       findUnique: jest.fn(),
       findMany: jest.fn(),
       create: jest.fn(),
-      update: jest.fn(),
+      update: jest.fn() as any,
       updateMany: jest.fn(),
       count: jest.fn()
     } as any;
@@ -374,6 +374,555 @@ describe('PromotionService', () => {
           status: CustomerPromotionStatus.EXPIRED
         }
       });
+    });
+  });
+
+  describe('updatePromotion', () => {
+    it('should throw error if promotion not found', async () => {
+      const payload = {
+        id: 'non-existent',
+        employeeId: 'employee-123'
+      };
+
+      // @ts-expect-error - Mock setup
+      mockPrisma.promotion!.findUnique = jest.fn().mockResolvedValue(null);
+
+      await expect(promotionService.updatePromotion(payload)).rejects.toThrow(
+        'Promotion not found'
+      );
+    });
+
+    it('should throw error if new code already exists', async () => {
+      const existingPromotion = {
+        id: 'promo-123',
+        code: 'OLD_CODE',
+        value: 10
+      };
+
+      const codeExists = {
+        id: 'promo-456',
+        code: 'NEW_CODE'
+      };
+
+      const payload = {
+        id: 'promo-123',
+        code: 'NEW_CODE',
+        employeeId: 'employee-123'
+      };
+
+      const findUniqueMock = jest.fn<() => Promise<any>>();
+      findUniqueMock.mockResolvedValueOnce(existingPromotion).mockResolvedValueOnce(codeExists);
+      mockPrisma.promotion!.findUnique = findUniqueMock as any;
+
+      await expect(promotionService.updatePromotion(payload)).rejects.toThrow(
+        'Promotion code "NEW_CODE" already exists'
+      );
+    });
+
+    it('should successfully update promotion', async () => {
+      const existingPromotion = {
+        id: 'promo-123',
+        code: 'OLD_CODE',
+        value: 10
+      };
+
+      const updatedPromotion = {
+        id: 'promo-123',
+        code: 'OLD_CODE',
+        value: 15
+      };
+
+      const payload = {
+        id: 'promo-123',
+        value: 15,
+        employeeId: 'employee-123'
+      };
+
+      const findUniqueMock = jest.fn<() => Promise<any>>();
+      findUniqueMock.mockResolvedValue(existingPromotion);
+      const updateMock = jest.fn<() => Promise<any>>();
+      updateMock.mockResolvedValue(updatedPromotion);
+
+      mockPrisma.promotion!.findUnique = findUniqueMock as any;
+      mockPrisma.promotion!.update = updateMock as any;
+      mockPrisma.$transaction = jest.fn((callback: any) =>
+        callback({
+          promotion: mockPrisma.promotion
+        })
+      ) as any;
+
+      const result = await promotionService.updatePromotion(payload);
+
+      expect(result.id).toBe('promo-123');
+      expect(mockActivityService.createActivity).toHaveBeenCalled();
+    });
+  });
+
+  describe('claimPromotion', () => {
+    it('should throw error if promotion not found', async () => {
+      const payload = {
+        customerId: 'customer-123',
+        promotionCode: 'INVALID'
+      };
+
+      const mockTx = {
+        promotion: {
+          findUnique: resolvedPromiseMock(null) as any
+        }
+      };
+
+      mockPrisma.$transaction = jest.fn((callback: any) => callback(mockTx)) as any;
+
+      await expect(promotionService.claimPromotion(payload)).rejects.toThrow('Promotion not found');
+    });
+
+    it('should throw error if promotion is disabled', async () => {
+      const payload = {
+        customerId: 'customer-123',
+        promotionCode: 'DISABLED'
+      };
+
+      const promotion = {
+        id: 'promo-123',
+        code: 'DISABLED',
+        disabledAt: new Date('2024-01-01'),
+        startDate: new Date('2024-01-01'),
+        endDate: new Date('2024-12-31'),
+        remainingQty: 10,
+        perCustomerLimit: 1
+      };
+
+      const mockTx = {
+        promotion: {
+          findUnique: resolvedPromiseMock(promotion) as any
+        }
+      };
+
+      mockPrisma.$transaction = jest.fn((callback: any) => callback(mockTx)) as any;
+
+      await expect(promotionService.claimPromotion(payload)).rejects.toThrow(
+        'Promotion has been disabled'
+      );
+    });
+
+    it('should throw error if promotion is not in valid date range', async () => {
+      const payload = {
+        customerId: 'customer-123',
+        promotionCode: 'FUTURE'
+      };
+
+      const promotion = {
+        id: 'promo-123',
+        code: 'FUTURE',
+        disabledAt: null,
+        startDate: new Date('2030-01-01'),
+        endDate: new Date('2030-12-31'),
+        remainingQty: 10,
+        perCustomerLimit: 1
+      };
+
+      const mockTx = {
+        promotion: {
+          findUnique: resolvedPromiseMock(promotion) as any
+        }
+      };
+
+      mockPrisma.$transaction = jest.fn((callback: any) => callback(mockTx)) as any;
+
+      await expect(promotionService.claimPromotion(payload)).rejects.toThrow(
+        'Promotion is not valid at this time'
+      );
+    });
+
+    it('should throw error if promotion quantity exhausted', async () => {
+      const payload = {
+        customerId: 'customer-123',
+        promotionCode: 'EXHAUSTED'
+      };
+
+      const promotion = {
+        id: 'promo-123',
+        code: 'EXHAUSTED',
+        disabledAt: null,
+        startDate: new Date('2020-01-01'),
+        endDate: new Date('2030-12-31'),
+        remainingQty: 0,
+        perCustomerLimit: 1
+      };
+
+      const mockTx = {
+        promotion: {
+          findUnique: resolvedPromiseMock(promotion) as any
+        }
+      };
+
+      mockPrisma.$transaction = jest.fn((callback: any) => callback(mockTx)) as any;
+
+      await expect(promotionService.claimPromotion(payload)).rejects.toThrow(
+        'Promotion is no longer available'
+      );
+    });
+
+    it('should throw error if per-customer limit reached', async () => {
+      const payload = {
+        customerId: 'customer-123',
+        promotionCode: 'LIMITED'
+      };
+
+      const promotion = {
+        id: 'promo-123',
+        code: 'LIMITED',
+        disabledAt: null,
+        startDate: new Date('2020-01-01'),
+        endDate: new Date('2030-12-31'),
+        remainingQty: 10,
+        perCustomerLimit: 2
+      };
+
+      const mockTx = {
+        promotion: {
+          findUnique: resolvedPromiseMock(promotion) as any
+        },
+        customerPromotion: {
+          count: resolvedPromiseMock(2) as any,
+          create: jest.fn() as any
+        }
+      };
+
+      mockPrisma.$transaction = jest.fn((callback: any) => callback(mockTx)) as any;
+
+      await expect(promotionService.claimPromotion(payload)).rejects.toThrow(
+        'You have already claimed this promotion 2 time(s)'
+      );
+    });
+
+    it('should successfully claim promotion', async () => {
+      const payload = {
+        customerId: 'customer-123',
+        promotionCode: 'SUMMER2024'
+      };
+
+      const promotion = {
+        id: 'promo-123',
+        code: 'SUMMER2024',
+        disabledAt: null,
+        startDate: new Date('2020-01-01'),
+        endDate: new Date('2030-12-31'),
+        remainingQty: 10,
+        perCustomerLimit: 1
+      };
+
+      const customerPromotion = {
+        id: 'cp-123',
+        customerId: 'customer-123',
+        promotionId: 'promo-123',
+        status: CustomerPromotionStatus.AVAILABLE
+      };
+
+      const mockTx = {
+        promotion: {
+          findUnique: resolvedPromiseMock(promotion) as any,
+          update: jest.fn() as any
+        },
+        customerPromotion: {
+          count: resolvedPromiseMock(0) as any,
+          create: resolvedPromiseMock(customerPromotion) as any
+        }
+      };
+
+      mockPrisma.$transaction = jest.fn((callback: any) => callback(mockTx)) as any;
+
+      const result = await promotionService.claimPromotion(payload);
+
+      expect(result.id).toBe('cp-123');
+      expect(mockTx.promotion.update).toHaveBeenCalledWith({
+        where: { id: 'promo-123' },
+        data: { remainingQty: 9 }
+      });
+      expect(mockActivityService.createActivity).toHaveBeenCalled();
+    });
+
+    it('should not decrement remainingQty if null', async () => {
+      const payload = {
+        customerId: 'customer-123',
+        promotionCode: 'UNLIMITED'
+      };
+
+      const promotion = {
+        id: 'promo-123',
+        code: 'UNLIMITED',
+        disabledAt: null,
+        startDate: new Date('2020-01-01'),
+        endDate: new Date('2030-12-31'),
+        remainingQty: null,
+        perCustomerLimit: 1
+      };
+
+      const customerPromotion = {
+        id: 'cp-123',
+        customerId: 'customer-123',
+        promotionId: 'promo-123',
+        status: CustomerPromotionStatus.AVAILABLE
+      };
+
+      const mockTx = {
+        promotion: {
+          findUnique: resolvedPromiseMock(promotion) as any,
+          update: jest.fn() as any
+        },
+        customerPromotion: {
+          count: resolvedPromiseMock(0) as any,
+          create: resolvedPromiseMock(customerPromotion) as any
+        }
+      };
+
+      mockPrisma.$transaction = jest.fn((callback: any) => callback(mockTx)) as any;
+
+      await promotionService.claimPromotion(payload);
+
+      expect(mockTx.promotion.update).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('applyPromotion', () => {
+    it('should throw error if customer promotion not found', async () => {
+      const payload = {
+        customerPromotionId: 'non-existent',
+        transactionDetailId: 'detail-123',
+        baseAmount: 100,
+        employeeId: 'employee-123'
+      };
+
+      // @ts-expect-error - Mock setup
+      mockPrisma.customerPromotion!.findUnique = jest.fn().mockResolvedValue(null);
+
+      await expect(promotionService.applyPromotion(payload)).rejects.toThrow(
+        'Customer promotion not found'
+      );
+    });
+
+    it('should throw error if promotion is not available', async () => {
+      const payload = {
+        customerPromotionId: 'cp-123',
+        transactionDetailId: 'detail-123',
+        baseAmount: 100,
+        employeeId: 'employee-123'
+      };
+
+      const customerPromotion = {
+        id: 'cp-123',
+        status: CustomerPromotionStatus.USED,
+        promotionId: 'promo-123',
+        customerId: 'customer-123',
+        promotion: {
+          id: 'promo-123',
+          code: 'TEST',
+          minBookingAmount: new Prisma.Decimal(0)
+        }
+      };
+
+      // @ts-expect-error - Mock setup
+      mockPrisma.customerPromotion!.findUnique = jest.fn().mockResolvedValue(customerPromotion);
+
+      await expect(promotionService.applyPromotion(payload)).rejects.toThrow(
+        'Promotion is not available'
+      );
+    });
+
+    it('should throw error if base amount does not meet minimum', async () => {
+      const payload = {
+        customerPromotionId: 'cp-123',
+        transactionDetailId: 'detail-123',
+        baseAmount: 50,
+        employeeId: 'employee-123'
+      };
+
+      const customerPromotion = {
+        id: 'cp-123',
+        status: CustomerPromotionStatus.AVAILABLE,
+        promotionId: 'promo-123',
+        customerId: 'customer-123',
+        promotion: {
+          id: 'promo-123',
+          code: 'TEST',
+          type: PromotionType.PERCENTAGE,
+          value: new Prisma.Decimal(10),
+          minBookingAmount: new Prisma.Decimal(100),
+          maxDiscount: null
+        }
+      };
+
+      // @ts-expect-error - Mock setup
+      mockPrisma.customerPromotion!.findUnique = jest.fn().mockResolvedValue(customerPromotion);
+      // @ts-expect-error - Mock setup
+      mockPrisma.promotion!.findUnique = jest.fn().mockResolvedValue(customerPromotion.promotion);
+
+      await expect(promotionService.applyPromotion(payload)).rejects.toThrow(
+        'Base amount (50) does not meet minimum requirement'
+      );
+    });
+
+    it('should successfully apply promotion', async () => {
+      const payload = {
+        customerPromotionId: 'cp-123',
+        transactionDetailId: 'detail-123',
+        baseAmount: 100,
+        employeeId: 'employee-123'
+      };
+
+      const customerPromotion = {
+        id: 'cp-123',
+        status: CustomerPromotionStatus.AVAILABLE,
+        promotionId: 'promo-123',
+        customerId: 'customer-123',
+        promotion: {
+          id: 'promo-123',
+          code: 'TEST',
+          type: PromotionType.PERCENTAGE,
+          value: new Prisma.Decimal(10),
+          minBookingAmount: new Prisma.Decimal(0),
+          maxDiscount: null
+        },
+        customer: { id: 'customer-123' }
+      };
+
+      const usedPromotion = {
+        id: 'used-123',
+        promotionId: 'promo-123',
+        discountAmount: 10,
+        transactionDetailId: 'detail-123'
+      };
+
+      mockPrisma.customerPromotion!.findUnique.mockResolvedValue(customerPromotion);
+      mockPrisma.customerPromotion!.update.mockResolvedValue(customerPromotion);
+      mockPrisma.promotion!.findUnique.mockResolvedValue(customerPromotion.promotion);
+      mockPrisma.usedPromotion = {
+        create: resolvedPromiseMock(usedPromotion) as any
+      } as any;
+
+      const result = await promotionService.applyPromotion(payload);
+
+      expect(result.discountAmount).toBe(10);
+      expect(result.usedPromotion).toBeDefined();
+      expect(mockPrisma.customerPromotion!.update).toHaveBeenCalledWith({
+        where: { id: 'cp-123' },
+        data: expect.objectContaining({
+          status: CustomerPromotionStatus.USED,
+          transactionDetailId: 'detail-123'
+        })
+      });
+      expect(mockActivityService.createActivity).toHaveBeenCalled();
+    });
+  });
+
+  describe('getAvailablePromotions', () => {
+    it('should return paginated available promotions for customer', async () => {
+      const customerPromotions = [
+        {
+          id: 'cp-1',
+          customerId: 'customer-123',
+          status: CustomerPromotionStatus.AVAILABLE,
+          promotion: { id: 'promo-1', code: 'CODE1' }
+        },
+        {
+          id: 'cp-2',
+          customerId: 'customer-123',
+          status: CustomerPromotionStatus.AVAILABLE,
+          promotion: { id: 'promo-2', code: 'CODE2' }
+        }
+      ];
+
+      // @ts-expect-error - Mock setup
+      mockPrisma.customerPromotion!.findMany = jest.fn().mockResolvedValue(customerPromotions);
+      // @ts-expect-error - Mock setup
+      mockPrisma.customerPromotion!.count = jest.fn().mockResolvedValue(2);
+
+      const result = await promotionService.getAvailablePromotions('customer-123', {
+        page: 1,
+        limit: 10
+      });
+
+      expect(result.data).toHaveLength(2);
+      expect(result.pagination.total).toBe(2);
+      expect(result.pagination.page).toBe(1);
+    });
+
+    it('should filter by code', async () => {
+      // @ts-expect-error - Mock setup
+      mockPrisma.customerPromotion!.findMany = jest.fn().mockResolvedValue([]);
+      // @ts-expect-error - Mock setup
+      mockPrisma.customerPromotion!.count = jest.fn().mockResolvedValue(0);
+
+      await promotionService.getAvailablePromotions('customer-123', {
+        code: 'SUMMER'
+      });
+
+      expect(mockPrisma.customerPromotion!.findMany).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: expect.objectContaining({
+            promotion: expect.objectContaining({
+              code: { contains: 'SUMMER', mode: 'insensitive' }
+            })
+          })
+        })
+      );
+    });
+  });
+
+  describe('getActivePromotions', () => {
+    it('should return paginated active promotions', async () => {
+      const promotions = [
+        { id: 'promo-1', code: 'CODE1', remainingQty: 10 },
+        { id: 'promo-2', code: 'CODE2', remainingQty: null }
+      ];
+
+      // @ts-expect-error - Mock setup
+      mockPrisma.promotion!.findMany = jest.fn().mockResolvedValue(promotions);
+      // @ts-expect-error - Mock setup
+      mockPrisma.promotion!.count = jest.fn().mockResolvedValue(2);
+
+      const result = await promotionService.getActivePromotions({ page: 1, limit: 10 });
+
+      expect(result.data).toHaveLength(2);
+      expect(result.pagination.total).toBe(2);
+    });
+
+    it('should filter by description', async () => {
+      // @ts-expect-error - Mock setup
+      mockPrisma.promotion!.findMany = jest.fn().mockResolvedValue([]);
+      // @ts-expect-error - Mock setup
+      mockPrisma.promotion!.count = jest.fn().mockResolvedValue(0);
+
+      await promotionService.getActivePromotions({
+        description: 'Holiday'
+      });
+
+      expect(mockPrisma.promotion!.findMany).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: expect.objectContaining({
+            description: { contains: 'Holiday', mode: 'insensitive' }
+          })
+        })
+      );
+    });
+
+    it('should filter by maxDiscount', async () => {
+      // @ts-expect-error - Mock setup
+      mockPrisma.promotion!.findMany = jest.fn().mockResolvedValue([]);
+      // @ts-expect-error - Mock setup
+      mockPrisma.promotion!.count = jest.fn().mockResolvedValue(0);
+
+      await promotionService.getActivePromotions({
+        maxDiscount: 50
+      });
+
+      expect(mockPrisma.promotion!.findMany).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: expect.objectContaining({
+            maxDiscount: { lte: 50 }
+          })
+        })
+      );
     });
   });
 });

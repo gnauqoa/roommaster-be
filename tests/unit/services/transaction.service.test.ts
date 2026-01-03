@@ -1,16 +1,16 @@
 /* eslint-disable @typescript-eslint/no-non-null-assertion */
 /* eslint-disable @typescript-eslint/no-var-requires */
 import { describe, expect, it, beforeEach, jest } from '@jest/globals';
-import { TransactionService } from '../../../src/services/transaction/transaction.service';
+import { TransactionService } from '@/services/transaction/transaction.service';
 import { createMockPrismaClient } from '../../utils/testContainer';
 import { PrismaClient, PaymentMethod, TransactionType } from '@prisma/client';
-import ApiError from '../../../src/utils/ApiError';
+import ApiError from '@/utils/ApiError';
 
 // Mock the handler modules
-jest.mock('../../../src/services/transaction/handlers/full-booking-payment');
-jest.mock('../../../src/services/transaction/handlers/split-room-payment');
-jest.mock('../../../src/services/transaction/handlers/booking-service-payment');
-jest.mock('../../../src/services/transaction/handlers/guest-service-payment');
+jest.mock('@/services/transaction/handlers/full-booking-payment');
+jest.mock('@/services/transaction/handlers/split-room-payment');
+jest.mock('@/services/transaction/handlers/booking-service-payment');
+jest.mock('@/services/transaction/handlers/guest-service-payment');
 
 describe('TransactionService', () => {
   let transactionService: TransactionService;

@@ -1,8 +1,12 @@
 import { PrismaClient } from '@prisma/client';
-import { PromotionService } from '../../promotion.service';
-import { PromotionApplication, TransactionDetailData, DiscountInfo } from '../types';
+import { PromotionService } from '@/services/promotion.service';
+import {
+  PromotionApplication,
+  TransactionDetailData,
+  DiscountInfo
+} from '@/services/transaction/types';
 import httpStatus from 'http-status';
-import ApiError from 'utils/ApiError';
+import ApiError from '@/utils/ApiError';
 
 /**
  * Calculate discounts for all promotions

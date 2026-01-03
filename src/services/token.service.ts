@@ -1,10 +1,10 @@
 import { PrismaClient } from '@prisma/client';
-import { Injectable } from 'core/decorators';
+import { Injectable } from '@/core/decorators';
 import jwt from 'jsonwebtoken';
 import moment, { Moment } from 'moment';
-import config from 'config/env';
+import config from '@/config/env';
 import httpStatus from 'http-status';
-import ApiError from 'utils/ApiError';
+import ApiError from '@/utils/ApiError';
 
 export type TokenType = 'ACCESS' | 'REFRESH' | 'RESET_PASSWORD';
 export type UserType = 'customer' | 'employee';

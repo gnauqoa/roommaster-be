@@ -22,6 +22,63 @@ const employeeUsageServiceController = new EmployeeUsageServiceController(usageS
 /**
  * @swagger
  * /employee/service/service-usage:
+ *   get:
+ *     summary: Get service usages
+ *     description: Retrieve a paginated list of service usages with filters
+ *     tags: [Employee Services]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: query
+ *         name: page
+ *         schema:
+ *           type: integer
+ *           default: 1
+ *         description: Page number
+ *       - in: query
+ *         name: limit
+ *         schema:
+ *           type: integer
+ *           default: 10
+ *         description: Items per page
+ *       - in: query
+ *         name: bookingId
+ *         schema:
+ *           type: string
+ *         description: Filter by booking ID
+ *       - in: query
+ *         name: bookingRoomId
+ *         schema:
+ *           type: string
+ *         description: Filter by booking room ID
+ *       - in: query
+ *         name: startDate
+ *         schema:
+ *           type: string
+ *           format: date-time
+ *         description: Filter by date start
+ *       - in: query
+ *         name: endDate
+ *         schema:
+ *           type: string
+ *           format: date-time
+ *         description: Filter by date end
+ *     responses:
+ *       200:
+ *         description: List of service usages
+ *       401:
+ *         description: Unauthorized
+ */
+router.get(
+  '/service-usage',
+  authEmployee,
+  validate(usageServiceValidation.getServiceUsages),
+  employeeUsageServiceController.getServiceUsages
+);
+
+/**
+ * @swagger
+ * /employee/service/service-usage:
  *   post:
  *     summary: Create a service usage record
  *     description: Record service consumption for a booking or guest user. BookingId and bookingRoomId are optional for guest users.
@@ -129,6 +186,39 @@ router.patch(
   authEmployee,
   validate(usageServiceValidation.updateServiceUsage),
   employeeUsageServiceController.updateServiceUsage
+);
+
+/**
+ * @swagger
+ * /employee/service/service-usage/{id}:
+ *   delete:
+ *     summary: Delete service usage
+ *     description: Delete a service usage record (if not paid/audited)
+ *     tags: [Employee Services]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: Service usage ID
+ *     responses:
+ *       200:
+ *         description: Service usage deleted successfully
+ *       400:
+ *         description: Cannot delete paid/audited service usage
+ *       401:
+ *         description: Unauthorized
+ *       404:
+ *         description: Service usage not found
+ */
+router.delete(
+  '/service-usage/:id',
+  authEmployee,
+  validate(usageServiceValidation.deleteServiceUsage),
+  employeeUsageServiceController.deleteServiceUsage
 );
 
 export default router;

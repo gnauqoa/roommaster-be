@@ -6,9 +6,9 @@ import {
   CustomerPromotionStatus,
   ActivityType
 } from '@prisma/client';
-import { Injectable } from 'core/decorators';
+import { Injectable } from '@/core/decorators';
 import httpStatus from 'http-status';
-import ApiError from 'utils/ApiError';
+import ApiError from '@/utils/ApiError';
 import { ActivityService } from './activity.service';
 
 export interface CreatePromotionPayload {

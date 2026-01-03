@@ -1,7 +1,7 @@
 import { PrismaClient, RoomType, Prisma } from '@prisma/client';
-import { Injectable } from 'core/decorators';
+import { Injectable } from '@/core/decorators';
 import httpStatus from 'http-status';
-import ApiError from 'utils/ApiError';
+import ApiError from '@/utils/ApiError';
 
 export interface CreateRoomTypeData {
   name: string;

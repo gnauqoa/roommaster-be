@@ -1,9 +1,9 @@
 import passport from 'passport';
 import httpStatus from 'http-status';
-import ApiError from 'utils/ApiError';
+import ApiError from '@/utils/ApiError';
 import { Request, Response, NextFunction } from 'express';
 import jwt from 'jsonwebtoken';
-import config from 'config/env';
+import config from '@/config/env';
 
 const verifyCustomerCallback =
   (req: Request, resolve: any, reject: any) => async (err: any, user: any, info: any) => {

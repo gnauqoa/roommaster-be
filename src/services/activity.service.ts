@@ -1,5 +1,5 @@
 import { PrismaClient, ActivityType, Prisma } from '@prisma/client';
-import { Injectable } from 'core/decorators';
+import { Injectable } from '@/core/decorators';
 
 export interface CreateActivityPayload {
   type: ActivityType;

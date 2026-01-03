@@ -1,7 +1,7 @@
 import { PrismaClient, Prisma, ServiceUsageStatus, ActivityType } from '@prisma/client';
-import { Injectable } from 'core/decorators';
+import { Injectable } from '@/core/decorators';
 import httpStatus from 'http-status';
-import ApiError from 'utils/ApiError';
+import ApiError from '@/utils/ApiError';
 import { ActivityService } from './activity.service';
 
 export interface CreateServiceUsagePayload {
@@ -439,6 +439,110 @@ export class UsageServiceService {
     totalPaid: Prisma.Decimal;
   }): Prisma.Decimal {
     return new Prisma.Decimal(serviceUsage.totalPrice).sub(serviceUsage.totalPaid);
+  }
+
+  /**
+   * Get service usages with pagination and filters
+   */
+  async getServiceUsages(filter: any, options: any) {
+    const { page = 1, limit = 10, sortBy = 'createdAt', sortOrder = 'desc' } = options;
+    const skip = (page - 1) * limit;
+
+    const where: any = {};
+
+    if (filter.bookingId) {
+      where.bookingId = filter.bookingId;
+    }
+
+    if (filter.bookingRoomId) {
+      where.bookingRoomId = filter.bookingRoomId;
+    }
+
+    if (filter.startDate && filter.endDate) {
+      where.createdAt = {
+        gte: new Date(filter.startDate),
+        lte: new Date(filter.endDate)
+      };
+    }
+
+    const [serviceUsages, total] = await Promise.all([
+      this.prisma.serviceUsage.findMany({
+        where,
+        include: {
+          service: true,
+          booking: {
+            select: {
+              bookingCode: true,
+              primaryCustomer: {
+                select: {
+                  fullName: true
+                }
+              }
+            }
+          },
+          bookingRoom: {
+            include: {
+              room: true
+            }
+          },
+          employee: {
+            select: {
+              name: true
+            }
+          }
+        },
+        orderBy: {
+          [sortBy]: sortOrder
+        },
+        skip,
+        take: limit
+      }),
+      this.prisma.serviceUsage.count({ where })
+    ]);
+
+    return {
+      data: serviceUsages,
+      pagination: {
+        page,
+        limit,
+        total,
+        totalPages: Math.ceil(total / limit)
+      }
+    };
+  }
+
+  /**
+   * Delete service usage
+   */
+  async deleteServiceUsage(id: string) {
+    const serviceUsage = await this.prisma.serviceUsage.findUnique({
+      where: { id },
+      include: {
+        transactionDetails: true
+      }
+    });
+
+    if (!serviceUsage) {
+      throw new ApiError(httpStatus.NOT_FOUND, 'Service usage not found');
+    }
+
+    // Check if paid or audited
+    if (Number(serviceUsage.totalPaid) > 0 || serviceUsage.transactionDetails.length > 0) {
+      throw new ApiError(
+        httpStatus.BAD_REQUEST,
+        'Cannot delete service usage that has been paid or processed'
+      );
+    }
+
+    if (serviceUsage.status === ServiceUsageStatus.COMPLETED) {
+      throw new ApiError(httpStatus.BAD_REQUEST, 'Cannot delete completed service usage');
+    }
+
+    await this.prisma.serviceUsage.delete({
+      where: { id }
+    });
+
+    return { message: 'Service usage deleted successfully' };
   }
 }
 
