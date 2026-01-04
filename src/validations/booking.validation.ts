@@ -1,4 +1,4 @@
-import { PaymentMethod } from '@prisma/client';
+import { BookingStatus, PaymentMethod } from '@prisma/client';
 import Joi from 'joi';
 
 const createBooking = {
@@ -103,7 +103,7 @@ const updateBooking = {
     checkInDate: Joi.date().iso(),
     checkOutDate: Joi.date().iso().greater(Joi.ref('checkInDate')),
     totalGuests: Joi.number().integer().min(1),
-    status: Joi.string().valid('PENDING', 'CONFIRMED', 'CHECKED_IN', 'CHECKED_OUT', 'CANCELLED'),
+    status: Joi.string().valid(BookingStatus),
     rooms: Joi.array().items(
       Joi.object().keys({
         roomTypeId: Joi.string().required(),

@@ -138,17 +138,12 @@ const swaggerDefinition = {
 
 const options = {
   swaggerDefinition,
-  // Path to the API routes - use absolute paths for reliability
-  apis:
-    config.env === 'production'
-      ? [
-          path.join(process.cwd(), 'build/src/routes/**/*.js'),
-          path.join(process.cwd(), 'build/src/controllers/**/*.js')
-        ]
-      : [
-          path.join(process.cwd(), 'src/routes/**/*.ts'),
-          path.join(process.cwd(), 'src/controllers/**/*.ts')
-        ]
+  // Path to the API routes - use source files for swagger-jsdoc to read JSDoc comments
+  // JSDoc comments are not preserved in compiled JavaScript files
+  apis: [
+    path.join(process.cwd(), 'src/routes/**/*.ts'),
+    path.join(process.cwd(), 'src/controllers/**/*.ts')
+  ]
 };
 
 const swaggerSpec = swaggerJsdoc(options);
