@@ -51,7 +51,7 @@ jobs:
             "*.log" \
             ".vscode/*" \
             ".idea/*" \
-            "*.md" \
+            "README.md" \
             ".eslintrc*" \
             ".prettierrc*" \
             "jest.config*" \
@@ -95,19 +95,12 @@ jobs:
           slot-name: 'Production'
           package: release.zip
 
-      - name: Run Prisma Migrations
-        run: |
-          unzip -q release.zip
-          npx prisma migrate deploy
-        env:
-          DATABASE_URL: ${{ secrets.DATABASE_URL }}
-
       - name: Deployment successful
         if: success()
-        run: echo "✅ Deployment and migrations completed successfully!"
+        run: echo "✅ Deployment completed successfully! Migrations will run on Azure startup."
 
       - name: Deployment failed
         if: failure()
         run: |
-          echo "❌ Deployment or migration failed!"
+          echo "❌ Deployment failed!"
           echo "Check Azure App Service logs for details"
