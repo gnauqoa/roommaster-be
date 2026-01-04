@@ -63,6 +63,11 @@ jobs:
           rm -rf node_modules
           yarn install --production --frozen-lockfile --ignore-scripts
 
+      - name: Generate Prisma Client again (for production)
+        run: yarn prisma generate
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+
       - name: Create logs directory
         run: mkdir -p logs
 
@@ -116,8 +121,8 @@ jobs:
       - name: Verify artifact
         run: |
           ls -lah release.zip
-          echo "=== First 20 files in zip ==="
-          unzip -l release.zip | head -30
+          echo "=== First 30 files in zip ==="
+          unzip -l release.zip | head -40
 
       - name: Login to Azure
         uses: azure/login@v2
