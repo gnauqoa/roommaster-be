@@ -94,3 +94,20 @@ jobs:
           app-name: 'room-master'
           slot-name: 'Production'
           package: release.zip
+
+      - name: Run Prisma Migrations
+        run: |
+          unzip -q release.zip
+          npx prisma migrate deploy
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+
+      - name: Deployment successful
+        if: success()
+        run: echo "✅ Deployment and migrations completed successfully!"
+
+      - name: Deployment failed
+        if: failure()
+        run: |
+          echo "❌ Deployment or migration failed!"
+          echo "Check Azure App Service logs for details"

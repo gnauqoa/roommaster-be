@@ -1,4 +1,5 @@
 import swaggerJsdoc from 'swagger-jsdoc';
+import path from 'path';
 import config from './env';
 
 const swaggerDefinition = {
@@ -137,9 +138,17 @@ const swaggerDefinition = {
 
 const options = {
   swaggerDefinition,
-  // Path to the API routes - use build directory in production, src in development
+  // Path to the API routes - use absolute paths for reliability
   apis:
-    config.env === 'production' ? ['./build/src/routes/v1/**/*.js'] : ['./src/routes/v1/**/*.ts']
+    config.env === 'production'
+      ? [
+          path.join(process.cwd(), 'build/src/routes/**/*.js'),
+          path.join(process.cwd(), 'build/src/controllers/**/*.js')
+        ]
+      : [
+          path.join(process.cwd(), 'src/routes/**/*.ts'),
+          path.join(process.cwd(), 'src/controllers/**/*.ts')
+        ]
 };
 
 const swaggerSpec = swaggerJsdoc(options);
