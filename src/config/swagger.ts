@@ -18,12 +18,8 @@ const swaggerDefinition = {
   },
   servers: [
     {
-      url: `http://localhost:${config.port}/v1`,
-      description: 'Development server'
-    },
-    {
-      url: 'https://api.roommaster.com/v1',
-      description: 'Production server'
+      url: config.apiUrl || `http://localhost:${config.port}/v1`,
+      description: config.env === 'production' ? 'Production server' : 'Development server'
     }
   ],
   components: {
@@ -141,8 +137,9 @@ const swaggerDefinition = {
 
 const options = {
   swaggerDefinition,
-  // Path to the API routes
-  apis: ['./src/routes/v1/**/*.ts', './src/routes/v1/**/*.js', './build/routes/v1/**/*.js']
+  // Path to the API routes - use build directory in production, src in development
+  apis:
+    config.env === 'production' ? ['./build/src/routes/v1/**/*.js'] : ['./src/routes/v1/**/*.ts']
 };
 
 const swaggerSpec = swaggerJsdoc(options);

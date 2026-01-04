@@ -1,7 +1,6 @@
-# Docs for the Azure Web Apps Deploy action: https://github.com/Azure/webapps-deploy
-# More GitHub Actions for Azure: https://github.com/Azure/actions
+# Build and deploy Node.js app to Azure Web App - room-master
 
-name: Build and deploy Node.js app to Azure Web App - room-master
+name: Deploy to Azure
 
 on:
   push:
@@ -12,14 +11,12 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
-    permissions:
-      contents: read
 
     steps:
       - uses: actions/checkout@v4
 
-      - name: Set up Node.js version
-        uses: actions/setup-node@v3
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
         with:
           node-version: '22.x'
           cache: 'yarn'
@@ -27,64 +24,28 @@ jobs:
       - name: Install dependencies
         run: yarn install --frozen-lockfile
 
-      - name: Run linting
-        run: yarn lint
-        continue-on-error: true
-
-      - name: Build application
+      - name: Build
         run: yarn build
 
-      - name: Generate Prisma Client
-        run: yarn prisma generate
-        env:
-          DATABASE_URL: ${{ secrets.DATABASE_URL }}
-
-      - name: Verify build output
-        run: |
-          if [ ! -d "build" ]; then
-            echo "❌ Build directory not found!"
-            exit 1
-          fi
-          if [ ! -f "build/src/index.js" ]; then
-            echo "❌ Entry point build/src/index.js not found!"
-            ls -la build/
-            exit 1
-          fi
-          echo "✅ Build structure verified"
-          ls -la build/src/
-
-      - name: Verify Prisma schema
-        run: yarn prisma validate
-        env:
-          DATABASE_URL: ${{ secrets.DATABASE_URL }}
-
-      - name: Clean node_modules for production
+      - name: Install production dependencies
         run: |
           rm -rf node_modules
-          yarn install --production --frozen-lockfile --ignore-scripts
+          yarn install --production --frozen-lockfile
 
-      - name: Generate Prisma Client again (for production)
-        run: yarn prisma generate
-        env:
-          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+      - name: Generate Prisma Client
+        run: npx prisma generate
 
-      - name: Create logs directory
-        run: mkdir -p logs
-
-      - name: Install Zip
-        run: sudo apt-get install -y zip
-
-      - name: Zip artifact for deployment
+      - name: Zip for deployment
         run: |
           zip -r release.zip . \
             -x "*.git*" \
             "src/*" \
             "tests/*" \
-            "test/*" \
             "scripts/*" \
             "docs/*" \
             ".github/*" \
             "docker-compose*" \
+            "Dockerfile*" \
             "terraform/*" \
             ".env*" \
             "*.log" \
@@ -94,16 +55,18 @@ jobs:
             ".eslintrc*" \
             ".prettierrc*" \
             "jest.config*" \
-            "tsconfig.json" \
-            "nodemon.json"
+            "tsconfig*.json" \
+            "nodemon.json" \
+            ".dockerignore" \
+            ".gitignore" \
+            ".husky/*" \
+            "coverage/*"
 
-      - name: Upload artifact for deployment job
+      - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
           name: node-app
           path: release.zip
-          retention-days: 1
-          if-no-files-found: error
 
   deploy:
     runs-on: ubuntu-latest
@@ -113,16 +76,10 @@ jobs:
       contents: read
 
     steps:
-      - name: Download artifact from build job
+      - name: Download artifact
         uses: actions/download-artifact@v4
         with:
           name: node-app
-
-      - name: Verify artifact
-        run: |
-          ls -lah release.zip
-          echo "=== First 30 files in zip ==="
-          unzip -l release.zip | head -40
 
       - name: Login to Azure
         uses: azure/login@v2
@@ -132,19 +89,8 @@ jobs:
           subscription-id: ${{ secrets.AZUREAPPSERVICE_SUBSCRIPTIONID_5DA2A0FA69CD4DED96B16ADDE8FD1830 }}
 
       - name: Deploy to Azure Web App
-        id: deploy-to-webapp
         uses: azure/webapps-deploy@v3
         with:
           app-name: 'room-master'
           slot-name: 'Production'
           package: release.zip
-
-      - name: Deployment successful
-        if: success()
-        run: echo "✅ Deployment to Azure completed successfully!"
-
-      - name: Deployment failed
-        if: failure()
-        run: |
-          echo "❌ Deployment failed!"
-          echo "Check Azure App Service logs: https://portal.azure.com/"

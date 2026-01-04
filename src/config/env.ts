@@ -7,6 +7,7 @@ dotenv.config({ path: path.join(process.cwd(), '.env') });
 const envVarsSchema = Joi.object()
   .keys({
     NODE_ENV: Joi.string().valid('production', 'development', 'test').required(),
+    APP_URL: Joi.string().uri().description('Application base URL for Swagger and external links'),
     DATABASE_URL: Joi.string().required().description('Database connection URL'),
     PORT: Joi.number().default(3000),
     JWT_SECRET: Joi.string().required().description('JWT secret key'),
@@ -46,6 +47,7 @@ if (error) {
 
 export default {
   env: envVars.NODE_ENV,
+  apiUrl: envVars.APP_URL,
   port: envVars.PORT,
   jwt: {
     secret: envVars.JWT_SECRET,

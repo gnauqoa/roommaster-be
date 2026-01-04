@@ -20,10 +20,14 @@
     "docker:dev-db:start": "docker compose -f docker-compose.only-db-dev.yml up -d",
     "docker:dev-db:stop": "docker compose -f docker-compose.only-db-dev.yml down",
     "prepare": "husky install",
-    "generate:swagger": "node scripts/generate-swagger.js"
+    "swagger:generate": "node scripts/generate-swagger.js"
   },
   "prisma": {
     "seed": "ts-node prisma/seeds/index.ts"
+  },
+  "engines": {
+    "node": "^22.0.0",
+    "yarn": "^1.22.19"
   },
   "keywords": [
     "node",
