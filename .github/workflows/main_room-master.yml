@@ -106,8 +106,6 @@ jobs:
     permissions:
       id-token: write
       contents: read
-    environment:
-      name: 'production'
 
     steps:
       - name: Download artifact from build job
