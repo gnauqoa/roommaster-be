@@ -21,7 +21,7 @@
     "docker:dev-db:stop": "docker compose -f docker-compose.only-db-dev.yml down",
     "prepare": "husky install",
     "swagger:generate": "node scripts/generate-swagger.js",
-    "prisma:seed": "prisma db seed"
+    "prisma:seed": "ts-node prisma/seeds/index.ts"
   },
   "engines": {
     "node": "^22.0.0"

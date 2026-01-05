@@ -14,21 +14,21 @@ const employeeAppSettingController = new EmployeeAppSettingController(appSetting
 /**
  * @swagger
  * tags:
- *   name: Employee/Config
- *   description: Configuration management endpoints for employees
+ *   name: Employee App Settings
+ *   description: Application settings management endpoints for employees
  */
 
 /**
  * @swagger
- * /v1/employee/config:
+ * /employee/app-settings:
  *   get:
- *     summary: Get all configurations
- *     tags: [Employee/Config]
+ *     summary: Get all app settings
+ *     tags: [Employee App Settings]
  *     security:
  *       - bearerAuth: []
  *     responses:
  *       200:
- *         description: List of all configurations
+ *         description: List of all app settings
  *       401:
  *         description: Unauthorized
  */
@@ -36,10 +36,10 @@ router.get('/', authEmployee, employeeAppSettingController.getConfigs);
 
 /**
  * @swagger
- * /v1/employee/config/checkin-time:
+ * /employee/app-settings/checkin-time:
  *   get:
  *     summary: Get check-in time configuration
- *     tags: [Employee/Config]
+ *     tags: [Employee App Settings]
  *     security:
  *       - bearerAuth: []
  *     responses:
@@ -47,7 +47,7 @@ router.get('/', authEmployee, employeeAppSettingController.getConfigs);
  *         description: Check-in time configuration
  *   put:
  *     summary: Update check-in time configuration
- *     tags: [Employee/Config]
+ *     tags: [Employee App Settings]
  *     security:
  *       - bearerAuth: []
  *     requestBody:
@@ -88,10 +88,10 @@ router
 
 /**
  * @swagger
- * /v1/employee/config/checkout-time:
+ * /employee/app-settings/checkout-time:
  *   get:
  *     summary: Get check-out time configuration
- *     tags: [Employee/Config]
+ *     tags: [Employee App Settings]
  *     security:
  *       - bearerAuth: []
  *     responses:
@@ -99,7 +99,7 @@ router
  *         description: Check-out time configuration
  *   put:
  *     summary: Update check-out time configuration
- *     tags: [Employee/Config]
+ *     tags: [Employee App Settings]
  *     security:
  *       - bearerAuth: []
  *     requestBody:
