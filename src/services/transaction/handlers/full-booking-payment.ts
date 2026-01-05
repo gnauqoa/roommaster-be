@@ -10,6 +10,7 @@ import ApiError from '@/utils/ApiError';
 import { ActivityService } from '@/services/activity.service';
 import { UsageServiceService } from '@/services/usage-service.service';
 import { PromotionService } from '@/services/promotion.service';
+import EmailService from '@/services/email.service';
 import { CreateTransactionPayload, TransactionDetailData } from '@/services/transaction/types';
 import { validatePromotions } from '@/services/transaction/validators/promotion-validator';
 import {
@@ -31,7 +32,8 @@ export async function processFullBookingPayment(
   prisma: PrismaClient,
   activityService: ActivityService,
   usageServiceService: UsageServiceService,
-  promotionService: PromotionService
+  promotionService: PromotionService,
+  emailService: EmailService
 ) {
   const {
     bookingId,
@@ -45,8 +47,11 @@ export async function processFullBookingPayment(
   if (!bookingId) {
     throw new ApiError(httpStatus.BAD_REQUEST, 'Booking ID is required');
   }
-
-  return prisma.$transaction(async (tx) => {
+  const EmailConfirmationInfo = {
+    bookingId: '',
+    ShouldSendEmail: false
+  };
+  const transaction = prisma.$transaction(async (tx) => {
     // STEP 1: Fetch booking with all rooms and services
     const booking = await tx.booking.findUnique({
       where: { id: bookingId },
@@ -261,10 +266,14 @@ export async function processFullBookingPayment(
         where: { id: bookingId },
         data: { status: BookingStatus.CONFIRMED }
       });
-
       await tx.bookingRoom.updateMany({
         where: { bookingId, status: BookingStatus.PENDING },
         data: { status: BookingStatus.CONFIRMED }
+      });
+
+      // Send booking confirmation email after successful status update
+      emailService.sendBookingConfirmation(bookingId).catch((error) => {
+        console.error('Failed to send booking confirmation email:', error);
       });
     }
 
@@ -295,4 +304,10 @@ export async function processFullBookingPayment(
       })
     };
   });
+  if (EmailConfirmationInfo.ShouldSendEmail && bookingId != '') {
+    emailService.sendBookingConfirmation(EmailConfirmationInfo.bookingId).catch((error) => {
+      console.error('Failed to send booking confirmation email:', error);
+    });
+  }
+  return transaction;
 }
