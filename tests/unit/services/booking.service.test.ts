@@ -18,11 +18,16 @@ describe('BookingService', () => {
       createCheckInActivity: jest.fn(),
       createCheckOutActivity: jest.fn()
     };
+    const mockAppSettingService = {
+      getCheckInTime: jest.fn(),
+      getCheckOutTime: jest.fn()
+    };
 
     bookingService = new BookingService(
       mockPrisma as PrismaClient,
       mockTransactionService,
-      mockActivityService
+      mockActivityService,
+      mockAppSettingService as any
     );
     jest.clearAllMocks();
   });

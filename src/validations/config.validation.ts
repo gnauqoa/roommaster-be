@@ -1,5 +1,5 @@
 import Joi from 'joi';
-import { FeeType } from 'services/app-setting.types';
+import { FeeType } from '@/services/app-setting.types';
 
 const timeConfig = {
   body: Joi.object({
