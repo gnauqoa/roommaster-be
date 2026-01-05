@@ -1,7 +1,7 @@
 # ============================================
 # Stage 1: Build
 # ============================================
-FROM node:20-alpine AS builder
+FROM node:22-alpine AS builder
 
 WORKDIR /app
 
@@ -19,7 +19,7 @@ RUN npx prisma generate
 # ============================================
 # Stage 2: Production
 # ============================================
-FROM node:20-alpine AS production
+FROM node:22-alpine AS production
 
 # Add labels for container registry
 LABEL org.opencontainers.image.source="https://github.com/roommaster/roommaster-be"
