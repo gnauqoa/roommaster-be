@@ -20,7 +20,8 @@ import {
   TransactionService,
   ActivityService,
   PromotionService,
-  TransactionDetailsService
+  TransactionDetailsService,
+  AppSettingService
 } from '@/services';
 
 /**
@@ -115,9 +116,15 @@ export function bootstrap(): void {
       new BookingService(
         args[0] as PrismaClient,
         args[1] as TransactionService,
-        args[2] as ActivityService
+        args[2] as ActivityService,
+        args[3] as AppSettingService
       ),
-    [TOKENS.PrismaClient, TOKENS.TransactionService, TOKENS.ActivityService]
+    [
+      TOKENS.PrismaClient,
+      TOKENS.TransactionService,
+      TOKENS.ActivityService,
+      TOKENS.AppSettingService
+    ]
   );
 
   container.registerFactory(
@@ -138,6 +145,18 @@ export function bootstrap(): void {
       ),
     [TOKENS.PrismaClient, TOKENS.TokenService, TOKENS.CustomerService, TOKENS.EmployeeService]
   );
+
+  container.registerFactory(
+    TOKENS.AppSettingService,
+    (...args: unknown[]) => new AppSettingService(args[0] as PrismaClient),
+    [TOKENS.PrismaClient]
+  );
+
+  // Initialize default configurations
+  const appSettingService = container.resolve<AppSettingService>(TOKENS.AppSettingService);
+  appSettingService.initializeDefaults().catch((error) => {
+    console.error('Failed to initialize default configurations:', error);
+  });
 }
 
 export default bootstrap;

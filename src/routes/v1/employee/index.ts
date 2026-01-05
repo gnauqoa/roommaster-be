@@ -13,6 +13,7 @@ import transactionDetailsRoute from './transaction-details.route';
 import promotionRoute from './promotion.route';
 import activityRoute from './activity.route';
 import roomTagRoute from './roomTag.route';
+import appSettingRoute from './app-setting.route';
 
 const employeeRoute = express.Router();
 
@@ -30,5 +31,6 @@ employeeRoute.use('/transaction-details', transactionDetailsRoute);
 employeeRoute.use('/promotions', promotionRoute);
 employeeRoute.use('/activities', activityRoute);
 employeeRoute.use('/room-tags', roomTagRoute);
+employeeRoute.use('/app-settings', appSettingRoute);
 
 export default employeeRoute;

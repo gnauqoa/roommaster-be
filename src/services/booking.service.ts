@@ -3,6 +3,7 @@ import { Injectable } from '@/core/decorators';
 import httpStatus from 'http-status';
 import ApiError from '@/utils/ApiError';
 import dayjs from 'dayjs';
+import AppSettingService from './app-setting.service';
 
 export interface RoomRequest {
   roomTypeId: string;
@@ -37,7 +38,8 @@ export class BookingService {
   constructor(
     private readonly prisma: PrismaClient,
     private readonly transactionService: any,
-    private readonly activityService: any
+    private readonly activityService: any,
+    private readonly appSettingService: AppSettingService
   ) {}
 
   /**
@@ -267,6 +269,32 @@ export class BookingService {
 
     // Perform check-in transaction
     const result = await this.prisma.$transaction(async (tx) => {
+      // Calculate early check-in fees for each room
+      const feeCalculations = await Promise.all(
+        bookingRooms.map(async (br) => {
+          const fee = await this.appSettingService.calculateEarlyCheckInFee(
+            now.toDate(),
+            Number(br.pricePerNight)
+          );
+          return {
+            bookingRoomId: br.id,
+            fee,
+            roomNumber: br.room.roomNumber,
+            bookingId: br.bookingId
+          };
+        })
+      );
+
+      // Log and track early check-in fees
+      const roomsWithFees = feeCalculations.filter((calc) => calc.fee > 0);
+      if (roomsWithFees.length > 0) {
+        console.log(
+          `Early check-in fees applied:`,
+          roomsWithFees.map((r) => `Room ${r.roomNumber}: ${r.fee} VND`).join(', ')
+        );
+        // Note: Fee transactions will be managed via service layer
+      }
+
       // Update all booking rooms to CHECKED_IN with actual check-in time
       await tx.bookingRoom.updateMany({
         where: {
@@ -428,6 +456,32 @@ export class BookingService {
 
     // Perform check-out transaction
     const result = await this.prisma.$transaction(async (tx) => {
+      // Calculate late check-out fees for each room
+      const feeCalculations = await Promise.all(
+        bookingRooms.map(async (br) => {
+          const fee = await this.appSettingService.calculateLateCheckOutFee(
+            now.toDate(),
+            Number(br.pricePerNight)
+          );
+          return {
+            bookingRoomId: br.id,
+            fee,
+            roomNumber: br.room.roomNumber,
+            bookingId: br.bookingId
+          };
+        })
+      );
+
+      // Log and track late check-out fees
+      const roomsWithFees = feeCalculations.filter((calc) => calc.fee > 0);
+      if (roomsWithFees.length > 0) {
+        console.log(
+          `Late check-out fees applied:`,
+          roomsWithFees.map((r) => `Room ${r.roomNumber}: ${r.fee} VND`).join(', ')
+        );
+        // Note: Fee transactions will be managed via service layer
+      }
+
       // Update all booking rooms to CHECKED_OUT with actual check-out time
       await tx.bookingRoom.updateMany({
         where: {

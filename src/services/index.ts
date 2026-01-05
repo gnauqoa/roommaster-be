@@ -13,6 +13,7 @@ export { TransactionService } from './transaction';
 export { ActivityService } from './activity.service';
 export { PromotionService } from './promotion.service';
 export { TransactionDetailsService } from './transaction-details.service';
+export { AppSettingService } from './app-setting.service';
 
 // Re-export getters from bootstrap for convenience
 export {} from '@/core/bootstrap';
