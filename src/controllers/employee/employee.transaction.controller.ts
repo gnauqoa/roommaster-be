@@ -39,7 +39,6 @@ export class EmployeeTransactionController {
       serviceUsageId,
       paymentMethod,
       transactionType,
-      transactionRef,
       description,
       promotionApplications
     } = req.body;
@@ -50,7 +49,6 @@ export class EmployeeTransactionController {
       serviceUsageId,
       paymentMethod,
       transactionType,
-      transactionRef,
       description,
       promotionApplications,
       employeeId: req.employee.id

@@ -65,7 +65,6 @@ const createTransaction = {
       .valid(...Object.values(PaymentMethod))
       .required(),
     bookingRoomId: Joi.string().optional(),
-    transactionRef: Joi.string().optional(),
     description: Joi.string().optional()
   })
 };

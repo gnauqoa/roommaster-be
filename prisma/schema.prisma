@@ -284,9 +284,8 @@ model Transaction {
   // Quan hệ tới chi tiết thanh toán
   details TransactionDetail[]
 
-  transactionRef String?
-  occurredAt     DateTime @default(now())
-  description    String?
+  occurredAt  DateTime @default(now())
+  description String?
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt

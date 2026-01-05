@@ -29,7 +29,6 @@ export async function processSplitRoomPayment(
     bookingRoomIds,
     paymentMethod,
     transactionType,
-    transactionRef,
     description,
     employeeId,
     promotionApplications = []
@@ -127,7 +126,6 @@ export async function processSplitRoomPayment(
         method: paymentMethod,
         status: TransactionStatus.COMPLETED,
         processedById: employeeId,
-        transactionRef,
         description:
           description ||
           `${transactionType} for ${bookingRooms.length} room(s) - ${booking.bookingCode}`

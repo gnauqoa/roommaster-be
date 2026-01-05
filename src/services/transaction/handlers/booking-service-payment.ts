@@ -29,7 +29,6 @@ export async function processBookingServicePayment(
     serviceUsageId,
     paymentMethod,
     transactionType,
-    transactionRef,
     description,
     employeeId,
     promotionApplications = []
@@ -109,7 +108,6 @@ export async function processBookingServicePayment(
         method: paymentMethod,
         status: TransactionStatus.COMPLETED,
         processedById: employeeId,
-        transactionRef,
         description: description || `${transactionType} for ${serviceUsage.service.name}`
       }
     });

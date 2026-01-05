@@ -229,9 +229,6 @@ router.get(
  *               transactionType:
  *                 type: string
  *                 enum: [DEPOSIT, ROOM_CHARGE, SERVICE_CHARGE, REFUND, ADJUSTMENT]
- *               transactionRef:
- *                 type: string
- *                 description: External transaction reference
  *               description:
  *                 type: string
  *                 description: Custom transaction description

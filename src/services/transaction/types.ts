@@ -14,7 +14,6 @@ export interface CreateTransactionPayload {
   // Payment details (amount removed - will be calculated)
   paymentMethod: import('@prisma/client').PaymentMethod;
   transactionType: import('@prisma/client').TransactionType;
-  transactionRef?: string;
   description?: string;
   employeeId: string;
 

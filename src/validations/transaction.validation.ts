@@ -18,7 +18,6 @@ const createTransaction = {
     transactionType: Joi.string()
       .valid(...Object.values(TransactionType))
       .required(),
-    transactionRef: Joi.string().optional(),
     description: Joi.string().optional(),
     promotionApplications: Joi.array().items(promotionApplication).optional()
   })

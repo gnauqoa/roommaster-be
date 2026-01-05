@@ -141,10 +141,7 @@ export class TransactionService {
     }
 
     if (search) {
-      where.OR = [
-        { transactionRef: { contains: search, mode: 'insensitive' } },
-        { description: { contains: search, mode: 'insensitive' } }
-      ];
+      where.description = { contains: search, mode: 'insensitive' };
     }
 
     // Calculate pagination

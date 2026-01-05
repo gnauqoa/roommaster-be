@@ -44,7 +44,6 @@ const createTransactionWithAllocation = {
       )
       .min(1)
       .required(),
-    transactionRef: Joi.string().optional(),
     description: Joi.string().optional()
   })
 };

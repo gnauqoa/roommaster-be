@@ -31,7 +31,6 @@ export async function processFullBookingPayment(
     bookingId,
     paymentMethod,
     transactionType,
-    transactionRef,
     description,
     employeeId,
     promotionApplications = []
@@ -118,7 +117,6 @@ export async function processFullBookingPayment(
         method: paymentMethod,
         status: TransactionStatus.COMPLETED,
         processedById: employeeId,
-        transactionRef,
         description: description || getDefaultDescription(transactionType, booking.bookingCode)
       }
     });
