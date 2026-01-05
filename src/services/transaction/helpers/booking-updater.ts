@@ -8,7 +8,9 @@ import ApiError from '@/utils/ApiError';
 export async function updateBookingTotals(
   bookingId: string,
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  tx: any
+  tx: any,
+  transactionType?: TransactionType,
+  transactionAmount?: number
 ): Promise<void> {
   const allBookingRooms = await tx.bookingRoom.findMany({
     where: { bookingId }
@@ -29,12 +31,19 @@ export async function updateBookingTotals(
 
   const aggregatedBalance = new Prisma.Decimal(booking.totalAmount).sub(aggregatedTotalPaid);
 
+  // Update totalDeposit if this is a deposit transaction
+  const updateData: any = {
+    totalPaid: aggregatedTotalPaid,
+    balance: aggregatedBalance
+  };
+
+  if (transactionType === TransactionType.DEPOSIT && transactionAmount) {
+    updateData.totalDeposit = new Prisma.Decimal(booking.totalDeposit).add(transactionAmount);
+  }
+
   await tx.booking.update({
     where: { id: bookingId },
-    data: {
-      totalPaid: aggregatedTotalPaid,
-      balance: aggregatedBalance
-    }
+    data: updateData
   });
 }
 

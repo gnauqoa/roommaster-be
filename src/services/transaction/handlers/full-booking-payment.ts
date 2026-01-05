@@ -1,4 +1,10 @@
-import { PrismaClient, Prisma, TransactionStatus, BookingStatus } from '@prisma/client';
+import {
+  PrismaClient,
+  Prisma,
+  TransactionStatus,
+  BookingStatus,
+  TransactionType
+} from '@prisma/client';
 import httpStatus from 'http-status';
 import ApiError from '@/utils/ApiError';
 import { ActivityService } from '@/services/activity.service';
@@ -63,28 +69,63 @@ export async function processFullBookingPayment(
     // STEP 2: Build transaction details
     const transactionDetails: TransactionDetailData[] = [];
 
-    for (const room of booking.bookingRooms) {
-      const roomBalance = new Prisma.Decimal(room.subtotalRoom).sub(room.totalPaid);
+    // For DEPOSIT transactions, only pay up to depositRequired
+    if (transactionType === TransactionType.DEPOSIT) {
+      const depositRequired = new Prisma.Decimal(booking.depositRequired);
+      const totalDeposit = new Prisma.Decimal(booking.totalDeposit);
+      const depositRemaining = depositRequired.sub(totalDeposit);
 
-      if (roomBalance.gt(0)) {
-        transactionDetails.push({
-          bookingRoomId: room.id,
-          baseAmount: roomBalance.toNumber(),
-          discountAmount: 0,
-          amount: roomBalance.toNumber()
-        });
+      if (depositRemaining.lte(0)) {
+        throw new ApiError(httpStatus.BAD_REQUEST, 'Deposit already paid in full');
       }
 
-      for (const service of room.serviceUsages) {
-        const serviceBalance = new Prisma.Decimal(service.totalPrice).sub(service.totalPaid);
+      // Distribute deposit across rooms proportionally
+      let remainingDeposit = depositRemaining.toNumber();
 
-        if (serviceBalance.gt(0)) {
+      for (const room of booking.bookingRooms) {
+        if (remainingDeposit <= 0) break;
+
+        const roomBalance = new Prisma.Decimal(room.subtotalRoom).sub(room.totalPaid);
+
+        if (roomBalance.gt(0)) {
+          // Pay up to room balance or remaining deposit, whichever is smaller
+          const paymentAmount = Math.min(roomBalance.toNumber(), remainingDeposit);
+
           transactionDetails.push({
-            serviceUsageId: service.id,
-            baseAmount: serviceBalance.toNumber(),
+            bookingRoomId: room.id,
+            baseAmount: paymentAmount,
             discountAmount: 0,
-            amount: serviceBalance.toNumber()
+            amount: paymentAmount
           });
+
+          remainingDeposit -= paymentAmount;
+        }
+      }
+    } else {
+      // For non-DEPOSIT transactions, pay all remaining balances
+      for (const room of booking.bookingRooms) {
+        const roomBalance = new Prisma.Decimal(room.subtotalRoom).sub(room.totalPaid);
+
+        if (roomBalance.gt(0)) {
+          transactionDetails.push({
+            bookingRoomId: room.id,
+            baseAmount: roomBalance.toNumber(),
+            discountAmount: 0,
+            amount: roomBalance.toNumber()
+          });
+        }
+
+        for (const service of room.serviceUsages) {
+          const serviceBalance = new Prisma.Decimal(service.totalPrice).sub(service.totalPaid);
+
+          if (serviceBalance.gt(0)) {
+            transactionDetails.push({
+              serviceUsageId: service.id,
+              baseAmount: serviceBalance.toNumber(),
+              discountAmount: 0,
+              amount: serviceBalance.toNumber()
+            });
+          }
         }
       }
     }
@@ -212,7 +253,7 @@ export async function processFullBookingPayment(
     }
 
     // Update booking totals
-    await updateBookingTotals(bookingId, tx);
+    await updateBookingTotals(bookingId, tx, transactionType, transactionAmounts.amount);
 
     // Apply state transition for DEPOSIT
     if (transactionType === 'DEPOSIT') {

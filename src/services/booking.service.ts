@@ -133,13 +133,14 @@ export class BookingService {
     // Calculate expiration time (15 minutes from now) using dayjs
     const expiresAt = dayjs().add(15, 'minute').toDate();
 
-    // Calculate total amount and deposit required
+    // Get deposit percentage from settings (cached)
+    const depositPercentage = await this.appSettingService.getDepositPercentage();
+
+    // Calculate total amount first
     let totalAmount = 0;
-    let depositRequired = 0;
     const bookingRoomsData = allocatedRooms.map(({ room, roomType }) => {
       const subtotal = Number(roomType.pricePerNight) * nights;
       totalAmount += subtotal;
-      depositRequired += Number(roomType.pricePerNight); // One night's price per room
 
       return {
         roomId: room.id,
@@ -153,6 +154,9 @@ export class BookingService {
         status: BookingStatus.PENDING
       };
     });
+
+    // Calculate deposit based on percentage of total booking amount
+    const depositRequired = Math.round(totalAmount * (depositPercentage / 100));
 
     // Create booking with transaction
     const booking = await this.prisma.$transaction(async (tx) => {
