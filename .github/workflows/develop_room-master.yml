@@ -69,7 +69,6 @@ jobs:
         run: |
           zip -r release.zip . \
             -x "*.git*" \
-            "src/*" \
             "tests/*" \
             "test/*" \
             "scripts/*" \
@@ -127,6 +126,12 @@ jobs:
           app-name: 'room-master'
           slot-name: 'Production'
           package: release.zip
+
+      - name: Restart Azure Web App
+        uses: azure/cli@v1
+        with:
+          inlineScript: |
+            az webapp restart --name 'room-master' --resource-group 'Roommaster'
 
       - name: Deployment successful
         if: success()

@@ -127,6 +127,12 @@ jobs:
           slot-name: 'Production'
           package: release.zip
 
+      - name: Restart Azure Web App
+        uses: azure/cli@v1
+        with:
+          inlineScript: |
+            az webapp restart --name 'room-master' --resource-group 'Roommaster'
+
       - name: Deployment successful
         if: success()
         run: echo "✅ Deployment to Azure completed successfully!"
