@@ -10,6 +10,14 @@ export const seedCustomers = async (prisma: PrismaClient): Promise<void> => {
 
   const customers = [
     {
+      fullName: 'Test Customer',
+      email: 'test@example.com',
+      phone: '0987654321',
+      idNumber: '001234567999',
+      address: '123 Test Street, Test City',
+      password: await hashPassword('password123')
+    },
+    {
       fullName: 'Nguyễn Văn An',
       email: 'nguyenvanan@example.com',
       phone: '0901234567',

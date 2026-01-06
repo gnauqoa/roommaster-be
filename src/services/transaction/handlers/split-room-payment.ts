@@ -69,7 +69,8 @@ export async function processSplitRoomPayment(
       throw new ApiError(httpStatus.BAD_REQUEST, 'Some booking rooms not found');
     }
 
-    // STEP 2: Build transaction details for selected rooms
+    // STEP 2: Build transaction details for selected rooms ONLY
+    // Services should be paid separately via SERVICE_CHARGE transactions
     const transactionDetails: TransactionDetailData[] = [];
 
     for (const room of bookingRooms) {
@@ -82,19 +83,6 @@ export async function processSplitRoomPayment(
           discountAmount: 0,
           amount: roomBalance.toNumber()
         });
-      }
-
-      for (const service of room.serviceUsages) {
-        const serviceBalance = new Prisma.Decimal(service.totalPrice).sub(service.totalPaid);
-
-        if (serviceBalance.gt(0)) {
-          transactionDetails.push({
-            serviceUsageId: service.id,
-            baseAmount: serviceBalance.toNumber(),
-            discountAmount: 0,
-            amount: serviceBalance.toNumber()
-          });
-        }
       }
     }
 

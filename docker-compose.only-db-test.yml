@@ -1,4 +1,3 @@
-version: '3.8'
 services:
   db:
     image: postgres:14
@@ -9,11 +8,11 @@ services:
       - POSTGRES_PASSWORD=secret
       - POSTGRES_DB=roommaster_test
     ports:
-      - '5433:5432'
-    volumes: 
+      - '5432:5432'
+    volumes:
       - db_test:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U postgres -d roommaster_test"]
+      test: ['CMD-SHELL', 'pg_isready -U postgres -d roommaster_test']
       interval: 5s
       timeout: 5s
       retries: 5

@@ -3,7 +3,7 @@
     "target": "es2016",
     "outDir": "./build",
     "module": "commonjs",
-    "types": ["node", "jest"],
+    "types": ["node"],
     "resolveJsonModule": true,
     "esModuleInterop": true,
     "forceConsistentCasingInFileNames": true,
@@ -15,14 +15,8 @@
       "@/*": ["src/*"]
     },
     "experimentalDecorators": true,
-    "emitDecoratorMetadata": true,
-    "sourceMap": true,
-    "incremental": true
+    "emitDecoratorMetadata": true
   },
-  "include": ["src/**/*", "tests/**/*"],
-  "exclude": ["node_modules", "build"],
-  "ts-node": {
-    "transpileOnly": true,
-    "require": ["tsconfig-paths/register"]
-  }
+  "include": ["src/**/*"],
+  "exclude": ["node_modules", "build", "tests", "**/*.test.ts", "**/*.spec.ts"]
 }

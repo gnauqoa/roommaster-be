@@ -29,6 +29,11 @@ const main = async () => {
         key: APP_SETTING_KEYS.CHECKOUT_TIME,
         value: { hour: 12, minute: 0, gracePeriodMinutes: 60 },
         description: 'Standard check-out time'
+      },
+      {
+        key: APP_SETTING_KEYS.DEPOSIT_PERCENTAGE,
+        value: { percentage: 50 },
+        description: 'Deposit percentage of total booking amount'
       }
     ];
     for (const setting of appSettings) {

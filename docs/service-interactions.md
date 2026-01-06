@@ -29,20 +29,20 @@ The RoomMaster backend uses **11 services** organized in a layered dependency st
 
 ## Service Inventory
 
-| Service | Purpose | Dependencies |
-|---------|---------|--------------|
-| `PrismaClient` | Database access layer | None (external) |
-| `TokenService` | JWT token generation/verification | PrismaClient |
-| `CustomerService` | Customer CRUD operations | PrismaClient |
-| `EmployeeService` | Employee CRUD operations | PrismaClient |
-| `RoomTypeService` | Room type management | PrismaClient |
-| `RoomService` | Room management | PrismaClient |
-| `ServiceService` | Hotel services (spa, laundry) | PrismaClient |
-| `ActivityService` | Activity/audit logging | PrismaClient |
-| `AuthService` | Authentication orchestration | PrismaClient, TokenService, CustomerService, EmployeeService |
-| `UsageServiceService` | Service usage tracking | PrismaClient, ActivityService |
-| `TransactionService` | Payment processing | PrismaClient, ActivityService, UsageServiceService |
-| `BookingService` | Booking lifecycle management | PrismaClient, TransactionService, ActivityService |
+| Service               | Purpose                           | Dependencies                                                 |
+| --------------------- | --------------------------------- | ------------------------------------------------------------ |
+| `PrismaClient`        | Database access layer             | None (external)                                              |
+| `TokenService`        | JWT token generation/verification | PrismaClient                                                 |
+| `CustomerService`     | Customer CRUD operations          | PrismaClient                                                 |
+| `EmployeeService`     | Employee CRUD operations          | PrismaClient                                                 |
+| `RoomTypeService`     | Room type management              | PrismaClient                                                 |
+| `RoomService`         | Room management                   | PrismaClient                                                 |
+| `ServiceService`      | Hotel services (spa, laundry)     | PrismaClient                                                 |
+| `ActivityService`     | Activity/audit logging            | PrismaClient                                                 |
+| `AuthService`         | Authentication orchestration      | PrismaClient, TokenService, CustomerService, EmployeeService |
+| `UsageServiceService` | Service usage tracking            | PrismaClient, ActivityService                                |
+| `TransactionService`  | Payment processing                | PrismaClient, ActivityService, UsageServiceService           |
+| `BookingService`      | Booking lifecycle management      | PrismaClient, TransactionService, ActivityService            |
 
 ---
 
@@ -93,33 +93,36 @@ The RoomMaster backend uses **11 services** organized in a layered dependency st
 ## Service Categories
 
 ### 1. Foundation Services (Tier 0)
+
 Services with no dependencies except PrismaClient.
 
-| Service | Methods | Description |
-|---------|---------|-------------|
-| **TokenService** | `generateToken`, `verifyToken`, `generateAuthTokens`, `generateResetPasswordToken` | Stateless JWT operations |
-| **CustomerService** | `createCustomer`, `getCustomerById`, `getCustomerByPhone`, `updateCustomer`, `deleteCustomer` | Customer entity management |
-| **EmployeeService** | `createEmployee`, `getEmployeeById`, `getEmployeeByUsername`, `updateEmployee`, `deleteEmployee` | Employee entity management |
-| **RoomTypeService** | `createRoomType`, `getAllRoomTypes`, `getRoomTypeById`, `updateRoomType`, `deleteRoomType` | Room type catalog |
-| **RoomService** | `createRoom`, `getAllRooms`, `getRoomById`, `updateRoom`, `deleteRoom` | Physical room inventory |
-| **ServiceService** | `createService`, `getAllServices`, `getServiceById`, `updateService`, `deleteService` | Hotel service catalog |
-| **ActivityService** | `createActivity`, `createCheckInActivity`, `createCheckOutActivity`, `createServiceUsageActivity` | Audit trail logging |
+| Service             | Methods                                                                                           | Description                |
+| ------------------- | ------------------------------------------------------------------------------------------------- | -------------------------- |
+| **TokenService**    | `generateToken`, `verifyToken`, `generateAuthTokens`, `generateResetPasswordToken`                | Stateless JWT operations   |
+| **CustomerService** | `createCustomer`, `getCustomerById`, `getCustomerByPhone`, `updateCustomer`, `deleteCustomer`     | Customer entity management |
+| **EmployeeService** | `createEmployee`, `getEmployeeById`, `getEmployeeByUsername`, `updateEmployee`, `deleteEmployee`  | Employee entity management |
+| **RoomTypeService** | `createRoomType`, `getAllRoomTypes`, `getRoomTypeById`, `updateRoomType`, `deleteRoomType`        | Room type catalog          |
+| **RoomService**     | `createRoom`, `getAllRooms`, `getRoomById`, `updateRoom`, `deleteRoom`                            | Physical room inventory    |
+| **ServiceService**  | `createService`, `getAllServices`, `getServiceById`, `updateService`, `deleteService`             | Hotel service catalog      |
+| **ActivityService** | `createActivity`, `createCheckInActivity`, `createCheckOutActivity`, `createServiceUsageActivity` | Audit trail logging        |
 
 ### 2. Composite Services (Tier 1)
+
 Services that depend on Tier 0 services.
 
-| Service | Dependencies | Description |
-|---------|--------------|-------------|
-| **AuthService** | TokenService, CustomerService, EmployeeService | Orchestrates login, logout, password reset |
-| **UsageServiceService** | ActivityService | Tracks hotel service consumption |
+| Service                 | Dependencies                                   | Description                                |
+| ----------------------- | ---------------------------------------------- | ------------------------------------------ |
+| **AuthService**         | TokenService, CustomerService, EmployeeService | Orchestrates login, logout, password reset |
+| **UsageServiceService** | ActivityService                                | Tracks hotel service consumption           |
 
 ### 3. Orchestration Services (Tier 2)
+
 Services that coordinate complex business operations.
 
-| Service | Dependencies | Description |
-|---------|--------------|-------------|
+| Service                | Dependencies                         | Description                   |
+| ---------------------- | ------------------------------------ | ----------------------------- |
 | **TransactionService** | ActivityService, UsageServiceService | Handles all payment scenarios |
-| **BookingService** | TransactionService, ActivityService | Manages booking lifecycle |
+| **BookingService**     | TransactionService, ActivityService  | Manages booking lifecycle     |
 
 ---
 
@@ -148,6 +151,7 @@ AuthService
 ```
 
 **Key Operations:**
+
 - `loginCustomerWithPhoneAndPassword()` → CustomerService → TokenService
 - `loginEmployeeWithUsernameAndPassword()` → EmployeeService → TokenService
 - `refreshAuth()` → TokenService.verifyToken() → TokenService.generateAuthTokens()
@@ -190,6 +194,7 @@ BookingService
 ```
 
 **Key Operations:**
+
 - `createBooking()` → Room allocation with conflict detection
 - `checkIn()` → ActivityService for audit logging
 - `checkOut()` → ActivityService for audit logging
@@ -229,6 +234,7 @@ TransactionService
 ```
 
 **Key Operations:**
+
 - `processFullBookingPayment()` → UsageServiceService, ActivityService
 - `processSplitRoomPayment()` → ActivityService
 - All scenarios update financial balances atomically
@@ -260,6 +266,7 @@ UsageServiceService
 ```
 
 **Key Operations:**
+
 - `createServiceUsage()` → ActivityService
 - `updateServiceUsagePaid()` → Called BY TransactionService (inverse dependency)
 
@@ -430,7 +437,7 @@ alt Password matches
   Token -> Token: generateToken(REFRESH, 30days)
   Token --> Auth: { access: {...}, refresh: {...} }
   deactivate Token
-  
+
   Auth --> Client: { customer, tokens }
 else Password doesn't match
   Auth --> Client: ApiError(401, "Incorrect phone or password")
@@ -497,7 +504,7 @@ loop For each room request
   Booking -> Prisma: room.findMany({ roomTypeId, status: AVAILABLE, no overlaps })
   Prisma -> DB: Complex availability query
   DB --> Prisma: Room[]
-  
+
   alt Not enough rooms
     Booking --> Customer: ApiError(409, "Not enough rooms")
   end
@@ -634,40 +641,40 @@ activate TxnSvc
 TxnSvc -> TxnSvc: Determine scenario\n(full/split/service)
 
 alt Full Booking Payment
-  
+
   ' Fetch booking with all items
   TxnSvc -> Prisma: booking.findUnique({ include: bookingRooms, serviceUsages })
   Prisma -> DB: Complex SELECT with joins
   DB --> Prisma: Booking with relations
   Prisma --> TxnSvc: Booking
-  
+
   TxnSvc -> TxnSvc: calculateBookingTotal()
-  
+
   alt Amount exceeds balance
     TxnSvc --> Cashier: ApiError(400, "Exceeds balance")
   end
-  
+
   ' Create transaction
   TxnSvc -> Prisma: $transaction()
   activate Prisma
-  
+
   Prisma -> DB: BEGIN
-  
+
   ' Create main transaction record
   Prisma -> DB: INSERT INTO Transaction (bookingId, type, amount, ...)
   DB --> Prisma: Transaction
-  
+
   ' Allocate to rooms
   TxnSvc -> TxnSvc: Proportional allocation algorithm
-  
+
   loop For each room with balance
     Prisma -> DB: INSERT INTO TransactionDetail (transactionId, bookingRoomId, amount)
     DB --> Prisma: TransactionDetail
-    
+
     Prisma -> DB: UPDATE BookingRoom SET totalPaid += ?, balance -= ?
     DB --> Prisma: Updated
   end
-  
+
   ' Allocate to services
   loop For each unpaid service
     TxnSvc -> Usage: updateServiceUsagePaid(serviceId, amount)
@@ -675,20 +682,20 @@ alt Full Booking Payment
     Prisma -> DB: UPDATE ServiceUsage
     DB --> Prisma: Updated
   end
-  
+
   ' Update booking totals
   Prisma -> DB: UPDATE Booking SET totalPaid += ?, balance -= ?
   DB --> Prisma: Updated
-  
+
   ' Log activity
   TxnSvc -> Activity: createPaymentActivity(...)
   Activity -> Prisma: activity.create()
   Prisma -> DB: INSERT INTO Activity
   DB --> Prisma: Activity
-  
+
   Prisma -> DB: COMMIT
   deactivate Prisma
-  
+
 end
 
 TxnSvc --> Cashier: { transaction, details, updatedBooking }
@@ -855,7 +862,7 @@ note bottom of Activity
   • BookingService
   • TransactionService
   • UsageServiceService
-  
+
   Provides consistent audit trail
 end note
 
@@ -888,10 +895,10 @@ end note
 
 ### Service Interaction Patterns
 
-| Pattern | Services Involved | Use Case |
-|---------|-------------------|----------|
-| **Authentication** | Auth → Token + Customer/Employee | Login, refresh, password reset |
-| **Booking Lifecycle** | Booking → Activity | Create, check-in, check-out |
-| **Payment Processing** | Transaction → Activity + Usage | Full, split, service payments |
-| **Service Tracking** | Usage → Activity | Add/cancel services |
-| **Audit Trail** | All → Activity | Consistent logging |
+| Pattern                | Services Involved                | Use Case                       |
+| ---------------------- | -------------------------------- | ------------------------------ |
+| **Authentication**     | Auth → Token + Customer/Employee | Login, refresh, password reset |
+| **Booking Lifecycle**  | Booking → Activity               | Create, check-in, check-out    |
+| **Payment Processing** | Transaction → Activity + Usage   | Full, split, service payments  |
+| **Service Tracking**   | Usage → Activity                 | Add/cancel services            |
+| **Audit Trail**        | All → Activity                   | Consistent logging             |

@@ -1,22 +1,13 @@
 import express from 'express';
-import employeeRoute from './employee';
-import customerRoute from './customer';
+import createEmployeeRoutes from './employee';
+import createCustomerRoutes from './customer';
 
-const router = express.Router();
+export default function createV1Routes(): express.Router {
+  const router = express.Router();
 
-const defaultRoutes = [
-  {
-    path: '/employee',
-    route: employeeRoute
-  },
-  {
-    path: '/customer',
-    route: customerRoute
-  }
-];
+  // Call factory functions to create routers
+  router.use('/employee', createEmployeeRoutes());
+  router.use('/customer', createCustomerRoutes());
 
-defaultRoutes.forEach((route) => {
-  router.use(route.path, route.route);
-});
-
-export default router;
+  return router;
+}
