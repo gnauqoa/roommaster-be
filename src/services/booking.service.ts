@@ -249,6 +249,20 @@ export class BookingService {
       );
     }
 
+    // Validate room availability status - rooms must be AVAILABLE or RESERVED to check in
+    const unavailableRooms = bookingRooms.filter(
+      (br) => br.room.status !== RoomStatus.AVAILABLE && br.room.status !== RoomStatus.RESERVED
+    );
+    if (unavailableRooms.length > 0) {
+      const roomDetails = unavailableRooms
+        .map((br) => `${br.room.roomNumber} (${br.room.status})`)
+        .join(', ');
+      throw new ApiError(
+        httpStatus.BAD_REQUEST,
+        `Cannot check in. The following rooms are not ready: ${roomDetails}`
+      );
+    }
+
     // Extract all customer IDs and verify they exist
     const allCustomerIds = checkInInfo.flatMap((info) => info.customerIds);
     const uniqueCustomerIds = [...new Set(allCustomerIds)];

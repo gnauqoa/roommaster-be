@@ -114,6 +114,7 @@ model Customer {
   idNumber String? // CMND/CCCD
   address  String? @db.Text
   password String
+  imageUrl String?
 
   bookings         Booking[]
   bookingCustomers BookingCustomer[]
@@ -132,6 +133,7 @@ model RoomType {
   capacity      Int
   totalBed      Int     @default(0)
   pricePerNight Decimal @db.Decimal(10, 2)
+  imageUrl      String?
 
   rooms        Room[]
   bookingRooms BookingRoom[]
@@ -322,6 +324,7 @@ model Service {
   price    Decimal @db.Decimal(10, 2)
   unit     String  @default("lần")
   isActive Boolean @default(true)
+  imageUrl String?
 
   serviceUsages ServiceUsage[]
 
