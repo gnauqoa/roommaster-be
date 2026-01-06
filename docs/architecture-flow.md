@@ -61,6 +61,7 @@
 ## 1. Routes (Định tuyến)
 
 ### Vị trí
+
 ```
 src/routes/v1/
 ├── index.ts                 # Router chính
@@ -76,12 +77,12 @@ src/routes/v1/
 
 ### Trách nhiệm
 
-| Trách nhiệm | Mô tả |
-|-------------|-------|
-| **Định nghĩa endpoints** | Khai báo các đường dẫn API (GET, POST, PUT, DELETE) |
-| **Gắn middleware** | Áp dụng xác thực và validation cho từng route |
-| **Swagger documentation** | Định nghĩa tài liệu API thông qua JSDoc comments |
-| **Phân luồng** | Tách biệt routes cho Customer và Employee |
+| Trách nhiệm               | Mô tả                                               |
+| ------------------------- | --------------------------------------------------- |
+| **Định nghĩa endpoints**  | Khai báo các đường dẫn API (GET, POST, PUT, DELETE) |
+| **Gắn middleware**        | Áp dụng xác thực và validation cho từng route       |
+| **Swagger documentation** | Định nghĩa tài liệu API thông qua JSDoc comments    |
+| **Phân luồng**            | Tách biệt routes cho Customer và Employee           |
 
 ### Các hoạt động chính
 
@@ -123,25 +124,26 @@ router.get(
 
 ### Danh sách Routes chính
 
-| Nhóm | Endpoint | Method | Mô tả |
-|------|----------|--------|-------|
-| **Customer Auth** | `/v1/customer/auth/register` | POST | Đăng ký tài khoản |
-| | `/v1/customer/auth/login` | POST | Đăng nhập |
-| | `/v1/customer/auth/profile` | GET | Xem hồ sơ |
-| **Customer Booking** | `/v1/customer/bookings` | POST | Tạo booking |
-| | `/v1/customer/bookings/:id` | GET | Xem chi tiết booking |
-| **Employee Auth** | `/v1/employee/auth/login` | POST | Đăng nhập nhân viên |
-| **Employee Booking** | `/v1/employee/bookings` | GET | Danh sách bookings |
-| | `/v1/employee/bookings/check-in` | POST | Check-in khách |
-| | `/v1/employee/bookings/check-out` | POST | Check-out khách |
-| **Room Management** | `/v1/employee/rooms` | GET/POST | Quản lý phòng |
-| **Transactions** | `/v1/employee/transactions` | POST | Tạo giao dịch |
+| Nhóm                 | Endpoint                          | Method   | Mô tả                |
+| -------------------- | --------------------------------- | -------- | -------------------- |
+| **Customer Auth**    | `/v1/customer/auth/register`      | POST     | Đăng ký tài khoản    |
+|                      | `/v1/customer/auth/login`         | POST     | Đăng nhập            |
+|                      | `/v1/customer/auth/profile`       | GET      | Xem hồ sơ            |
+| **Customer Booking** | `/v1/customer/bookings`           | POST     | Tạo booking          |
+|                      | `/v1/customer/bookings/:id`       | GET      | Xem chi tiết booking |
+| **Employee Auth**    | `/v1/employee/auth/login`         | POST     | Đăng nhập nhân viên  |
+| **Employee Booking** | `/v1/employee/bookings`           | GET      | Danh sách bookings   |
+|                      | `/v1/employee/bookings/check-in`  | POST     | Check-in khách       |
+|                      | `/v1/employee/bookings/check-out` | POST     | Check-out khách      |
+| **Room Management**  | `/v1/employee/rooms`              | GET/POST | Quản lý phòng        |
+| **Transactions**     | `/v1/employee/transactions`       | POST     | Tạo giao dịch        |
 
 ---
 
 ## 2. Middleware (Phần mềm trung gian)
 
 ### Vị trí
+
 ```
 src/middlewares/
 ├── auth.ts           # Xác thực JWT (authCustomer, authEmployee)
@@ -153,15 +155,15 @@ src/middlewares/
 
 ### Trách nhiệm
 
-| Middleware | File | Trách nhiệm |
-|------------|------|-------------|
-| **authCustomer** | `auth.ts` | Xác thực JWT cho khách hàng, gắn `req.customer` |
-| **authEmployee** | `auth.ts` | Xác thực JWT cho nhân viên, gắn `req.employee` |
-| **validate** | `validate.ts` | Kiểm tra `req.body`, `req.params`, `req.query` với Joi schema |
-| **errorConverter** | `error.ts` | Chuyển đổi mọi lỗi thành `ApiError` chuẩn |
-| **errorHandler** | `error.ts` | Định dạng và trả về JSON response lỗi |
-| **authLimiter** | `rateLimiter.ts` | Giới hạn 20 requests/15 phút cho auth endpoints |
-| **xss** | `xss.ts` | Sanitize dữ liệu đầu vào chống XSS |
+| Middleware         | File             | Trách nhiệm                                                   |
+| ------------------ | ---------------- | ------------------------------------------------------------- |
+| **authCustomer**   | `auth.ts`        | Xác thực JWT cho khách hàng, gắn `req.customer`               |
+| **authEmployee**   | `auth.ts`        | Xác thực JWT cho nhân viên, gắn `req.employee`                |
+| **validate**       | `validate.ts`    | Kiểm tra `req.body`, `req.params`, `req.query` với Joi schema |
+| **errorConverter** | `error.ts`       | Chuyển đổi mọi lỗi thành `ApiError` chuẩn                     |
+| **errorHandler**   | `error.ts`       | Định dạng và trả về JSON response lỗi                         |
+| **authLimiter**    | `rateLimiter.ts` | Giới hạn 20 requests/15 phút cho auth endpoints               |
+| **xss**            | `xss.ts`         | Sanitize dữ liệu đầu vào chống XSS                            |
 
 ### Các hoạt động chính
 
@@ -171,12 +173,14 @@ src/middlewares/
 // auth.ts - Xác thực Customer
 export const authCustomer = () => async (req, res, next) => {
   return new Promise((resolve, reject) => {
-    passport.authenticate('jwt', { session: false }, 
-      verifyCustomerCallback(req, resolve, reject)
-    )(req, res, next);
+    passport.authenticate('jwt', { session: false }, verifyCustomerCallback(req, resolve, reject))(
+      req,
+      res,
+      next
+    );
   })
-  .then(() => next())
-  .catch((err) => next(err));
+    .then(() => next())
+    .catch((err) => next(err));
 };
 
 const verifyCustomerCallback = (req, resolve, reject) => async (err, user, info) => {
@@ -184,16 +188,16 @@ const verifyCustomerCallback = (req, resolve, reject) => async (err, user, info)
   if (err || info || !user) {
     return reject(new ApiError(401, 'Please authenticate'));
   }
-  
+
   // 2. Lấy token và verify userType
   const token = req.headers.authorization?.replace('Bearer ', '');
   const decoded = jwt.verify(token, config.jwt.secret);
-  
+
   // 3. Đảm bảo userType là 'customer'
   if (decoded.userType !== 'customer') {
     return reject(new ApiError(403, 'Customer authentication required'));
   }
-  
+
   // 4. Gắn thông tin user vào request
   req.customer = user;
   resolve();
@@ -208,18 +212,18 @@ const validate = (schema: object) => (req, res, next) => {
   // 1. Lọc các trường cần validate
   const validSchema = pick(schema, ['params', 'query', 'body']);
   const obj = pick(req, Object.keys(validSchema));
-  
+
   // 2. Thực hiện validation với Joi
   const { value, error } = Joi.compile(validSchema)
     .prefs({ errors: { label: 'key' }, abortEarly: false })
     .validate(obj);
-  
+
   // 3. Trả về lỗi nếu validation fail
   if (error) {
-    const errorMessage = error.details.map(d => d.message).join(', ');
+    const errorMessage = error.details.map((d) => d.message).join(', ');
     return next(new ApiError(400, errorMessage));
   }
-  
+
   // 4. Gán validated value vào request
   Object.assign(req, value);
   return next();
@@ -232,28 +236,27 @@ const validate = (schema: object) => (req, res, next) => {
 // error.ts
 export const errorConverter = (err, req, res, next) => {
   let error = err;
-  
+
   // Chuyển đổi các loại lỗi khác thành ApiError
   if (!(error instanceof ApiError)) {
-    const statusCode = error.statusCode || 
-      (error instanceof Prisma.PrismaClientKnownRequestError 
-        ? 400 : 500);
+    const statusCode =
+      error.statusCode || (error instanceof Prisma.PrismaClientKnownRequestError ? 400 : 500);
     const message = error.message || httpStatus[statusCode];
     error = new ApiError(statusCode, message, false, err.stack);
   }
-  
+
   next(error);
 };
 
 export const errorHandler = (err, req, res, next) => {
   let { statusCode, message } = err;
-  
+
   // Ẩn chi tiết lỗi trong production
   if (config.env === 'production' && !err.isOperational) {
     statusCode = 500;
     message = 'Internal Server Error';
   }
-  
+
   res.status(statusCode).send({
     code: statusCode,
     message,
@@ -316,6 +319,7 @@ export const errorHandler = (err, req, res, next) => {
 ## 3. Controller (Bộ điều khiển)
 
 ### Vị trí
+
 ```
 src/controllers/
 ├── index.ts
@@ -331,13 +335,13 @@ src/controllers/
 
 ### Trách nhiệm
 
-| Trách nhiệm | Mô tả |
-|-------------|-------|
-| **Nhận HTTP Request** | Parse request params, query, body |
-| **Ủy quyền cho Service** | Gọi các service methods với dữ liệu đã validate |
-| **Định dạng Response** | Sử dụng `sendData()`, `sendNoContent()` từ responseWrapper |
-| **Xử lý lỗi** | Wrap trong `catchAsync()` để tự động forward errors |
-| **KHÔNG chứa logic nghiệp vụ** | Chỉ điều phối, không tính toán |
+| Trách nhiệm                    | Mô tả                                                      |
+| ------------------------------ | ---------------------------------------------------------- |
+| **Nhận HTTP Request**          | Parse request params, query, body                          |
+| **Ủy quyền cho Service**       | Gọi các service methods với dữ liệu đã validate            |
+| **Định dạng Response**         | Sử dụng `sendData()`, `sendNoContent()` từ responseWrapper |
+| **Xử lý lỗi**                  | Wrap trong `catchAsync()` để tự động forward errors        |
+| **KHÔNG chứa logic nghiệp vụ** | Chỉ điều phối, không tính toán                             |
 
 ### Các hoạt động chính
 
@@ -355,13 +359,13 @@ export class CustomerController {
   register = catchAsync(async (req: Request, res: Response) => {
     // 1. Gọi service để tạo customer
     const customer = await this.customerService.createCustomer(req.body);
-    
+
     // 2. Tạo tokens
     const tokens = await this.tokenService.generateAuthTokens(customer.id, 'customer');
-    
+
     // 3. Loại bỏ password trước khi trả về
     const customerWithoutPassword = exclude(customer, ['password']);
-    
+
     // 4. Trả về response chuẩn
     sendData(res, { customer: customerWithoutPassword, tokens }, httpStatus.CREATED);
   });
@@ -369,11 +373,13 @@ export class CustomerController {
   // Đăng nhập
   login = catchAsync(async (req: Request, res: Response) => {
     const { phone, password } = req.body;
-    
+
     // Ủy quyền hoàn toàn cho AuthService
-    const { customer, tokens } = await this.authService
-      .loginCustomerWithPhoneAndPassword(phone, password);
-    
+    const { customer, tokens } = await this.authService.loginCustomerWithPhoneAndPassword(
+      phone,
+      password
+    );
+
     const customerWithoutPassword = exclude(customer, ['password']);
     sendData(res, { customer: customerWithoutPassword, tokens });
   });
@@ -384,7 +390,7 @@ export class CustomerController {
     if (!req.customer?.id) {
       throw new Error('Customer not authenticated');
     }
-    
+
     const customer = await this.customerService.getCustomerById(req.customer.id);
     const customerWithoutPassword = exclude(customer, ['password']);
     sendData(res, customerWithoutPassword);
@@ -394,15 +400,15 @@ export class CustomerController {
 
 ### Danh sách Controllers
 
-| Controller | Methods | Mô tả |
-|------------|---------|-------|
-| **CustomerController** | `register`, `login`, `logout`, `refreshTokens`, `getProfile`, `updateProfile`, `changePassword` | Xác thực và quản lý hồ sơ khách |
-| **CustomerBookingController** | `createBooking`, `getMyBookings`, `getBookingById`, `cancelBooking` | Đặt phòng và xem lịch sử |
-| **EmployeeController** | `login`, `logout`, `refreshTokens`, `getProfile` | Xác thực nhân viên |
-| **EmployeeBookingController** | `getAllBookings`, `getBookingById`, `checkIn`, `checkOut`, `confirmBooking` | Quản lý booking |
-| **EmployeeRoomController** | `createRoom`, `getAllRooms`, `updateRoom`, `deleteRoom`, `updateRoomStatus` | Quản lý phòng |
-| **EmployeeRoomTypeController** | `createRoomType`, `getAllRoomTypes`, `updateRoomType`, `deleteRoomType` | Quản lý loại phòng |
-| **EmployeeServiceController** | `createService`, `getAllServices`, `updateService` | Quản lý dịch vụ khách sạn |
+| Controller                     | Methods                                                                                         | Mô tả                           |
+| ------------------------------ | ----------------------------------------------------------------------------------------------- | ------------------------------- |
+| **CustomerController**         | `register`, `login`, `logout`, `refreshTokens`, `getProfile`, `updateProfile`, `changePassword` | Xác thực và quản lý hồ sơ khách |
+| **CustomerBookingController**  | `createBooking`, `getMyBookings`, `getBookingById`, `cancelBooking`                             | Đặt phòng và xem lịch sử        |
+| **EmployeeController**         | `login`, `logout`, `refreshTokens`, `getProfile`                                                | Xác thực nhân viên              |
+| **EmployeeBookingController**  | `getAllBookings`, `getBookingById`, `checkIn`, `checkOut`, `confirmBooking`                     | Quản lý booking                 |
+| **EmployeeRoomController**     | `createRoom`, `getAllRooms`, `updateRoom`, `deleteRoom`, `updateRoomStatus`                     | Quản lý phòng                   |
+| **EmployeeRoomTypeController** | `createRoomType`, `getAllRoomTypes`, `updateRoomType`, `deleteRoomType`                         | Quản lý loại phòng              |
+| **EmployeeServiceController**  | `createService`, `getAllServices`, `updateService`                                              | Quản lý dịch vụ khách sạn       |
 
 ### Tương tác
 
@@ -457,6 +463,7 @@ sendData(res, { booking, message: 'Booking created' }, 201);
 ## 4. Service (Dịch vụ nghiệp vụ)
 
 ### Vị trí
+
 ```
 src/services/
 ├── index.ts                  # Barrel export
@@ -475,19 +482,19 @@ src/services/
 
 ### Trách nhiệm
 
-| Service | Trách nhiệm chính |
-|---------|-------------------|
-| **TokenService** | Tạo/xác thực JWT tokens (access, refresh, reset password) |
-| **AuthService** | Orchestrate login, logout, refresh, reset password |
-| **CustomerService** | CRUD khách hàng, hash password |
-| **EmployeeService** | CRUD nhân viên, quản lý roles |
-| **BookingService** | Tạo booking, phân bổ phòng, check-in/out |
-| **RoomService** | CRUD phòng, cập nhật trạng thái |
-| **RoomTypeService** | CRUD loại phòng với giá và tiện nghi |
-| **ServiceService** | CRUD dịch vụ khách sạn (spa, giặt ủi...) |
-| **TransactionService** | Xử lý thanh toán, phân bổ tiền |
-| **UsageServiceService** | Ghi nhận sử dụng dịch vụ |
-| **ActivityService** | Ghi audit trail cho mọi hoạt động |
+| Service                 | Trách nhiệm chính                                         |
+| ----------------------- | --------------------------------------------------------- |
+| **TokenService**        | Tạo/xác thực JWT tokens (access, refresh, reset password) |
+| **AuthService**         | Orchestrate login, logout, refresh, reset password        |
+| **CustomerService**     | CRUD khách hàng, hash password                            |
+| **EmployeeService**     | CRUD nhân viên, quản lý roles                             |
+| **BookingService**      | Tạo booking, phân bổ phòng, check-in/out                  |
+| **RoomService**         | CRUD phòng, cập nhật trạng thái                           |
+| **RoomTypeService**     | CRUD loại phòng với giá và tiện nghi                      |
+| **ServiceService**      | CRUD dịch vụ khách sạn (spa, giặt ủi...)                  |
+| **TransactionService**  | Xử lý thanh toán, phân bổ tiền                            |
+| **UsageServiceService** | Ghi nhận sử dụng dịch vụ                                  |
+| **ActivityService**     | Ghi audit trail cho mọi hoạt động                         |
 
 ### Phân tầng Services
 
@@ -555,7 +562,7 @@ export class AuthService {
   async refreshAuth(refreshToken: string) {
     // 1. Verify token
     const payload = this.tokenService.verifyToken(refreshToken, 'REFRESH');
-    
+
     // 2. Generate new tokens
     return this.tokenService.generateAuthTokens(payload.sub, payload.userType);
   }
@@ -756,6 +763,7 @@ UsageServiceService
 ## 5. Data Access (Truy cập dữ liệu)
 
 ### Vị trí
+
 ```
 prisma/
 ├── schema.prisma           # Định nghĩa schema
@@ -771,14 +779,14 @@ prisma/
 
 ### Trách nhiệm
 
-| Trách nhiệm | Mô tả |
-|-------------|-------|
-| **Schema Definition** | Định nghĩa các model, relations, enums |
-| **Migrations** | Quản lý thay đổi schema theo thời gian |
-| **Type Generation** | Tự động tạo TypeScript types từ schema |
-| **Query Building** | Cung cấp type-safe query API |
-| **Transactions** | Hỗ trợ atomic operations với `$transaction` |
-| **Seeding** | Khởi tạo dữ liệu mẫu cho development |
+| Trách nhiệm           | Mô tả                                       |
+| --------------------- | ------------------------------------------- |
+| **Schema Definition** | Định nghĩa các model, relations, enums      |
+| **Migrations**        | Quản lý thay đổi schema theo thời gian      |
+| **Type Generation**   | Tự động tạo TypeScript types từ schema      |
+| **Query Building**    | Cung cấp type-safe query API                |
+| **Transactions**      | Hỗ trợ atomic operations với `$transaction` |
+| **Seeding**           | Khởi tạo dữ liệu mẫu cho development        |
 
 ### Các hoạt động chính
 
@@ -887,11 +895,11 @@ class BookingService {
   // Complex query with filters
   async getAllBookings(filters, pagination) {
     const where: Prisma.BookingWhereInput = {};
-    
+
     if (filters.status) {
       where.status = filters.status;
     }
-    
+
     if (filters.dateFrom && filters.dateTo) {
       where.checkInDate = {
         gte: filters.dateFrom,
@@ -986,6 +994,7 @@ npx prisma studio
 ## 6. DI-Core (Dependency Injection)
 
 ### Vị trí
+
 ```
 src/core/
 ├── container.ts    # DI Container & Tokens
@@ -996,12 +1005,12 @@ src/core/
 
 ### Trách nhiệm
 
-| Component | Trách nhiệm |
-|-----------|-------------|
-| **Container** | Singleton quản lý providers và instances |
-| **TOKENS** | Type-safe symbols để identify services |
-| **Bootstrap** | Đăng ký tất cả services khi app khởi động |
-| **Decorators** | Mark classes là injectable |
+| Component      | Trách nhiệm                               |
+| -------------- | ----------------------------------------- |
+| **Container**  | Singleton quản lý providers và instances  |
+| **TOKENS**     | Type-safe symbols để identify services    |
+| **Bootstrap**  | Đăng ký tất cả services khi app khởi động |
+| **Decorators** | Mark classes là injectable                |
 
 ### Các hoạt động chính
 
@@ -1103,9 +1112,9 @@ export const TOKENS = {
 // bootstrap.ts
 import { container, TOKENS } from './container';
 import prisma from 'prisma';
-import { 
-  TokenService, AuthService, CustomerService, 
-  EmployeeService, BookingService, ... 
+import {
+  TokenService, AuthService, CustomerService,
+  EmployeeService, BookingService, ...
 } from 'services';
 
 export function bootstrap(): void {
@@ -1134,7 +1143,7 @@ export function bootstrap(): void {
   // 3. Register Tier 1 Services (depend on Tier 0)
   container.registerFactory(
     TOKENS.UsageServiceService,
-    (prisma, activityService) => 
+    (prisma, activityService) =>
       new UsageServiceService(prisma, activityService),
     [TOKENS.PrismaClient, TOKENS.ActivityService]
   );
@@ -1142,14 +1151,14 @@ export function bootstrap(): void {
   // 4. Register Tier 2 Services (depend on Tier 0 + 1)
   container.registerFactory(
     TOKENS.TransactionService,
-    (prisma, activityService, usageService) => 
+    (prisma, activityService, usageService) =>
       new TransactionService(prisma, activityService, usageService),
     [TOKENS.PrismaClient, TOKENS.ActivityService, TOKENS.UsageServiceService]
   );
 
   container.registerFactory(
     TOKENS.BookingService,
-    (prisma, transactionService, activityService) => 
+    (prisma, transactionService, activityService) =>
       new BookingService(prisma, transactionService, activityService),
     [TOKENS.PrismaClient, TOKENS.TransactionService, TOKENS.ActivityService]
   );
@@ -1179,11 +1188,7 @@ const customerService = container.resolve<CustomerService>(TOKENS.CustomerServic
 const tokenService = container.resolve<TokenService>(TOKENS.TokenService);
 
 // Inject vào controller
-const customerController = new CustomerController(
-  authService, 
-  customerService, 
-  tokenService
-);
+const customerController = new CustomerController(authService, customerService, tokenService);
 
 router.post('/login', validate(schema), customerController.login);
 ```
@@ -1333,9 +1338,10 @@ REQUEST → Global Middleware → Routes → Route Middleware → Controller →
 ```
 
 **Nguyên tắc chính:**
+
 1. **Routes** chỉ định nghĩa đường dẫn và gắn middleware
 2. **Middleware** xử lý cross-cutting concerns (auth, validation)
 3. **Controller** điều phối, không chứa logic nghiệp vụ
 4. **Service** chứa toàn bộ business logic
 5. **Data Access** cung cấp type-safe database operations
-6. **DI-Core** kết nối tất cả với dependency injection 
+6. **DI-Core** kết nối tất cả với dependency injection

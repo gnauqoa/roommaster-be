@@ -1,3 +1,10 @@
+import * as dotenv from 'dotenv';
+import * as path from 'path';
+
+// Load .env.test if it exists, otherwise fall back to .env
+const envFile = path.resolve(__dirname, '.env.test');
+dotenv.config({ path: envFile });
+
 export default {
   preset: 'ts-jest',
   testEnvironment: 'node',

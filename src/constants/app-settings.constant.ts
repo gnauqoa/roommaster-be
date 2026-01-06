@@ -5,7 +5,8 @@
 
 export const APP_SETTING_KEYS = {
   CHECKIN_TIME: 'checkin_time',
-  CHECKOUT_TIME: 'checkout_time'
+  CHECKOUT_TIME: 'checkout_time',
+  DEPOSIT_PERCENTAGE: 'deposit_percentage'
 } as const;
 
 export type AppSettingKey = (typeof APP_SETTING_KEYS)[keyof typeof APP_SETTING_KEYS];
