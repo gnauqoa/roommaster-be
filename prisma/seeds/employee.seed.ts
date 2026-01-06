@@ -16,6 +16,12 @@ export const seedEmployees = async (prisma: PrismaClient): Promise<void> => {
       role: 'ADMIN'
     },
     {
+      name: 'Test Admin',
+      username: 'test-admin',
+      password: await hashPassword('password123'),
+      role: 'ADMIN'
+    },
+    {
       name: 'Trần Thị Lan',
       username: 'receptionist1',
       password: await hashPassword('password123'),

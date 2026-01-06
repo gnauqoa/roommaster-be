@@ -24,6 +24,13 @@ async function seedAppSettings() {
         gracePeriodMinutes: 60
       },
       description: 'Standard check-out time (12:00 PM with 60-minute grace period)'
+    },
+    {
+      key: APP_SETTING_KEYS.DEPOSIT_PERCENTAGE,
+      value: {
+        percentage: 50
+      },
+      description: 'Deposit percentage of total booking amount (50%)'
     }
   ];
 

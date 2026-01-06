@@ -26,3 +26,7 @@ export type CheckInTimeConfig = TimeConfig;
 export type CheckOutTimeConfig = TimeConfig;
 export type EarlyCheckInFeeConfig = FeeConfig;
 export type LateCheckOutFeeConfig = FeeConfig;
+
+export interface DepositPercentageConfig {
+  percentage: number; // 0-100, e.g., 50 = 50%
+}

@@ -1,18 +1,20 @@
 import express from 'express';
-import authRoute from './auth.route';
-import profileRoute from './profile.route';
-import bookingRoute from './booking.route';
-import usageServiceRoute from './usage-service.route';
-import promotionRoute from './promotion.route';
-import roomRoute from './room.route';
+import createAuthRoute from './auth.route';
+import createProfileRoute from './profile.route';
+import createBookingRoute from './booking.route';
+import createUsageServiceRoute from './usage-service.route';
+import createPromotionRoute from './promotion.route';
+import createRoomRoute from './room.route';
 
-const customerRoute = express.Router();
+export default function createCustomerRoutes(): express.Router {
+  const router = express.Router();
 
-customerRoute.use('/auth', authRoute);
-customerRoute.use('/profile', profileRoute);
-customerRoute.use('/bookings', bookingRoute);
-customerRoute.use('/service', usageServiceRoute);
-customerRoute.use('/promotions', promotionRoute);
-customerRoute.use('/rooms', roomRoute);
+  router.use('/auth', createAuthRoute());
+  router.use('/profile', createProfileRoute());
+  router.use('/bookings', createBookingRoute());
+  router.use('/service', createUsageServiceRoute());
+  router.use('/promotions', createPromotionRoute());
+  router.use('/rooms', createRoomRoute());
 
-export default customerRoute;
+  return router;
+}

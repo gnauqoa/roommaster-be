@@ -15,12 +15,10 @@ import { errorConverter, errorHandler } from './middlewares/error';
 import ApiError from './utils/ApiError';
 import { bootstrap } from './core/bootstrap';
 import swaggerSpec from './config/swagger';
+import createV1Routes from './routes/v1';
 
-// Bootstrap DI container - must be called before routes are loaded
+// Bootstrap DI container before using routes
 bootstrap();
-
-// Import routes AFTER bootstrap
-import routes from './routes/v1';
 
 const app = express();
 
@@ -79,7 +77,7 @@ app.use(
 );
 
 // v1 api routes
-app.use('/v1', routes);
+app.use('/v1', createV1Routes());
 
 app.get('/', (req, res) => {
   res.send('Roommaster API');
