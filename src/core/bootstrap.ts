@@ -23,6 +23,7 @@ import {
   TransactionDetailsService,
   AppSettingService
 } from '@/services';
+import CaslService from '@/services/casl.service';
 
 /**
  * Bootstrap the application by registering all dependencies
@@ -149,6 +150,12 @@ export function bootstrap(): void {
   container.registerFactory(
     TOKENS.AppSettingService,
     (...args: unknown[]) => new AppSettingService(args[0] as PrismaClient),
+    [TOKENS.PrismaClient]
+  );
+
+  container.registerFactory(
+    TOKENS.CaslService,
+    (...args: unknown[]) => new CaslService(args[0] as PrismaClient),
     [TOKENS.PrismaClient]
   );
 

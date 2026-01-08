@@ -267,7 +267,11 @@ export class TransactionService {
             id: true,
             name: true,
             username: true,
-            role: true
+            roleRef: {
+              select: {
+                name: true
+              }
+            }
           }
         },
         details: {

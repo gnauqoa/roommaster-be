@@ -90,6 +90,11 @@ enum CustomerPromotionStatus {
   EXPIRED
 }
 
+enum PermissionType {
+  SCREEN
+  ACTION
+}
+
 // ==================== MODELS ====================
 
 model Employee {
@@ -97,7 +102,9 @@ model Employee {
   name     String
   username String @unique
   password String
-  role     String @default("STAFF") // ADMIN, RECEPTIONIST, HOUSEKEEPING
+  roleId String?
+  roleRef Role? @relation(fields: [roleId], references: [id])
+//  role     String @default("STAFF") // ADMIN, RECEPTIONIST, HOUSEKEEPING
 
   transactions Transaction[]
 
@@ -456,4 +463,41 @@ model AppSetting {
   updatedAt DateTime @updatedAt
 
   @@index([key])
+}
+
+model Role {
+  id          String           @id @default(cuid())
+  name        String           @unique
+  description String?
+  isActive    Boolean          @default(true)
+  permissions RolePermission[]
+  employees   Employee[]
+  createdAt   DateTime         @default(now())
+  updatedAt   DateTime         @updatedAt
+}
+
+model Permission {
+  id          String           @id @default(cuid())
+  name        String           @unique  // e.g., "screen:booking" or "booking:create"
+  type        PermissionType
+  subject     String           // e.g., "Booking", "Room", "Employee"
+  action      String           // e.g., "access" for screen, "create/read/update/delete" for action
+  description String?
+  parentId    String?
+  parent      Permission?      @relation("PermissionHierarchy", fields: [parentId], references: [id])
+  children    Permission[]     @relation("PermissionHierarchy")
+  roles       RolePermission[]
+  createdAt   DateTime         @default(now())
+  updatedAt   DateTime         @updatedAt
+}
+
+model RolePermission {
+  id           String     @id @default(cuid())
+  roleId       String
+  permissionId String
+  role         Role       @relation(fields: [roleId], references: [id], onDelete: Cascade)
+  permission   Permission @relation(fields: [permissionId], references: [id], onDelete: Cascade)
+  createdAt    DateTime   @default(now())
+
+  @@unique([roleId, permissionId])
 }
