@@ -85,6 +85,36 @@ export class EmployeeAppSettingController {
       data: updatedConfig
     });
   });
+
+  /**
+   * Get app setting by key
+   */
+  getAppSettingByKey = catchAsync(async (req: Request, res: Response) => {
+    const { key } = req.params;
+    const value = await this.appSettingService.getConfig(key);
+
+    res.status(httpStatus.OK).json({
+      success: true,
+      data: { key, value }
+    });
+  });
+
+  /**
+   * Update app setting by key
+   */
+  updateAppSettingByKey = catchAsync(async (req: Request, res: Response) => {
+    const { key } = req.params;
+    const { value } = req.body;
+
+    await this.appSettingService.setConfig(key, value);
+    const updated = await this.appSettingService.getConfig(key);
+
+    res.status(httpStatus.OK).json({
+      success: true,
+      message: `App setting '${key}' updated successfully`,
+      data: { key, value: updated }
+    });
+  });
 }
 
 export default EmployeeAppSettingController;

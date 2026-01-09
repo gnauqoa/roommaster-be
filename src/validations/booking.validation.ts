@@ -6,8 +6,7 @@ const createBooking = {
     rooms: Joi.array()
       .items(
         Joi.object().keys({
-          roomTypeId: Joi.string().required(),
-          count: Joi.number().integer().min(1).required()
+          roomId: Joi.string().required()
         })
       )
       .min(1)
@@ -105,8 +104,7 @@ const updateBooking = {
     status: Joi.string().valid(BookingStatus),
     rooms: Joi.array().items(
       Joi.object().keys({
-        roomTypeId: Joi.string().required(),
-        count: Joi.number().integer().min(1).required()
+        roomId: Joi.string().required()
       })
     )
   })
@@ -128,8 +126,7 @@ const createBookingEmployee = {
       rooms: Joi.array()
         .items(
           Joi.object().keys({
-            roomTypeId: Joi.string().required(),
-            count: Joi.number().integer().min(1).required()
+            roomId: Joi.string().required()
           })
         )
         .min(1)
