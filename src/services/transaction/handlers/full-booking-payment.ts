@@ -270,11 +270,8 @@ export async function processFullBookingPayment(
         where: { bookingId, status: BookingStatus.PENDING },
         data: { status: BookingStatus.CONFIRMED }
       });
-
-      // Send booking confirmation email after successful status update
-      emailService.sendBookingConfirmation(bookingId).catch((error) => {
-        console.error('Failed to send booking confirmation email:', error);
-      });
+      EmailConfirmationInfo.ShouldSendEmail = true;
+      EmailConfirmationInfo.bookingId = bookingId;
     }
 
     // Create activity
@@ -304,7 +301,7 @@ export async function processFullBookingPayment(
       })
     };
   });
-  if (EmailConfirmationInfo.ShouldSendEmail && bookingId != '') {
+  if (EmailConfirmationInfo.ShouldSendEmail && EmailConfirmationInfo.bookingId != '') {
     emailService.sendBookingConfirmation(EmailConfirmationInfo.bookingId).catch((error) => {
       console.error('Failed to send booking confirmation email:', error);
     });
