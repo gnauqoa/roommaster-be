@@ -282,6 +282,8 @@ describe('processFullBookingPayment', () => {
     const booking = {
       id: 'booking-123',
       bookingCode: 'BK123',
+      depositRequired: new Prisma.Decimal(100),
+      totalDeposit: new Prisma.Decimal(0),
       bookingRooms: [
         {
           id: 'room-1',

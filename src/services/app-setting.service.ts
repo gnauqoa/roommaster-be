@@ -8,7 +8,9 @@ import {
   TimeConfig,
   CheckInTimeConfig,
   CheckOutTimeConfig,
-  DepositPercentageConfig
+  DepositPercentageConfig,
+  PenaltyServiceIdConfig,
+  SurchargeServiceIdConfig
 } from './app-setting.types';
 
 @Injectable()
@@ -128,6 +130,44 @@ export class AppSettingService {
       ConfigKey.DEPOSIT_PERCENTAGE,
       { percentage },
       'Deposit percentage of total booking amount'
+    );
+  }
+
+  /**
+   * Get penalty service ID (cached)
+   */
+  async getPenaltyServiceId(): Promise<string> {
+    const config = await this.getConfig(ConfigKey.PENALTY_SERVICE_ID);
+    return (config as PenaltyServiceIdConfig).serviceId;
+  }
+
+  /**
+   * Get surcharge service ID (cached)
+   */
+  async getSurchargeServiceId(): Promise<string> {
+    const config = await this.getConfig(ConfigKey.SURCHARGE_SERVICE_ID);
+    return (config as SurchargeServiceIdConfig).serviceId;
+  }
+
+  /**
+   * Set penalty service ID
+   */
+  async setPenaltyServiceId(serviceId: string): Promise<void> {
+    await this.setConfig(
+      ConfigKey.PENALTY_SERVICE_ID,
+      { serviceId },
+      'Penalty service ID for custom penalty charges'
+    );
+  }
+
+  /**
+   * Set surcharge service ID
+   */
+  async setSurchargeServiceId(serviceId: string): Promise<void> {
+    await this.setConfig(
+      ConfigKey.SURCHARGE_SERVICE_ID,
+      { serviceId },
+      'Surcharge service ID for custom surcharge fees'
     );
   }
 

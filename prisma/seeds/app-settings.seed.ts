@@ -6,6 +6,23 @@ const prisma = new PrismaClient();
 async function seedAppSettings() {
   console.log('Seeding app settings...');
 
+  // First, get the penalty and surcharge service IDs
+  const penaltyService = await prisma.service.findFirst({
+    where: { name: 'Phạt' }
+  });
+
+  const surchargeService = await prisma.service.findFirst({
+    where: { name: 'Phụ thu' }
+  });
+
+  if (!penaltyService) {
+    console.warn('⚠ Penalty service not found. Please seed services first.');
+  }
+
+  if (!surchargeService) {
+    console.warn('⚠ Surcharge service not found. Please seed services first.');
+  }
+
   const settings = [
     {
       key: APP_SETTING_KEYS.CHECKIN_TIME,
@@ -33,6 +50,27 @@ async function seedAppSettings() {
       description: 'Deposit percentage of total booking amount (50%)'
     }
   ];
+
+  // Add penalty and surcharge service IDs if they exist
+  if (penaltyService) {
+    settings.push({
+      key: APP_SETTING_KEYS.PENALTY_SERVICE_ID,
+      value: {
+        serviceId: penaltyService.id
+      },
+      description: 'Penalty service ID for custom penalty charges'
+    });
+  }
+
+  if (surchargeService) {
+    settings.push({
+      key: APP_SETTING_KEYS.SURCHARGE_SERVICE_ID,
+      value: {
+        serviceId: surchargeService.id
+      },
+      description: 'Surcharge service ID for custom surcharge fees'
+    });
+  }
 
   for (const setting of settings) {
     await prisma.appSetting.upsert({

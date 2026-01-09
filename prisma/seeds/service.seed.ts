@@ -79,6 +79,18 @@ export const seedServices = async (prisma: PrismaClient): Promise<void> => {
       price: 100000,
       unit: 'ngày',
       isActive: false // Example inactive service
+    },
+    {
+      name: 'Phạt',
+      price: 20000,
+      unit: 'kiện/ngày',
+      isActive: true
+    },
+    {
+      name: 'Phụ thu',
+      price: 20000,
+      unit: 'lần',
+      isActive: true
     }
   ];
 

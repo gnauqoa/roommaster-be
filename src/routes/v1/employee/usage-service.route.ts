@@ -222,5 +222,117 @@ export default function createUsageServiceRoutes(): express.Router {
     employeeUsageServiceController.deleteServiceUsage
   );
 
+  /**
+   * @swagger
+   * /employee/service/penalty:
+   *   post:
+   *     summary: Create a penalty charge
+   *     description: Apply a penalty charge with custom price to a booking or guest
+   *     tags: [Employee Services]
+   *     security:
+   *       - bearerAuth: []
+   *     requestBody:
+   *       required: true
+   *       content:
+   *         application/json:
+   *           schema:
+   *             type: object
+   *             required:
+   *               - customPrice
+   *               - reason
+   *             properties:
+   *               bookingId:
+   *                 type: string
+   *                 description: Optional booking ID
+   *               bookingRoomId:
+   *                 type: string
+   *                 description: Optional booking room ID
+   *               customPrice:
+   *                 type: number
+   *                 description: Custom penalty amount
+   *                 example: 100000
+   *               quantity:
+   *                 type: integer
+   *                 default: 1
+   *                 description: Number of penalty units
+   *               reason:
+   *                 type: string
+   *                 minLength: 3
+   *                 maxLength: 500
+   *                 description: Reason for penalty
+   *                 example: "Hư hỏng tài sản phòng"
+   *     responses:
+   *       201:
+   *         description: Penalty created successfully
+   *       400:
+   *         description: Invalid input
+   *       401:
+   *         description: Unauthorized
+   *       404:
+   *         description: Booking or room not found
+   */
+  router.post(
+    '/penalty',
+    authEmployee,
+    validate(usageServiceValidation.createPenalty),
+    employeeUsageServiceController.createPenalty
+  );
+
+  /**
+   * @swagger
+   * /employee/service/surcharge:
+   *   post:
+   *     summary: Create a surcharge fee
+   *     description: Apply a surcharge fee with custom price to a booking or guest
+   *     tags: [Employee Services]
+   *     security:
+   *       - bearerAuth: []
+   *     requestBody:
+   *       required: true
+   *       content:
+   *         application/json:
+   *           schema:
+   *             type: object
+   *             required:
+   *               - customPrice
+   *               - reason
+   *             properties:
+   *               bookingId:
+   *                 type: string
+   *                 description: Optional booking ID
+   *               bookingRoomId:
+   *                 type: string
+   *                 description: Optional booking room ID
+   *               customPrice:
+   *                 type: number
+   *                 description: Custom surcharge amount
+   *                 example: 50000
+   *               quantity:
+   *                 type: integer
+   *                 default: 1
+   *                 description: Number of surcharge units
+   *               reason:
+   *                 type: string
+   *                 minLength: 3
+   *                 maxLength: 500
+   *                 description: Reason for surcharge
+   *                 example: "Phụ thu giờ cao điểm"
+   *     responses:
+   *       201:
+   *         description: Surcharge created successfully
+   *       400:
+   *         description: Invalid input
+   *       401:
+   *         description: Unauthorized
+   *       404:
+   *         description: Booking or room not found
+   */
+  router.post(
+    '/surcharge',
+    authEmployee,
+    validate(usageServiceValidation.createSurcharge),
+    employeeUsageServiceController.createSurcharge
+  );
+
   return router;
 }
