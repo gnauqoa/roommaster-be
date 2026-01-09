@@ -28,9 +28,9 @@ async function seedAppSettings() {
     {
       key: APP_SETTING_KEYS.DEPOSIT_PERCENTAGE,
       value: {
-        percentage: 50
+        percentage: 30
       },
-      description: 'Deposit percentage of total booking amount (50%)'
+      description: 'Deposit percentage of total booking amount (30%)'
     }
   ];
 
