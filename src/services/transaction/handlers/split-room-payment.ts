@@ -47,7 +47,7 @@ export async function processSplitRoomPayment(
     bookingId: '',
     ShouldSendEmail: false
   };
-  const transaction = prisma.$transaction(async (tx) => {
+  const result = await prisma.$transaction(async (tx) => {
     // STEP 1: Fetch booking and validate rooms
     const booking = await tx.booking.findUnique({
       where: { id: bookingId }
@@ -265,10 +265,16 @@ export async function processSplitRoomPayment(
       })
     };
   });
-  if (EmailConfirmationInfo.ShouldSendEmail && bookingId != '') {
+
+  // Send email AFTER transaction commits so the email service sees updated data
+  if (EmailConfirmationInfo.ShouldSendEmail) {
+    console.log(
+      'Sending booking confirmation email for bookingId:',
+      EmailConfirmationInfo.bookingId
+    );
     emailService.sendBookingConfirmation(EmailConfirmationInfo.bookingId).catch((error) => {
       console.error('Failed to send booking confirmation email:', error);
     });
   }
-  return transaction;
+  return result;
 }
