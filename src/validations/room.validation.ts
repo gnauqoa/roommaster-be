@@ -73,11 +73,68 @@ const searchRooms = {
   })
 };
 
+/**
+ * Search rooms available for specific date range
+ * Used by customers to find bookable rooms
+ */
+const searchAvailableRoomsByDate = {
+  query: Joi.object().keys({
+    checkInDate: Joi.date().iso().required().messages({
+      'any.required': 'Check-in date is required',
+      'date.format': 'Check-in date must be in ISO format (YYYY-MM-DD)'
+    }),
+    checkOutDate: Joi.date().iso().greater(Joi.ref('checkInDate')).required().messages({
+      'any.required': 'Check-out date is required',
+      'date.greater': 'Check-out date must be after check-in date'
+    }),
+    search: Joi.string().optional(),
+    floor: Joi.number().integer().optional(),
+    roomTypeId: Joi.string().optional(),
+    minCapacity: Joi.number().integer().min(1).optional(),
+    maxCapacity: Joi.number().integer().min(1).optional(),
+    minPrice: Joi.number().min(0).optional(),
+    maxPrice: Joi.number().min(0).optional(),
+    page: Joi.number().integer().min(1).optional(),
+    limit: Joi.number().integer().min(1).max(100).optional(),
+    sortBy: Joi.string().valid('roomNumber', 'floor', 'code', 'createdAt', 'updatedAt').optional(),
+    sortOrder: Joi.string().valid('asc', 'desc').optional()
+  })
+};
+
+/**
+ * Check if a specific room is available for a date range
+ */
+const checkRoomAvailability = {
+  params: Joi.object().keys({
+    roomId: Joi.string().required()
+  }),
+  query: Joi.object().keys({
+    checkInDate: Joi.date().iso().required(),
+    checkOutDate: Joi.date().iso().greater(Joi.ref('checkInDate')).required()
+  })
+};
+
+/**
+ * Bulk check availability for multiple rooms
+ */
+const checkMultipleRoomsAvailability = {
+  body: Joi.object().keys({
+    roomIds: Joi.array().items(Joi.string()).min(1).required().messages({
+      'array.min': 'At least one room ID is required'
+    }),
+    checkInDate: Joi.date().iso().required(),
+    checkOutDate: Joi.date().iso().greater(Joi.ref('checkInDate')).required()
+  })
+};
+
 export default {
   createRoom,
   getRooms,
   getRoom,
   updateRoom,
   deleteRoom,
-  searchRooms
+  searchRooms,
+  searchAvailableRoomsByDate,
+  checkRoomAvailability,
+  checkMultipleRoomsAvailability
 };
