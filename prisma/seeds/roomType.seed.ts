@@ -50,28 +50,28 @@ export const seedRoomTypes = async (prisma: PrismaClient): Promise<void> => {
       name: 'Phòng Standard',
       capacity: 2,
       totalBed: 1,
-      pricePerNight: 500000,
+      basePrice: 500000,
       tags: ['WiFi', 'Điều hòa', 'Tivi']
     },
     {
       name: 'Phòng Deluxe',
       capacity: 2,
       totalBed: 1,
-      pricePerNight: 800000,
+      basePrice: 800000,
       tags: ['WiFi', 'Điều hòa', 'Tivi', 'Minibar', 'Bồn tắm']
     },
     {
       name: 'Phòng Superior',
       capacity: 3,
       totalBed: 2,
-      pricePerNight: 1200000,
+      basePrice: 1200000,
       tags: ['WiFi', 'Điều hòa', 'Tivi', 'Minibar', 'Ban công', 'Bồn tắm', 'View thành phố']
     },
     {
       name: 'Phòng Suite',
       capacity: 4,
       totalBed: 2,
-      pricePerNight: 2000000,
+      basePrice: 2000000,
       tags: [
         'WiFi',
         'Điều hòa',
@@ -88,7 +88,7 @@ export const seedRoomTypes = async (prisma: PrismaClient): Promise<void> => {
       name: 'Phòng Family',
       capacity: 6,
       totalBed: 3,
-      pricePerNight: 1800000,
+      basePrice: 1800000,
       tags: ['WiFi', 'Điều hòa', 'Tivi', 'Minibar', 'Ban công', 'Bếp nhỏ']
     }
   ];
@@ -109,14 +109,14 @@ export const seedRoomTypes = async (prisma: PrismaClient): Promise<void> => {
         name: roomType.name,
         capacity: roomType.capacity,
         totalBed: roomType.totalBed,
-        pricePerNight: roomType.pricePerNight
+        basePrice: roomType.basePrice
       },
       create: {
         id: roomTypeId,
         name: roomType.name,
         capacity: roomType.capacity,
         totalBed: roomType.totalBed,
-        pricePerNight: roomType.pricePerNight
+        basePrice: roomType.basePrice
       }
     });
 

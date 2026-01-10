@@ -95,6 +95,17 @@ enum PermissionType {
   ACTION
 }
 
+enum EventType {
+  HOLIDAY // Lễ, Tết (Thường priority cao)
+  SEASONAL // Mùa vụ (Hè, Mưa)
+  SPECIAL_EVENT // Sự kiện (Blackpink, Pháo hoa)
+}
+
+enum AdjustmentType {
+  PERCENTAGE // Tăng/Giảm theo % (VD: +20, -10)
+  FIXED_AMOUNT // Tăng/Giảm số tiền cứng (VD: +500000, -200000)
+}
+
 // ==================== MODELS ====================
 
 model Employee {
@@ -137,12 +148,12 @@ model Customer {
 }
 
 model RoomType {
-  id            String  @id @default(cuid())
-  name          String
-  capacity      Int
-  totalBed      Int     @default(0)
-  pricePerNight Decimal @db.Decimal(10, 2)
-  imageUrl      String?
+  id        String  @id @default(cuid())
+  name      String
+  capacity  Int
+  totalBed  Int     @default(0)
+  basePrice Decimal @db.Decimal(10, 2) // Base price before dynamic pricing
+  imageUrl  String?
 
   rooms        Room[]
   bookingRooms BookingRoom[]
@@ -235,6 +246,11 @@ model BookingRoom {
   subtotalRoom    Decimal @default(0) @db.Decimal(10, 2)
   subtotalService Decimal @default(0) @db.Decimal(10, 2)
   totalAmount     Decimal @default(0) @db.Decimal(10, 2)
+
+  // DYNAMIC PRICING AUDIT TRAIL
+  pricingRuleId       String?
+  pricingRule         PricingRule? @relation(fields: [pricingRuleId], references: [id], onDelete: SetNull)
+  pricingRuleSnapshot Json?
 
   status BookingStatus @default(PENDING)
 
@@ -486,6 +502,66 @@ model Permission {
   roles       RolePermission[]
   createdAt   DateTime         @default(now())
   updatedAt   DateTime         @updatedAt
+}
+
+// ==================== DYNAMIC PRICING ====================
+
+model CalendarEvent {
+  id          String    @id @default(cuid())
+  name        String // "Mùa Hè 2026", "Tết Nguyên Đán 2026"
+  description String?
+  type        EventType @default(SPECIAL_EVENT)
+
+  startDate DateTime
+  endDate   DateTime
+
+  // Quan hệ ngược
+  pricingRules PricingRule[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([startDate, endDate])
+}
+
+model PricingRule {
+  id   String @id @default(cuid())
+  name String // "Giảm giá CN cuối tháng"
+
+  // LEXORANK: Sắp xếp ASC. String nhỏ nằm trên.
+  rank String @unique
+
+  // Phạm vi áp dụng (Scope)
+  roomTypeIds String[] // Empty = Áp dụng toàn bộ khách sạn
+
+  // --- ĐIỀU KIỆN THỜI GIAN (TIME MATCHING) ---
+
+  // Cách 1: Kế thừa từ Sự kiện (VD: Rule áp dụng cho Mùa Hè)
+  calendarEventId String?
+  calendarEvent   CalendarEvent? @relation(fields: [calendarEventId], references: [id])
+
+  // Cách 2: Set cứng ngày (Nếu không dùng Event)
+  startDate DateTime?
+  endDate   DateTime?
+
+  // Cách 3: Lặp lại phức tạp (RRule string)
+  // VD: "FREQ=WEEKLY;BYDAY=SA,SU" (Thứ 7, CN hàng tuần)
+  // VD: "FREQ=MONTHLY;BYDAY=-1SU" (CN cuối cùng của tháng)
+  recurrenceRule String?
+
+  // --- GIÁ TRỊ ĐIỀU CHỈNH ---
+  adjustmentType  AdjustmentType
+  adjustmentValue Decimal        @db.Decimal(10, 2) // Hỗ trợ số âm để giảm giá
+
+  isActive Boolean @default(true)
+
+  // Quan hệ ngược
+  bookingRooms BookingRoom[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([rank]) // Quan trọng để query sort nhanh
 }
 
 model RolePermission {

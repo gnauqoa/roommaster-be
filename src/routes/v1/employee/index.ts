@@ -14,6 +14,8 @@ import createPromotionRoute from './promotion.route';
 import createActivityRoute from './activity.route';
 import createRoomTagRoute from './roomTag.route';
 import createAppSettingRoute from './app-setting.route';
+import createPricingRuleRoutes from './pricing-rule.route';
+import createCalendarEventRoutes from './calendar-event.route';
 
 export default function createEmployeeRoutes(): express.Router {
   const router = express.Router();
@@ -33,6 +35,8 @@ export default function createEmployeeRoutes(): express.Router {
   router.use('/activities', createActivityRoute());
   router.use('/room-tags', createRoomTagRoute());
   router.use('/app-settings', createAppSettingRoute());
+  router.use('/pricing-rules', createPricingRuleRoutes());
+  router.use('/calendar-events', createCalendarEventRoutes());
 
   return router;
 }

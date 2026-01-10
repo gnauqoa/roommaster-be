@@ -133,7 +133,9 @@ export const TOKENS = {
   AppSettingService: Symbol('AppSettingService'),
   CaslService: Symbol('CaslService'),
   TemplateService: Symbol('TemplateService'),
-  EmailService: Symbol('EmailService')
+  EmailService: Symbol('EmailService'),
+  PricingRuleService: Symbol('PricingRuleService'),
+  PricingCalculatorService: Symbol('PricingCalculatorService')
 } as const;
 
 export type TokenKey = keyof typeof TOKENS;
