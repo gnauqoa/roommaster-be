@@ -120,9 +120,7 @@ export class EmailService {
         })),
         totalAmount: booking.totalAmount.toString(),
         depositRequired: booking.depositRequired.toString(),
-        totalDeposit: booking.totalDeposit.toString(),
-        totalPaid: booking.totalPaid.toString(),
-        balance: booking.balance.toString()
+        isPaid: booking.status === 'CONFIRMED'
       };
 
       // Render email template

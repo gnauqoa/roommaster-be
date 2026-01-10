@@ -1,4 +1,4 @@
-import { PrismaClient, Prisma, TransactionStatus, BookingStatus } from '@prisma/client';
+import { PrismaClient, TransactionStatus, BookingStatus } from '@prisma/client';
 import httpStatus from 'http-status';
 import ApiError from '@/utils/ApiError';
 import { ActivityService } from '@/services/activity.service';
@@ -79,16 +79,12 @@ export async function processSplitRoomPayment(
     const transactionDetails: TransactionDetailData[] = [];
 
     for (const room of bookingRooms) {
-      const roomBalance = new Prisma.Decimal(room.subtotalRoom).sub(room.totalPaid);
-
-      if (roomBalance.gt(0)) {
-        transactionDetails.push({
-          bookingRoomId: room.id,
-          baseAmount: roomBalance.toNumber(),
-          discountAmount: 0,
-          amount: roomBalance.toNumber()
-        });
-      }
+      transactionDetails.push({
+        bookingRoomId: room.id,
+        baseAmount: room.subtotalRoom.toNumber(),
+        discountAmount: 0,
+        amount: room.subtotalRoom.toNumber()
+      });
     }
 
     // STEP 3: Validate promotions
@@ -138,21 +134,7 @@ export async function processSplitRoomPayment(
         }
       });
 
-      // Update room or service payment
-      if (detail.bookingRoomId) {
-        const room = bookingRooms.find((r) => r.id === detail.bookingRoomId);
-        if (room) {
-          await tx.bookingRoom.update({
-            where: { id: detail.bookingRoomId },
-            data: {
-              totalPaid: new Prisma.Decimal(room.totalPaid).add(detail.amount),
-              balance: new Prisma.Decimal(room.totalAmount).sub(
-                new Prisma.Decimal(room.totalPaid).add(detail.amount)
-              )
-            }
-          });
-        }
-      }
+      // No need to update BookingRoom payment tracking
 
       if (detail.serviceUsageId) {
         await usageServiceService.updateServiceUsagePayment(

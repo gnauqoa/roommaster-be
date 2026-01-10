@@ -74,63 +74,45 @@ export async function processFullBookingPayment(
     // STEP 2: Build transaction details
     const transactionDetails: TransactionDetailData[] = [];
 
-    // For DEPOSIT transactions, only pay up to depositRequired
+    // For DEPOSIT transactions, pay depositRequired amount
     if (transactionType === TransactionType.DEPOSIT) {
       const depositRequired = new Prisma.Decimal(booking.depositRequired);
-      const totalDeposit = new Prisma.Decimal(booking.totalDeposit);
-      const depositRemaining = depositRequired.sub(totalDeposit);
-
-      if (depositRemaining.lte(0)) {
-        throw new ApiError(httpStatus.BAD_REQUEST, 'Deposit already paid in full');
-      }
 
       // Distribute deposit across rooms proportionally
-      let remainingDeposit = depositRemaining.toNumber();
+      const totalRoomAmount = booking.bookingRooms.reduce(
+        (sum, room) => sum.add(room.subtotalRoom),
+        new Prisma.Decimal(0)
+      );
 
       for (const room of booking.bookingRooms) {
-        if (remainingDeposit <= 0) break;
+        // Calculate proportional deposit for this room
+        const roomProportion = new Prisma.Decimal(room.subtotalRoom).div(totalRoomAmount);
+        const roomDeposit = depositRequired.mul(roomProportion);
 
-        const roomBalance = new Prisma.Decimal(room.subtotalRoom).sub(room.totalPaid);
-
-        if (roomBalance.gt(0)) {
-          // Pay up to room balance or remaining deposit, whichever is smaller
-          const paymentAmount = Math.min(roomBalance.toNumber(), remainingDeposit);
-
-          transactionDetails.push({
-            bookingRoomId: room.id,
-            baseAmount: paymentAmount,
-            discountAmount: 0,
-            amount: paymentAmount
-          });
-
-          remainingDeposit -= paymentAmount;
-        }
+        transactionDetails.push({
+          bookingRoomId: room.id,
+          baseAmount: roomDeposit.toNumber(),
+          discountAmount: 0,
+          amount: roomDeposit.toNumber()
+        });
       }
     } else {
-      // For non-DEPOSIT transactions, pay all remaining balances
+      // For non-DEPOSIT transactions, pay all rooms and services
       for (const room of booking.bookingRooms) {
-        const roomBalance = new Prisma.Decimal(room.subtotalRoom).sub(room.totalPaid);
-
-        if (roomBalance.gt(0)) {
-          transactionDetails.push({
-            bookingRoomId: room.id,
-            baseAmount: roomBalance.toNumber(),
-            discountAmount: 0,
-            amount: roomBalance.toNumber()
-          });
-        }
+        transactionDetails.push({
+          bookingRoomId: room.id,
+          baseAmount: room.subtotalRoom.toNumber(),
+          discountAmount: 0,
+          amount: room.subtotalRoom.toNumber()
+        });
 
         for (const service of room.serviceUsages) {
-          const serviceBalance = new Prisma.Decimal(service.totalPrice).sub(service.totalPaid);
-
-          if (serviceBalance.gt(0)) {
-            transactionDetails.push({
-              serviceUsageId: service.id,
-              baseAmount: serviceBalance.toNumber(),
-              discountAmount: 0,
-              amount: serviceBalance.toNumber()
-            });
-          }
+          transactionDetails.push({
+            serviceUsageId: service.id,
+            baseAmount: service.totalPrice.toNumber(),
+            discountAmount: 0,
+            amount: service.totalPrice.toNumber()
+          });
         }
       }
     }
@@ -180,21 +162,7 @@ export async function processFullBookingPayment(
         }
       });
 
-      // Update room or service payment
-      if (detail.bookingRoomId) {
-        const room = booking.bookingRooms.find((r) => r.id === detail.bookingRoomId);
-        if (room) {
-          await tx.bookingRoom.update({
-            where: { id: detail.bookingRoomId },
-            data: {
-              totalPaid: new Prisma.Decimal(room.totalPaid).add(detail.amount),
-              balance: new Prisma.Decimal(room.totalAmount).sub(
-                new Prisma.Decimal(room.totalPaid).add(detail.amount)
-              )
-            }
-          });
-        }
-      }
+      // No need to update BookingRoom payment tracking
 
       if (detail.serviceUsageId) {
         await usageServiceService.updateServiceUsagePayment(
@@ -258,7 +226,7 @@ export async function processFullBookingPayment(
     }
 
     // Update booking totals
-    await updateBookingTotals(bookingId, tx, transactionType, transactionAmounts.amount);
+    await updateBookingTotals(bookingId, tx);
 
     // Apply state transition for DEPOSIT
     if (transactionType === 'DEPOSIT') {
