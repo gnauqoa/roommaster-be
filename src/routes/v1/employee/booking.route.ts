@@ -110,13 +110,11 @@ export default function createBookingRoutes(): express.Router {
    *                 items:
    *                   type: object
    *                   required:
-   *                     - roomTypeId
-   *                     - count
+   *                     - roomId
    *                   properties:
-   *                     roomTypeId:
+   *                     roomId:
    *                       type: string
-   *                     count:
-   *                       type: integer
+   *                       description: ID of the specific room to book
    *               checkInDate:
    *                 type: string
    *                 format: date-time
@@ -327,6 +325,16 @@ export default function createBookingRoutes(): express.Router {
    *               status:
    *                 type: string
    *                 enum: [PENDING, CONFIRMED, CHECKED_IN, CHECKED_OUT, CANCELLED]
+   *               rooms:
+   *                 type: array
+   *                 items:
+   *                   type: object
+   *                   required:
+   *                     - roomId
+   *                   properties:
+   *                     roomId:
+   *                       type: string
+   *                       description: ID of the specific room
    *     responses:
    *       200:
    *         description: Booking updated successfully

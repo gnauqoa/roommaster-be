@@ -38,6 +38,7 @@ export default function createRoomTypeRoutes(): express.Router {
    *             required:
    *               - name
    *               - capacity
+   *               - totalBed
    *               - pricePerNight
    *             properties:
    *               name:
@@ -48,22 +49,25 @@ export default function createRoomTypeRoutes(): express.Router {
    *                 type: integer
    *                 minimum: 1
    *                 description: Maximum number of guests
+   *               totalBed:
+   *                 type: integer
+   *                 minimum: 0
+   *                 description: Total number of beds in the room
    *               pricePerNight:
    *                 type: number
    *                 minimum: 0
    *                 description: Price per night (VND)
-   *               amenities:
-   *                 type: object
-   *                 description: Room amenities (JSON object)
+   *               tagIds:
+   *                 type: array
+   *                 items:
+   *                   type: string
+   *                 description: Array of room tag IDs (optional)
    *             example:
    *               name: "Phòng Deluxe"
    *               capacity: 2
+   *               totalBed: 2
    *               pricePerNight: 1500000
-   *               amenities:
-   *                 wifi: true
-   *                 airConditioner: true
-   *                 minibar: true
-   *                 balcony: false
+   *               tagIds: ["tag_id_1", "tag_id_2"]
    *     responses:
    *       201:
    *         description: Room type created successfully
@@ -316,13 +320,19 @@ export default function createRoomTypeRoutes(): express.Router {
    *                 type: integer
    *                 minimum: 1
    *                 description: Maximum number of guests
+   *               totalBed:
+   *                 type: integer
+   *                 minimum: 0
+   *                 description: Total number of beds in the room
    *               pricePerNight:
    *                 type: number
    *                 minimum: 0
    *                 description: Price per night (VND)
-   *               amenities:
-   *                 type: object
-   *                 description: Room amenities
+   *               tagIds:
+   *                 type: array
+   *                 items:
+   *                   type: string
+   *                 description: Array of room tag IDs
    *             example:
    *               name: "Phòng Superior"
    *               pricePerNight: 1800000

@@ -46,17 +46,12 @@ export default function createBookingRoutes(): express.Router {
    *                 items:
    *                   type: object
    *                   required:
-   *                     - roomTypeId
-   *                     - count
+   *                     - roomId
    *                   properties:
-   *                     roomTypeId:
+   *                     roomId:
    *                       type: string
-   *                       description: ID of the room type
-   *                     count:
-   *                       type: integer
-   *                       minimum: 1
-   *                       description: Number of rooms of this type
-   *                 description: Array of room type requests
+   *                       description: ID of the specific room to book
+   *                 description: Array of room requests
    *               checkInDate:
    *                 type: string
    *                 format: date-time
@@ -71,10 +66,9 @@ export default function createBookingRoutes(): express.Router {
    *                 description: Total number of guests
    *             example:
    *               rooms:
-   *                 - roomTypeId: "room_type_id_1"
-   *                   count: 2
-   *                 - roomTypeId: "room_type_id_2"
-   *                   count: 1
+   *                 - roomId: "room_id_1"
+   *                 - roomId: "room_id_2"
+   *                 - roomId: "room_id_3"
    *               checkInDate: "2025-12-25T14:00:00Z"
    *               checkOutDate: "2025-12-27T12:00:00Z"
    *               totalGuests: 4
@@ -177,7 +171,12 @@ export default function createBookingRoutes(): express.Router {
    *       404:
    *         $ref: '#/components/responses/NotFound'
    */
-  router.get('/:id', authCustomer, customerBookingController.getBooking);
+  router.get(
+    '/:id',
+    authCustomer,
+    validate(bookingValidation.getBooking),
+    customerBookingController.getBooking
+  );
 
   /**
    * @swagger

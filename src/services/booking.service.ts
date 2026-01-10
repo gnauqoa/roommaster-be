@@ -4,6 +4,7 @@ import httpStatus from 'http-status';
 import ApiError from '@/utils/ApiError';
 import dayjs from 'dayjs';
 import AppSettingService from './app-setting.service';
+import { encryptPassword } from '@/utils/encryption';
 import EmailService from './email.service';
 
 export interface RoomRequest {
@@ -755,7 +756,7 @@ export class BookingService {
         const newCustomer = await this.prisma.customer.create({
           data: {
             ...input.customer,
-            password: await import('bcryptjs').then((m) => m.hash('12345678', 8)) // Default password
+            password: await encryptPassword('12345678') // Default password
           }
         });
         customerId = newCustomer.id;
