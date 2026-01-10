@@ -4,20 +4,20 @@ import ApiError from '@/utils/ApiError';
 
 /**
  * Update booking totals from all booking rooms
+ * Simplified for single-payment flow
  */
 export async function updateBookingTotals(
   bookingId: string,
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  tx: any,
-  transactionType?: TransactionType,
-  transactionAmount?: number
+  tx: any
 ): Promise<void> {
   const allBookingRooms = await tx.bookingRoom.findMany({
     where: { bookingId }
   });
 
-  const aggregatedTotalPaid = allBookingRooms.reduce(
-    (sum: Prisma.Decimal, br: { totalPaid: Prisma.Decimal }) => sum.add(br.totalPaid),
+  // Aggregate totalAmount from all booking rooms
+  const aggregatedTotalAmount = allBookingRooms.reduce(
+    (sum: Prisma.Decimal, br: { totalAmount: Prisma.Decimal }) => sum.add(br.totalAmount),
     new Prisma.Decimal(0)
   );
 
@@ -29,21 +29,12 @@ export async function updateBookingTotals(
     throw new ApiError(httpStatus.NOT_FOUND, 'Booking not found');
   }
 
-  const aggregatedBalance = new Prisma.Decimal(booking.totalAmount).sub(aggregatedTotalPaid);
-
-  // Update totalDeposit if this is a deposit transaction
-  const updateData: any = {
-    totalPaid: aggregatedTotalPaid,
-    balance: aggregatedBalance
-  };
-
-  if (transactionType === TransactionType.DEPOSIT && transactionAmount) {
-    updateData.totalDeposit = new Prisma.Decimal(booking.totalDeposit).add(transactionAmount);
-  }
-
+  // Only update totalAmount
   await tx.booking.update({
     where: { id: bookingId },
-    data: updateData
+    data: {
+      totalAmount: aggregatedTotalAmount
+    }
   });
 }
 

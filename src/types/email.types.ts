@@ -40,9 +40,7 @@ export interface BookingConfirmationData {
   }>;
   totalAmount: number | string;
   depositRequired: number | string;
-  totalDeposit: number | string;
-  totalPaid: number | string;
-  balance: number | string;
+  isPaid: boolean;
 }
 
 export interface TemplateData {
