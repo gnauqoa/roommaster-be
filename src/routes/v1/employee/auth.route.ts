@@ -4,6 +4,8 @@ import { employeeValidation, authValidation } from '@/validations';
 import EmployeeController from '@/controllers/employee/employee.controller';
 import { container, TOKENS } from '@/core/container';
 import { AuthService, EmployeeService, TokenService } from '@/services';
+import CaslService from '@/services/casl.service';
+import { authEmployee } from '@/middlewares/auth';
 
 export default function createAuthRoutes(): express.Router {
   const router = express.Router();
@@ -12,7 +14,13 @@ export default function createAuthRoutes(): express.Router {
   const authService = container.resolve<AuthService>(TOKENS.AuthService);
   const employeeService = container.resolve<EmployeeService>(TOKENS.EmployeeService);
   const tokenService = container.resolve<TokenService>(TOKENS.TokenService);
-  const employeeController = new EmployeeController(authService, employeeService, tokenService);
+  const caslService = container.resolve<CaslService>(TOKENS.CaslService);
+  const employeeController = new EmployeeController(
+    authService,
+    employeeService,
+    tokenService,
+    caslService
+  );
 
   /**
    * @swagger
@@ -302,6 +310,82 @@ export default function createAuthRoutes(): express.Router {
     validate(authValidation.resetPassword),
     employeeController.resetPassword
   );
+
+  /**
+   * @swagger
+   * /employee/auth/permissions:
+   *   get:
+   *     summary: Get current employee permissions
+   *     description: |
+   *       Returns the permissions for the authenticated employee's role.
+   *       Use this to build UI elements:
+   *       - `screens`: List of screens the employee can access (for sidebar menu)
+   *       - `actions`: List of action permissions (for button visibility)
+   *       - `permissions`: Raw CASL permissions (for frontend CASL instance)
+   *     tags: [Employee Auth]
+   *     security:
+   *       - bearerAuth: []
+   *     responses:
+   *       200:
+   *         description: Employee permissions retrieved successfully
+   *         content:
+   *           application/json:
+   *             schema:
+   *               type: object
+   *               properties:
+   *                 data:
+   *                   type: object
+   *                   properties:
+   *                     role:
+   *                       type: object
+   *                       properties:
+   *                         id:
+   *                           type: string
+   *                         name:
+   *                           type: string
+   *                           example: "RECEPTIONIST"
+   *                         description:
+   *                           type: string
+   *                           example: "Front desk operations"
+   *                     screens:
+   *                       type: array
+   *                       description: Screens the employee can access
+   *                       items:
+   *                         type: object
+   *                         properties:
+   *                           name:
+   *                             type: string
+   *                             example: "screen:booking"
+   *                           subject:
+   *                             type: string
+   *                             example: "Booking"
+   *                           description:
+   *                             type: string
+   *                             example: "Booking Management"
+   *                     actions:
+   *                       type: array
+   *                       description: Action permissions
+   *                       items:
+   *                         type: string
+   *                         example: "booking:create"
+   *                     permissions:
+   *                       type: array
+   *                       description: Raw permissions for frontend CASL
+   *                       items:
+   *                         type: object
+   *                         properties:
+   *                           action:
+   *                             type: string
+   *                             example: "create"
+   *                           subject:
+   *                             type: string
+   *                             example: "Booking"
+   *       401:
+   *         $ref: '#/components/responses/Unauthorized'
+   *       404:
+   *         description: Role not found
+   */
+  router.get('/permissions', authEmployee, employeeController.getMyPermissions);
 
   return router;
 }

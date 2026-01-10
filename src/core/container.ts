@@ -130,7 +130,10 @@ export const TOKENS = {
   TransactionDetailsService: Symbol('TransactionDetailsService'),
   ActivityService: Symbol('ActivityService'),
   PromotionService: Symbol('PromotionService'),
-  AppSettingService: Symbol('AppSettingService')
+  AppSettingService: Symbol('AppSettingService'),
+  CaslService: Symbol('CaslService'),
+  TemplateService: Symbol('TemplateService'),
+  EmailService: Symbol('EmailService')
 } as const;
 
 export type TokenKey = keyof typeof TOKENS;

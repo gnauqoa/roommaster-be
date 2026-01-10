@@ -5,6 +5,8 @@ import ApiError from '@/utils/ApiError';
 import dayjs from 'dayjs';
 import AppSettingService from './app-setting.service';
 import { encryptPassword } from '@/utils/encryption';
+import EmailService from './email.service';
+
 export interface RoomRequest {
   roomId: string;
 }
@@ -38,7 +40,8 @@ export class BookingService {
     private readonly prisma: PrismaClient,
     private readonly transactionService: any,
     private readonly activityService: any,
-    private readonly appSettingService: AppSettingService
+    private readonly appSettingService: AppSettingService,
+    private readonly emailService: EmailService
   ) {}
 
   /**
@@ -257,6 +260,20 @@ export class BookingService {
         `Cannot check in. All booking rooms must be CONFIRMED. Invalid rooms: ${invalidRooms
           .map((br) => br.room.roomNumber)
           .join(', ')}`
+      );
+    }
+
+    // Validate room availability status - rooms must be AVAILABLE or RESERVED to check in
+    const unavailableRooms = bookingRooms.filter(
+      (br) => br.room.status !== RoomStatus.AVAILABLE && br.room.status !== RoomStatus.RESERVED
+    );
+    if (unavailableRooms.length > 0) {
+      const roomDetails = unavailableRooms
+        .map((br) => `${br.room.roomNumber} (${br.room.status})`)
+        .join(', ');
+      throw new ApiError(
+        httpStatus.BAD_REQUEST,
+        `Cannot check in. The following rooms are not ready: ${roomDetails}`
       );
     }
 
@@ -690,6 +707,7 @@ export class BookingService {
    */
   async updateBooking(id: string, updateBody: any) {
     const booking = await this.getBookingById(id);
+    const oldStatus = booking.status;
 
     if (
       booking.status === BookingStatus.CANCELLED ||
@@ -705,6 +723,17 @@ export class BookingService {
         bookingRooms: true
       }
     });
+
+    // Trigger booking confirmation email if status changed to CONFIRMED
+    if (
+      oldStatus !== BookingStatus.CONFIRMED &&
+      updatedBooking.status === BookingStatus.CONFIRMED
+    ) {
+      // Send email asynchronously without blocking the response
+      this.emailService.sendBookingConfirmation(updatedBooking.id).catch((error) => {
+        console.error('Failed to send booking confirmation email:', error);
+      });
+    }
 
     return updatedBooking;
   }

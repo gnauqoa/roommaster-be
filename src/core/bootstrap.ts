@@ -23,6 +23,9 @@ import {
   TransactionDetailsService,
   AppSettingService
 } from '@/services';
+import CaslService from '@/services/casl.service';
+import TemplateService from '@/services/template.service';
+import EmailService from '@/services/email.service';
 
 /**
  * Bootstrap the application by registering all dependencies
@@ -94,13 +97,15 @@ export function bootstrap(): void {
         args[0] as PrismaClient,
         args[1] as ActivityService,
         args[2] as UsageServiceService,
-        args[3] as PromotionService
+        args[3] as PromotionService,
+        args[4] as EmailService
       ),
     [
       TOKENS.PrismaClient,
       TOKENS.ActivityService,
       TOKENS.UsageServiceService,
-      TOKENS.PromotionService
+      TOKENS.PromotionService,
+      TOKENS.EmailService
     ]
   );
 
@@ -108,23 +113,6 @@ export function bootstrap(): void {
     TOKENS.TransactionDetailsService,
     (...args: unknown[]) => new TransactionDetailsService(args[0] as PrismaClient),
     [TOKENS.PrismaClient]
-  );
-
-  container.registerFactory(
-    TOKENS.BookingService,
-    (...args: unknown[]) =>
-      new BookingService(
-        args[0] as PrismaClient,
-        args[1] as TransactionService,
-        args[2] as ActivityService,
-        args[3] as AppSettingService
-      ),
-    [
-      TOKENS.PrismaClient,
-      TOKENS.TransactionService,
-      TOKENS.ActivityService,
-      TOKENS.AppSettingService
-    ]
   );
 
   container.registerFactory(
@@ -150,6 +138,42 @@ export function bootstrap(): void {
     TOKENS.AppSettingService,
     (...args: unknown[]) => new AppSettingService(args[0] as PrismaClient),
     [TOKENS.PrismaClient]
+  );
+
+  container.registerFactory(
+    TOKENS.CaslService,
+    (...args: unknown[]) => new CaslService(args[0] as PrismaClient),
+    [TOKENS.PrismaClient]
+  );
+
+  // Register TemplateService (no dependencies)
+  container.registerFactory(TOKENS.TemplateService, () => new TemplateService(), []);
+
+  // Register EmailService
+  container.registerFactory(
+    TOKENS.EmailService,
+    (...args: unknown[]) => new EmailService(args[0] as TemplateService, args[1] as PrismaClient),
+    [TOKENS.TemplateService, TOKENS.PrismaClient]
+  );
+
+  // Re-register BookingService with EmailService dependency
+  container.registerFactory(
+    TOKENS.BookingService,
+    (...args: unknown[]) =>
+      new BookingService(
+        args[0] as PrismaClient,
+        args[1] as TransactionService,
+        args[2] as ActivityService,
+        args[3] as AppSettingService,
+        args[4] as EmailService
+      ),
+    [
+      TOKENS.PrismaClient,
+      TOKENS.TransactionService,
+      TOKENS.ActivityService,
+      TOKENS.AppSettingService,
+      TOKENS.EmailService
+    ]
   );
 
   // Initialize default configurations

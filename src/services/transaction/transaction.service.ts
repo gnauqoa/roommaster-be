@@ -3,6 +3,7 @@ import { Injectable } from '@/core/decorators';
 import httpStatus from 'http-status';
 import ApiError from '@/utils/ApiError';
 import { PromotionService, ActivityService, UsageServiceService } from '@/services';
+import EmailService from '@/services/email.service';
 
 import {
   CreateTransactionPayload,
@@ -43,7 +44,8 @@ export class TransactionService {
     private readonly prisma: PrismaClient,
     private readonly activityService: ActivityService,
     private readonly usageServiceService: UsageServiceService,
-    private readonly promotionService: PromotionService
+    private readonly promotionService: PromotionService,
+    private readonly emailService: EmailService
   ) {}
 
   /**
@@ -85,7 +87,8 @@ export class TransactionService {
         this.prisma,
         this.activityService,
         this.usageServiceService,
-        this.promotionService
+        this.promotionService,
+        this.emailService
       );
     }
 
@@ -96,7 +99,8 @@ export class TransactionService {
         this.prisma,
         this.activityService,
         this.usageServiceService,
-        this.promotionService
+        this.promotionService,
+        this.emailService
       );
     }
 
@@ -267,7 +271,11 @@ export class TransactionService {
             id: true,
             name: true,
             username: true,
-            role: true
+            roleRef: {
+              select: {
+                name: true
+              }
+            }
           }
         },
         details: {
