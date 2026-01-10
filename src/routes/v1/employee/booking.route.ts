@@ -5,6 +5,7 @@ import EmployeeBookingController from '@/controllers/employee/employee.booking.c
 import { container, TOKENS } from '@/core/container';
 import { BookingService } from '@/services/booking.service';
 import { authEmployee } from '@/middlewares/auth';
+import { attachAbilities, authorize, canAccessScreen } from '@/middlewares/casl.middleware';
 
 export default function createBookingRoutes(): express.Router {
   const router = express.Router();
@@ -12,6 +13,10 @@ export default function createBookingRoutes(): express.Router {
   // Resolve dependencies from container
   const bookingService = container.resolve<BookingService>(TOKENS.BookingService);
   const employeeBookingController = new EmployeeBookingController(bookingService);
+
+  // Apply auth and CASL abilities to all routes
+  // All routes require: 1) employee authentication, 2) CASL abilities, 3) Booking screen access
+  router.use(authEmployee, attachAbilities, canAccessScreen('Booking'));
 
   /**
    * @swagger
@@ -131,12 +136,12 @@ export default function createBookingRoutes(): express.Router {
   router
     .route('/')
     .get(
-      authEmployee,
+      authorize('read', 'Booking'),
       validate(bookingValidation.getBookings),
       employeeBookingController.getBookings
     )
     .post(
-      authEmployee,
+      authorize('create', 'Booking'),
       validate(bookingValidation.createBookingEmployee),
       employeeBookingController.createBooking
     );
@@ -204,7 +209,7 @@ export default function createBookingRoutes(): express.Router {
    */
   router.post(
     '/check-in',
-    authEmployee,
+    authorize('checkIn', 'Booking'),
     validate(bookingValidation.checkInRooms),
     employeeBookingController.checkInRooms
   );
@@ -257,7 +262,7 @@ export default function createBookingRoutes(): express.Router {
    */
   router.post(
     '/check-out',
-    authEmployee,
+    authorize('checkOut', 'Booking'),
     validate(bookingValidation.checkOutRooms),
     employeeBookingController.checkOutRooms
   );
@@ -286,7 +291,7 @@ export default function createBookingRoutes(): express.Router {
    *       404:
    *         $ref: '#/components/responses/NotFound'
    */
-  router.get('/:id', authEmployee, employeeBookingController.getBooking);
+  router.get('/:id', authorize('read', 'Booking'), employeeBookingController.getBooking);
 
   /**
    * @swagger
@@ -334,7 +339,7 @@ export default function createBookingRoutes(): express.Router {
    */
   router.put(
     '/:id',
-    authEmployee,
+    authorize('update', 'Booking'),
     validate(bookingValidation.updateBooking),
     employeeBookingController.updateBooking
   );
@@ -367,7 +372,7 @@ export default function createBookingRoutes(): express.Router {
    */
   router.post(
     '/:id/cancel',
-    authEmployee,
+    authorize('cancel', 'Booking'),
     validate(bookingValidation.cancelBooking),
     employeeBookingController.cancelBooking
   );

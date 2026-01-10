@@ -7,6 +7,7 @@
 1. Truy cập: https://myaccount.google.com/apppasswords
 2. Tạo App Password mới
 3. Update `.env`:
+
 ```env
 SMTP_HOST=smtp.gmail.com
 SMTP_PORT=587
@@ -20,6 +21,7 @@ EMAIL_FROM="RoomMaster <noreply@roommaster.com>"
 1. Truy cập: https://ethereal.email/create
 2. Copy credentials
 3. Update `.env`:
+
 ```env
 SMTP_HOST=smtp.ethereal.email
 SMTP_PORT=587
@@ -35,6 +37,7 @@ npm run dev
 ```
 
 Check console cho:
+
 ```
 ✅ Email service is ready to send emails
 ```
@@ -85,14 +88,17 @@ curl -X PATCH http://localhost:8080/employee-api/v1/bookings/BOOKING_ID \
 ## Bước 4: Verify Email
 
 ### Nếu dùng Gmail:
+
 - Check inbox của email trong Step 3.1
 
 ### Nếu dùng Ethereal:
+
 - Truy cập: https://ethereal.email/messages
 - Login với credentials từ Step 1
 - Xem email preview
 
 ### Check Console Logs:
+
 ```
 ✅ Email sent successfully: <message-id>
 ✅ Booking confirmation email sent to test@example.com for booking BOOK-XXX
@@ -101,6 +107,7 @@ curl -X PATCH http://localhost:8080/employee-api/v1/bookings/BOOKING_ID \
 ## 🎉 Done!
 
 Email đã được gửi với:
+
 - ✅ Vietnamese content
 - ✅ Beautiful HTML design
 - ✅ All booking details
@@ -110,14 +117,17 @@ Email đã được gửi với:
 ## Troubleshooting
 
 ### Không thấy log email sent?
+
 - Check customer có email không: `GET /employee-api/v1/customers/:id`
 - Check booking status đã CONFIRMED: `GET /employee-api/v1/bookings/:id`
 
 ### Email service connection failed?
+
 - Verify SMTP credentials trong `.env`
 - Test connection: Restart server và check console
 
 ### Template not found?
+
 - Check file tồn tại: `ls src/templates/emails/booking-confirmation.hbs`
 - Rebuild: `npm run build`
 

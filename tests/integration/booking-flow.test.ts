@@ -60,12 +60,14 @@ describe('Full Booking Flow Integration Test', () => {
     if (employee) {
       employeeId = employee.id;
     } else {
+      // Get the ADMIN role first
+      const adminRole = await prisma.role.findUnique({ where: { name: 'ADMIN' } });
       const newEmployee = await prisma.employee.create({
         data: {
           name: 'Test Admin',
           username: 'test-admin',
           password: await encryptPassword('password123'),
-          role: 'ADMIN'
+          roleId: adminRole?.id
         }
       });
       employeeId = newEmployee.id;

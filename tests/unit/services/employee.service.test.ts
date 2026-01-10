@@ -181,12 +181,12 @@ describe('EmployeeService', () => {
       // @ts-expect-error - Mock setup
       mockPrisma.employee!.count = jest.fn().mockResolvedValue(0);
 
-      await employeeService.getAllEmployees({ role: 'ADMIN' });
+      await employeeService.getAllEmployees({ roleId: 'admin-role-id' });
 
       expect(mockPrisma.employee!.findMany).toHaveBeenCalledWith(
         expect.objectContaining({
           where: expect.objectContaining({
-            role: 'ADMIN'
+            roleId: 'admin-role-id'
           })
         })
       );
