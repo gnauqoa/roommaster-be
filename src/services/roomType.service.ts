@@ -58,7 +58,7 @@ export class RoomTypeService {
         name: roomTypeData.name,
         capacity: roomTypeData.capacity,
         totalBed: roomTypeData.totalBed,
-        pricePerNight: roomTypeData.pricePerNight,
+        basePrice: roomTypeData.pricePerNight,
         roomTypeTags: roomTypeData.tagIds
           ? {
               create: roomTypeData.tagIds.map((tagId) => ({
@@ -116,12 +116,12 @@ export class RoomTypeService {
 
     // Apply price filters
     if (minPrice !== undefined || maxPrice !== undefined) {
-      where.pricePerNight = {};
+      where.basePrice = {};
       if (minPrice !== undefined) {
-        where.pricePerNight.gte = minPrice;
+        where.basePrice.gte = minPrice;
       }
       if (maxPrice !== undefined) {
-        where.pricePerNight.lte = maxPrice;
+        where.basePrice.lte = maxPrice;
       }
     }
 

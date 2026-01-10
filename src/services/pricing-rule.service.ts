@@ -1,5 +1,5 @@
 import { Injectable } from '@/core/decorators';
-import { PrismaClient, Prisma } from '@prisma/client';
+import { PrismaClient } from '@prisma/client';
 import { LexoRank } from 'lexorank';
 import ApiError from '@/utils/ApiError';
 import httpStatus from 'http-status';

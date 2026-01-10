@@ -322,7 +322,7 @@ export class RoomService {
       if (maxPrice !== undefined) {
         priceFilter.lte = maxPrice;
       }
-      where.roomType.pricePerNight = priceFilter;
+      where.roomType.basePrice = priceFilter;
     }
 
     const skip = (page - 1) * limit;
@@ -441,9 +441,9 @@ export class RoomService {
       if (maxCapacity !== undefined) roomTypeFilter.capacity.lte = maxCapacity;
     }
     if (minPrice !== undefined || maxPrice !== undefined) {
-      roomTypeFilter.pricePerNight = {};
-      if (minPrice !== undefined) roomTypeFilter.pricePerNight.gte = minPrice;
-      if (maxPrice !== undefined) roomTypeFilter.pricePerNight.lte = maxPrice;
+      roomTypeFilter.basePrice = {};
+      if (minPrice !== undefined) roomTypeFilter.basePrice.gte = minPrice;
+      if (maxPrice !== undefined) roomTypeFilter.basePrice.lte = maxPrice;
     }
     if (Object.keys(roomTypeFilter).length > 0) {
       where.roomType = roomTypeFilter;
@@ -507,6 +507,7 @@ export class RoomService {
         };
       }
       // Remove bookingRooms from response
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
       const { bookingRooms, ...roomWithoutBookings } = room;
       acc[rtId].rooms.push(roomWithoutBookings);
       acc[rtId].availableCount++;

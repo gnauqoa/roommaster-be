@@ -102,9 +102,8 @@ export const authorizeAny = (permissions: Array<{ action: string; subject: strin
       return next(new ApiError(httpStatus.UNAUTHORIZED, 'Authentication required'));
     }
 
-    const hasPermission = permissions.some((p) =>
-      req.ability!.can(p.action as any, p.subject as any)
-    );
+    const ability = req.ability;
+    const hasPermission = permissions.some((p) => ability.can(p.action as any, p.subject as any));
 
     if (!hasPermission) {
       const required = permissions.map((p) => `${p.action}:${p.subject}`).join(' or ');
@@ -133,8 +132,9 @@ export const authorizeAll = (permissions: Array<{ action: string; subject: strin
       return next(new ApiError(httpStatus.UNAUTHORIZED, 'Authentication required'));
     }
 
+    const ability = req.ability;
     const missingPermissions = permissions.filter(
-      (p) => !req.ability!.can(p.action as any, p.subject as any)
+      (p) => !ability.can(p.action as any, p.subject as any)
     );
 
     if (missingPermissions.length > 0) {

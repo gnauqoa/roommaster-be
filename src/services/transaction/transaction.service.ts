@@ -259,7 +259,7 @@ export class TransactionService {
                 roomType: {
                   select: {
                     name: true,
-                    pricePerNight: true
+                    basePrice: true
                   }
                 }
               }
@@ -458,7 +458,7 @@ export class TransactionService {
               roomType: {
                 select: {
                   name: true,
-                  pricePerNight: true
+                  basePrice: true
                 }
               }
             }

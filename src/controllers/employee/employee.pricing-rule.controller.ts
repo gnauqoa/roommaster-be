@@ -1,4 +1,4 @@
-import { Request, Response, NextFunction } from 'express';
+import { Request, Response } from 'express';
 import { Injectable } from '@/core/decorators';
 import PricingRuleService from '@/services/pricing-rule.service';
 import httpStatus from 'http-status';
@@ -50,7 +50,7 @@ export class EmployeePricingRuleController {
    *       201:
    *         description: Pricing rule created successfully
    */
-  createRule = catchAsync(async (req: Request, res: Response, next: NextFunction) => {
+  createRule = catchAsync(async (req: Request, res: Response) => {
     const rule = await this.pricingRuleService.createRule(req.body);
     res.status(httpStatus.CREATED).json(rule);
   });
@@ -71,7 +71,7 @@ export class EmployeePricingRuleController {
    *       200:
    *         description: List of pricing rules
    */
-  getRules = catchAsync(async (req: Request, res: Response, next: NextFunction) => {
+  getRules = catchAsync(async (req: Request, res: Response) => {
     const includeInactive = req.query.includeInactive === 'true';
     const rules = await this.pricingRuleService.getRules(includeInactive);
     res.status(httpStatus.OK).json(rules);
@@ -95,7 +95,7 @@ export class EmployeePricingRuleController {
    *       404:
    *         description: Pricing rule not found
    */
-  getRuleById = catchAsync(async (req: Request, res: Response, next: NextFunction) => {
+  getRuleById = catchAsync(async (req: Request, res: Response) => {
     const rule = await this.pricingRuleService.getRuleById(req.params.id);
     res.status(httpStatus.OK).json(rule);
   });
@@ -122,7 +122,7 @@ export class EmployeePricingRuleController {
    *       200:
    *         description: Pricing rule updated successfully
    */
-  updateRule = catchAsync(async (req: Request, res: Response, next: NextFunction) => {
+  updateRule = catchAsync(async (req: Request, res: Response) => {
     const rule = await this.pricingRuleService.updateRule(req.params.id, req.body);
     res.status(httpStatus.OK).json(rule);
   });
@@ -143,7 +143,7 @@ export class EmployeePricingRuleController {
    *       200:
    *         description: Pricing rule deleted successfully
    */
-  deleteRule = catchAsync(async (req: Request, res: Response, next: NextFunction) => {
+  deleteRule = catchAsync(async (req: Request, res: Response) => {
     const rule = await this.pricingRuleService.deleteRule(req.params.id);
     res.status(httpStatus.OK).json(rule);
   });
@@ -177,7 +177,7 @@ export class EmployeePricingRuleController {
    *       200:
    *         description: Pricing rule reordered successfully
    */
-  reorderRule = catchAsync(async (req: Request, res: Response, next: NextFunction) => {
+  reorderRule = catchAsync(async (req: Request, res: Response) => {
     const rule = await this.pricingRuleService.reorderRule(req.params.id, req.body);
     res.status(httpStatus.OK).json(rule);
   });

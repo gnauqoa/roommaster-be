@@ -1,4 +1,4 @@
-import { Request, Response, NextFunction } from 'express';
+import { Request, Response } from 'express';
 import { Injectable } from '@/core/decorators';
 import { PrismaClient } from '@prisma/client';
 import httpStatus from 'http-status';
@@ -43,7 +43,7 @@ export class EmployeeCalendarEventController {
    *       201:
    *         description: Calendar event created successfully
    */
-  createEvent = catchAsync(async (req: Request, res: Response, next: NextFunction) => {
+  createEvent = catchAsync(async (req: Request, res: Response) => {
     const event = await this.prisma.calendarEvent.create({
       data: req.body
     });
@@ -76,7 +76,7 @@ export class EmployeeCalendarEventController {
    *       200:
    *         description: List of calendar events
    */
-  getEvents = catchAsync(async (req: Request, res: Response, next: NextFunction) => {
+  getEvents = catchAsync(async (req: Request, res: Response) => {
     const { type, startDate, endDate } = req.query;
 
     const where: any = {};
@@ -119,7 +119,7 @@ export class EmployeeCalendarEventController {
    *       404:
    *         description: Calendar event not found
    */
-  getEventById = catchAsync(async (req: Request, res: Response, next: NextFunction) => {
+  getEventById = catchAsync(async (req: Request, res: Response) => {
     const event = await this.prisma.calendarEvent.findUnique({
       where: { id: req.params.id },
       include: {
@@ -159,7 +159,7 @@ export class EmployeeCalendarEventController {
    *       200:
    *         description: Calendar event updated successfully
    */
-  updateEvent = catchAsync(async (req: Request, res: Response, next: NextFunction) => {
+  updateEvent = catchAsync(async (req: Request, res: Response) => {
     const event = await this.prisma.calendarEvent.update({
       where: { id: req.params.id },
       data: req.body
@@ -183,7 +183,7 @@ export class EmployeeCalendarEventController {
    *       204:
    *         description: Calendar event deleted successfully
    */
-  deleteEvent = catchAsync(async (req: Request, res: Response, next: NextFunction) => {
+  deleteEvent = catchAsync(async (req: Request, res: Response) => {
     await this.prisma.calendarEvent.delete({
       where: { id: req.params.id }
     });

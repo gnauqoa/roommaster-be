@@ -9,7 +9,6 @@ const pricingCalculator = new PricingCalculatorService(prisma);
 describe('PricingCalculatorService', () => {
   let testRoomTypeId: string;
   let testCalendarEventId: string;
-  let testPricingRuleId: string;
 
   beforeAll(async () => {
     // Create test room type

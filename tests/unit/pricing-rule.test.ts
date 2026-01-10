@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeAll, afterAll, beforeEach } from '@jest/globals';
+import { describe, it, expect, afterAll, beforeEach } from '@jest/globals';
 import { PrismaClient, AdjustmentType } from '@prisma/client';
 import PricingRuleService from '@/services/pricing-rule.service';
 import { LexoRank } from 'lexorank';

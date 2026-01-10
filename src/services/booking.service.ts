@@ -188,7 +188,7 @@ export class BookingService {
     // Calculate total amount first
     let totalAmount = 0;
     const bookingRoomsData = allocatedRooms.map(({ room, roomType }) => {
-      const subtotal = Number(roomType.pricePerNight) * nights;
+      const subtotal = Number(roomType.basePrice) * nights;
       totalAmount += subtotal;
 
       return {
@@ -196,7 +196,7 @@ export class BookingService {
         roomTypeId: roomType.id,
         checkInDate: checkIn.toDate(),
         checkOutDate: checkOut.toDate(),
-        pricePerNight: roomType.pricePerNight,
+        pricePerNight: roomType.basePrice,
         subtotalRoom: subtotal,
         totalAmount: subtotal,
         balance: subtotal,
@@ -220,7 +220,6 @@ export class BookingService {
           totalGuests,
           totalAmount,
           depositRequired,
-          balance: totalAmount,
           bookingRooms: {
             create: bookingRoomsData
           }

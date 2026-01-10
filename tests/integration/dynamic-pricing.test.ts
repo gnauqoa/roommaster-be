@@ -1,8 +1,7 @@
 import { describe, it, expect, beforeAll, afterAll } from '@jest/globals';
-import { PrismaClient, EventType, AdjustmentType } from '@prisma/client';
+import { PrismaClient, EventType } from '@prisma/client';
 import PricingCalculatorService from '@/services/pricing-calculator.service';
 import PricingRuleService from '@/services/pricing-rule.service';
-import { LexoRank } from 'lexorank';
 
 const prisma = new PrismaClient();
 const pricingCalculator = new PricingCalculatorService(prisma);
@@ -69,21 +68,21 @@ describe('Dynamic Pricing Integration Tests', () => {
       });
 
       // Create rules with different priorities
-      const tetRule = await pricingRuleService.createRule({
+      await pricingRuleService.createRule({
         name: 'Integration Tết Surcharge',
         calendarEventId: tetEventId,
         adjustmentType: 'PERCENTAGE',
         adjustmentValue: 50
       });
 
-      const weekendRule = await pricingRuleService.createRule({
+      await pricingRuleService.createRule({
         name: 'Integration Weekend Surcharge',
         recurrenceRule: 'FREQ=WEEKLY;BYDAY=SA,SU',
         adjustmentType: 'PERCENTAGE',
         adjustmentValue: 20
       });
 
-      const summerRule = await pricingRuleService.createRule({
+      await pricingRuleService.createRule({
         name: 'Integration Summer Surcharge',
         calendarEventId: summerEventId,
         adjustmentType: 'PERCENTAGE',
