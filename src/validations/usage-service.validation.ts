@@ -8,7 +8,8 @@ const createServiceUsage = {
     bookingId: Joi.string().optional(), // Optional for customers (auto-detected)
     bookingRoomId: Joi.string().optional(),
     serviceId: Joi.string().required(),
-    quantity: Joi.number().integer().min(1).required()
+    quantity: Joi.number().integer().min(1).required(),
+    note: Joi.string().max(500).optional() // Optional note for service usage
   })
 };
 

@@ -20,13 +20,14 @@ export class EmployeeUsageServiceController {
       throw new Error('Employee not authenticated');
     }
 
-    const { bookingId, bookingRoomId, serviceId, quantity } = req.body;
+    const { bookingId, bookingRoomId, serviceId, quantity, note } = req.body;
 
     const result = await this.usageServiceService.createServiceUsage({
       bookingId,
       bookingRoomId,
       serviceId,
       quantity,
+      note,
       employeeId: req.employee.id
     });
 

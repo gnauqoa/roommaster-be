@@ -10,6 +10,7 @@ export interface CreateServiceUsagePayload {
   bookingRoomId?: string; // Optional - for room-specific services
   serviceId: string;
   quantity: number;
+  note?: string; // Optional note for service usage
   employeeId: string;
 }
 
@@ -50,7 +51,7 @@ export class UsageServiceService {
    * 3. Guest service (standalone, not tied to booking)
    */
   async createServiceUsage(payload: CreateServiceUsagePayload) {
-    const { bookingId, bookingRoomId, serviceId, quantity, employeeId } = payload;
+    const { bookingId, bookingRoomId, serviceId, quantity, note, employeeId } = payload;
 
     // Determine service usage scenario
     const isGuestService = !bookingId && !bookingRoomId;
@@ -110,6 +111,7 @@ export class UsageServiceService {
           unitPrice,
           totalPrice,
           totalPaid: 0,
+          ...(note && { note }), // Include note if provided
           status: ServiceUsageStatus.PENDING,
           employeeId
         },
@@ -218,6 +220,7 @@ export class UsageServiceService {
           customPrice: unitPrice, // Store custom penalty price
           totalPrice,
           totalPaid: 0,
+          note: reason, // Store reason for penalty
           status: ServiceUsageStatus.PENDING,
           employeeId
         },
@@ -320,6 +323,7 @@ export class UsageServiceService {
           customPrice: unitPrice, // Store custom surcharge price
           totalPrice,
           totalPaid: 0,
+          note: reason, // Store reason for surcharge
           status: ServiceUsageStatus.PENDING,
           employeeId
         },
