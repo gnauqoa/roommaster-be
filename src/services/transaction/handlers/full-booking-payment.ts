@@ -51,7 +51,7 @@ export async function processFullBookingPayment(
     bookingId: '',
     ShouldSendEmail: false
   };
-  const transaction = prisma.$transaction(async (tx) => {
+  const result = await prisma.$transaction(async (tx) => {
     // STEP 1: Fetch booking with all rooms and services
     const booking = await tx.booking.findUnique({
       where: { id: bookingId },
@@ -270,6 +270,7 @@ export async function processFullBookingPayment(
         where: { bookingId, status: BookingStatus.PENDING },
         data: { status: BookingStatus.CONFIRMED }
       });
+      console.log('Booking status changed to CONFIRMED for bookingId:', bookingId);
       EmailConfirmationInfo.ShouldSendEmail = true;
       EmailConfirmationInfo.bookingId = bookingId;
     }
@@ -301,10 +302,16 @@ export async function processFullBookingPayment(
       })
     };
   });
-  if (EmailConfirmationInfo.ShouldSendEmail && EmailConfirmationInfo.bookingId != '') {
+
+  // Send email AFTER transaction commits so the email service sees updated data
+  if (EmailConfirmationInfo.ShouldSendEmail) {
+    console.log(
+      'Sending booking confirmation email for bookingId:',
+      EmailConfirmationInfo.bookingId
+    );
     emailService.sendBookingConfirmation(EmailConfirmationInfo.bookingId).catch((error) => {
       console.error('Failed to send booking confirmation email:', error);
     });
   }
-  return transaction;
+  return result;
 }
