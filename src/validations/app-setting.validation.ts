@@ -25,9 +25,16 @@ const updateCheckOutTime = timeConfig;
 const updateEarlyCheckInFee = feeConfig;
 const updateLateCheckOutFee = feeConfig;
 
+const updateDepositPercentage = {
+  body: Joi.object({
+    percentage: Joi.number().min(0).max(100).required()
+  })
+};
+
 export default {
   updateCheckInTime,
   updateCheckOutTime,
   updateEarlyCheckInFee,
-  updateLateCheckOutFee
+  updateLateCheckOutFee,
+  updateDepositPercentage
 };

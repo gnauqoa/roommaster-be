@@ -1,11 +1,6 @@
 import { PrismaClient, PermissionType } from '@prisma/client';
 import { Injectable } from '@/core/decorators';
-import {
-  AppAbility,
-  defineAbilitiesFor,
-  buildAbilitiesFromPermissions,
-  CaslPermission
-} from '@/config/casl-ability';
+import { AppAbility, defineAbilitiesFor, CaslPermission } from '@/config/casl-ability';
 
 /**
  * Response structure for permissions endpoint

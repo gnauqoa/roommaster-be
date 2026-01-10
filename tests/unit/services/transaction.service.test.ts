@@ -18,6 +18,7 @@ describe('TransactionService', () => {
   let mockActivityService: any;
   let mockUsageServiceService: any;
   let mockPromotionService: any;
+  let mockEmailService: any;
 
   beforeEach(() => {
     mockPrisma = createMockPrismaClient();
@@ -26,12 +27,16 @@ describe('TransactionService', () => {
     };
     mockUsageServiceService = {};
     mockPromotionService = {};
+    mockEmailService = {
+      sendBookingConfirmation: jest.fn()
+    };
 
     transactionService = new TransactionService(
       mockPrisma as PrismaClient,
       mockActivityService,
       mockUsageServiceService,
-      mockPromotionService
+      mockPromotionService,
+      mockEmailService
     );
     jest.clearAllMocks();
   });
@@ -106,7 +111,8 @@ describe('TransactionService', () => {
         mockPrisma,
         mockActivityService,
         mockUsageServiceService,
-        mockPromotionService
+        mockPromotionService,
+        mockEmailService
       );
     });
 
@@ -128,7 +134,8 @@ describe('TransactionService', () => {
         mockPrisma,
         mockActivityService,
         mockUsageServiceService,
-        mockPromotionService
+        mockPromotionService,
+        mockEmailService
       );
     });
 

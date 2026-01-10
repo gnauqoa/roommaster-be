@@ -1,6 +1,6 @@
 import { PrismaClient } from '@prisma/client';
 import { seedEmployees } from './employee.seed';
-import { seedCustomers } from './customer.seed';
+import { seedCustomers, seedCustomerPromotions } from './customer.seed';
 import { seedRoomTypes } from './roomType.seed';
 import { seedRooms } from './room.seed';
 import { seedServices } from './service.seed';
@@ -55,6 +55,7 @@ const main = async () => {
     await seedRooms(prisma);
     await seedServices(prisma);
     await seedPromotions(prisma);
+    await seedCustomerPromotions(prisma);
 
     console.log('');
     console.log('📋 Phase 2: Bookings and activities');
@@ -76,6 +77,7 @@ const main = async () => {
       prisma.room.count(),
       prisma.service.count(),
       prisma.promotion.count(),
+      prisma.customerPromotion.count(),
       prisma.booking.count(),
       prisma.bookingRoom.count(),
       prisma.activity.count()
@@ -91,9 +93,10 @@ const main = async () => {
     console.log(`  - Rooms: ${counts[7]}`);
     console.log(`  - Services: ${counts[8]}`);
     console.log(`  - Promotions: ${counts[9]}`);
-    console.log(`  - Bookings: ${counts[10]}`);
-    console.log(`  - Booking Rooms: ${counts[11]}`);
-    console.log(`  - Activities: ${counts[12]}`);
+    console.log(`  - Customer Promotions: ${counts[10]}`);
+    console.log(`  - Bookings: ${counts[11]}`);
+    console.log(`  - Booking Rooms: ${counts[12]}`);
+    console.log(`  - Activities: ${counts[13]}`);
   } catch (error) {
     console.error('❌ Error during seeding:', error);
     throw error;

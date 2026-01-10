@@ -1,0 +1,325 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Xác nhận đặt phòng</title>
+  <style>
+    body {
+      margin: 0;
+      padding: 0;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background-color: #f5f5f5;
+    }
+    .email-container {
+      max-width: 600px;
+      margin: 20px auto;
+      background-color: #ffffff;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    }
+    .header {
+      background: linear-gradient(135deg, #1e40af 0%, #3b82f6 100%);
+      color: white;
+      padding: 30px 20px;
+      text-align: center;
+    }
+    .header h1 {
+      margin: 0;
+      font-size: 32px;
+      font-weight: bold;
+    }
+    .header p {
+      margin: 10px 0 0 0;
+      font-size: 18px;
+      opacity: 0.9;
+    }
+    .content {
+      padding: 30px 20px;
+    }
+    .greeting {
+      margin-bottom: 20px;
+      line-height: 1.6;
+      color: #333;
+    }
+    .greeting strong {
+      color: #1e40af;
+    }
+    .info-section {
+      background-color: #f3f4f6;
+      padding: 20px;
+      border-radius: 8px;
+      margin: 20px 0;
+    }
+    .info-section h2 {
+      margin-top: 0;
+      color: #1e40af;
+      font-size: 20px;
+      border-bottom: 2px solid #1e40af;
+      padding-bottom: 10px;
+    }
+    .info-table {
+      width: 100%;
+      margin-top: 15px;
+    }
+    .info-table td {
+      padding: 8px 0;
+      vertical-align: top;
+    }
+    .info-table td:first-child {
+      font-weight: 600;
+      color: #555;
+      width: 40%;
+    }
+    .info-table td:last-child {
+      color: #333;
+    }
+    .room-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 15px;
+      border-radius: 8px;
+      overflow: hidden;
+    }
+    .room-table thead {
+      background-color: #e5e7eb;
+    }
+    .room-table th {
+      padding: 12px;
+      text-align: left;
+      font-weight: 600;
+      color: #374151;
+      border-bottom: 2px solid #d1d5db;
+    }
+    .room-table th:last-child,
+    .room-table td:last-child {
+      text-align: right;
+    }
+    .room-table tbody tr {
+      border-bottom: 1px solid #e5e7eb;
+    }
+    .room-table tbody tr:last-child {
+      border-bottom: none;
+    }
+    .room-table td {
+      padding: 15px 12px;
+      color: #333;
+    }
+    .room-table tbody tr:hover {
+      background-color: #f9fafb;
+    }
+    .financial-summary {
+      background-color: #fef3c7;
+      padding: 20px;
+      border-radius: 8px;
+      margin: 20px 0;
+      border-left: 4px solid #f59e0b;
+    }
+    .financial-summary h3 {
+      margin-top: 0;
+      color: #92400e;
+      font-size: 18px;
+    }
+    .financial-table {
+      width: 100%;
+      margin-top: 10px;
+    }
+    .financial-table td {
+      padding: 8px 0;
+      font-size: 16px;
+    }
+    .financial-table td:first-child {
+      font-weight: 600;
+      color: #78350f;
+    }
+    .financial-table td:last-child {
+      text-align: right;
+      font-weight: 700;
+      color: #92400e;
+    }
+    .financial-table .total-row td {
+      font-size: 18px;
+      padding-top: 15px;
+      border-top: 2px solid #fbbf24;
+    }
+    .balance-highlight {
+      color: #dc2626 !important;
+      font-size: 20px !important;
+    }
+    .note {
+      background-color: #dbeafe;
+      padding: 15px;
+      border-radius: 8px;
+      margin: 20px 0;
+      border-left: 4px solid #3b82f6;
+    }
+    .note p {
+      margin: 0;
+      color: #1e40af;
+      font-size: 14px;
+      line-height: 1.5;
+    }
+    .footer {
+      background-color: #f9fafb;
+      padding: 30px 20px;
+      text-align: center;
+      color: #6b7280;
+      border-top: 1px solid #e5e7eb;
+    }
+    .footer h3 {
+      margin: 0 0 15px 0;
+      color: #374151;
+      font-size: 18px;
+    }
+    .footer p {
+      margin: 8px 0;
+      font-size: 14px;
+    }
+    .contact-info {
+      margin: 20px 0;
+    }
+    .contact-info p {
+      margin: 5px 0;
+      font-size: 15px;
+      color: #374151;
+    }
+    .footer-note {
+      margin-top: 30px;
+      padding-top: 20px;
+      border-top: 1px solid #d1d5db;
+      font-size: 12px;
+      color: #9ca3af;
+    }
+    .badge {
+      display: inline-block;
+      padding: 4px 12px;
+      background-color: #10b981;
+      color: white;
+      border-radius: 12px;
+      font-size: 14px;
+      font-weight: 600;
+    }
+  </style>
+</head>
+<body>
+  <div class="email-container">
+    <!-- Header -->
+    <div class="header">
+      <h1>🏨 RoomMaster</h1>
+      <p>Xác nhận đặt phòng thành công</p>
+    </div>
+
+    <!-- Content -->
+    <div class="content">
+      <!-- Greeting -->
+      <div class="greeting">
+        <p>Kính gửi Quý khách <strong>{{primaryCustomer.fullName}}</strong>,</p>
+        <p>Cảm ơn Quý khách đã tin tưởng và lựa chọn RoomMaster. Đơn đặt phòng của Quý khách đã được <span class="badge">XÁC NHẬN</span> thành công.</p>
+      </div>
+
+      <!-- Booking Information -->
+      <div class="info-section">
+        <h2>📋 Thông tin đặt phòng</h2>
+        <table class="info-table">
+          <tr>
+            <td>Mã đặt phòng:</td>
+            <td><strong style="color: #1e40af; font-size: 18px;">{{bookingCode}}</strong></td>
+          </tr>
+          <tr>
+            <td>Ngày nhận phòng:</td>
+            <td><strong>{{formatDate checkInDate}}</strong></td>
+          </tr>
+          <tr>
+            <td>Ngày trả phòng:</td>
+            <td><strong>{{formatDate checkOutDate}}</strong></td>
+          </tr>
+          <tr>
+            <td>Số đêm:</td>
+            <td><strong>{{calculateNights checkInDate checkOutDate}} đêm</strong></td>
+          </tr>
+          <tr>
+            <td>Số lượng khách:</td>
+            <td><strong>{{totalGuests}} người</strong></td>
+          </tr>
+        </table>
+      </div>
+
+      <!-- Room Details -->
+      <div class="info-section">
+        <h2>🛏️ Chi tiết phòng đã đặt</h2>
+        <table class="room-table">
+          <thead>
+            <tr>
+              <th>Phòng</th>
+              <th>Loại phòng</th>
+              <th>Sức chứa</th>
+              <th>Giá/đêm</th>
+              <th>Thành tiền</th>
+            </tr>
+          </thead>
+          <tbody>
+            {{#each bookingRooms}}
+            <tr>
+              <td>
+                <strong>{{room.roomNumber}}</strong>
+                <br>
+                <small style="color: #6b7280;">Tầng {{room.floor}}</small>
+              </td>
+              <td>{{roomType.name}}</td>
+              <td>{{roomType.capacity}} người</td>
+              <td>{{formatCurrency pricePerNight}}</td>
+              <td><strong>{{formatCurrency totalAmount}}</strong></td>
+            </tr>
+            {{/each}}
+          </tbody>
+        </table>
+      </div>
+
+      <!-- Financial Summary -->
+      <div class="financial-summary">
+        <h3>💰 Tổng quan tài chính</h3>
+        <table class="financial-table">
+          <tr>
+            <td>Tổng tiền phòng:</td>
+            <td>{{formatCurrency totalAmount}}</td>
+          </tr>
+          <tr>
+            <td>Tiền cọc yêu cầu:</td>
+            <td>{{formatCurrency depositRequired}}</td>
+          </tr>
+          <tr>
+            <td>Đã thanh toán:</td>
+            <td style="color: #10b981;">{{formatCurrency totalPaid}}</td>
+          </tr>
+          <tr class="total-row">
+            <td>Còn lại cần thanh toán:</td>
+            <td class="balance-highlight">{{formatCurrency balance}}</td>
+          </tr>
+        </table>
+      </div>
+
+      <!-- Important Note -->
+      <div class="note">
+        <p><strong>📌 Lưu ý quan trọng:</strong></p>
+        <p>• Vui lòng mang theo CMND/CCCD khi nhận phòng</p>
+        <p>• Thời gian nhận phòng: 14:00 | Trả phòng: 12:00</p>
+        <p>• Nếu cần hỗ trợ, vui lòng liên hệ số hotline bên dưới</p>
+      </div>
+    </div>
+
+    <!-- Footer -->
+    <div class="footer">
+      <h3>Cần hỗ trợ?</h3>
+      <div class="contact-info">
+        <p>📞 <strong>Hotline:</strong> 1900-xxxx (24/7)</p>
+        <p>📧 <strong>Email:</strong> support@roommaster.com</p>
+        <p>🏢 <strong>Địa chỉ:</strong> 123 Đường ABC, Quận XYZ, TP. HCM</p>
+      </div>
+      
+      <div class="footer-note">
+        <p>Email này được gửi tự động. Vui lòng không trả lời email này.</p>
+        <p>© 2026 RoomMaster. All rights reserved.</p>
+      </div>
+    </div>
+  </div>
+</body>
+</html>

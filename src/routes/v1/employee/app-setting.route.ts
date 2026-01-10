@@ -139,5 +139,108 @@ export default function createAppSettingRoutes(): express.Router {
       employeeAppSettingController.updateCheckOutTime
     );
 
+  /**
+   * @swagger
+   * /employee/app-settings/{key}:
+   *   get:
+   *     summary: Get app setting by key
+   *     tags: [Employee App Settings]
+   *     security:
+   *       - bearerAuth: []
+   *     parameters:
+   *       - in: path
+   *         name: key
+   *         required: true
+   *         schema:
+   *           type: string
+   *         description: App setting key (e.g., DEPOSIT_PERCENTAGE, CHECKIN_TIME, CHECKOUT_TIME)
+   *         example: DEPOSIT_PERCENTAGE
+   *     responses:
+   *       200:
+   *         description: App setting value
+   *         content:
+   *           application/json:
+   *             schema:
+   *               type: object
+   *               properties:
+   *                 success:
+   *                   type: boolean
+   *                   example: true
+   *                 data:
+   *                   type: object
+   *                   properties:
+   *                     key:
+   *                       type: string
+   *                       example: DEPOSIT_PERCENTAGE
+   *                     value:
+   *                       type: object
+   *                       description: Setting value (structure varies by key)
+   *                       example: { "percentage": 50 }
+   *       401:
+   *         description: Unauthorized
+   *       404:
+   *         description: Setting not found
+   */
+  router.get('/:key', authEmployee, employeeAppSettingController.getAppSettingByKey);
+
+  /**
+   * @swagger
+   * /employee/app-settings/{key}:
+   *   put:
+   *     summary: Update app setting by key
+   *     tags: [Employee App Settings]
+   *     security:
+   *       - bearerAuth: []
+   *     parameters:
+   *       - in: path
+   *         name: key
+   *         required: true
+   *         schema:
+   *           type: string
+   *         description: App setting key (e.g., DEPOSIT_PERCENTAGE, CHECKIN_TIME, CHECKOUT_TIME)
+   *         example: DEPOSIT_PERCENTAGE
+   *     requestBody:
+   *       required: true
+   *       content:
+   *         application/json:
+   *           schema:
+   *             type: object
+   *             required:
+   *               - value
+   *             properties:
+   *               value:
+   *                 type: object
+   *                 description: Setting value (structure varies by key)
+   *                 example: { "percentage": 30 }
+   *     responses:
+   *       200:
+   *         description: App setting updated successfully
+   *         content:
+   *           application/json:
+   *             schema:
+   *               type: object
+   *               properties:
+   *                 success:
+   *                   type: boolean
+   *                   example: true
+   *                 message:
+   *                   type: string
+   *                   example: App setting 'DEPOSIT_PERCENTAGE' updated successfully
+   *                 data:
+   *                   type: object
+   *                   properties:
+   *                     key:
+   *                       type: string
+   *                       example: DEPOSIT_PERCENTAGE
+   *                     value:
+   *                       type: object
+   *                       example: { "percentage": 30 }
+   *       401:
+   *         description: Unauthorized
+   *       404:
+   *         description: Setting not found
+   */
+  router.put('/:key', authEmployee, employeeAppSettingController.updateAppSettingByKey);
+
   return router;
 }
