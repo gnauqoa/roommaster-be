@@ -47,6 +47,10 @@ export default function createRoomRoutes(): express.Router {
    *               floor:
    *                 type: integer
    *                 description: Floor number
+   *               code:
+   *                 type: string
+   *                 maxLength: 50
+   *                 description: Room code (optional)
    *               roomTypeId:
    *                 type: string
    *                 description: ID of the room type
@@ -327,6 +331,10 @@ export default function createRoomRoutes(): express.Router {
    *               floor:
    *                 type: integer
    *                 description: Floor number
+   *               code:
+   *                 type: string
+   *                 maxLength: 50
+   *                 description: Room code
    *               roomTypeId:
    *                 type: string
    *                 description: ID of the room type
