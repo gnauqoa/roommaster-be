@@ -29,7 +29,7 @@ describe('Full Booking Flow Integration Test', () => {
   let bookingId: string;
   let bookingRoomIds: string[] = [];
   let serviceUsageId: string;
-  let roomTypeIds: string[] = [];
+  let availableRoomIds: string[] = [];
   let serviceId: string;
 
   beforeAll(async () => {
@@ -60,12 +60,14 @@ describe('Full Booking Flow Integration Test', () => {
     if (employee) {
       employeeId = employee.id;
     } else {
+      // Get the ADMIN role first
+      const adminRole = await prisma.role.findUnique({ where: { name: 'ADMIN' } });
       const newEmployee = await prisma.employee.create({
         data: {
           name: 'Test Admin',
           username: 'test-admin',
           password: await encryptPassword('password123'),
-          role: 'ADMIN'
+          roleId: adminRole?.id
         }
       });
       employeeId = newEmployee.id;
@@ -105,7 +107,8 @@ describe('Full Booking Flow Integration Test', () => {
       throw new Error('No available rooms found. Please seed the database first.');
     }
 
-    roomTypeIds = roomTypes.map((rt) => rt.id);
+    // Store available room IDs for booking
+    availableRoomIds = roomTypes.flatMap((rt) => rt.rooms.map((r) => r.id));
 
     // Get a service
     const service = await prisma.service.findFirst({
@@ -137,12 +140,15 @@ describe('Full Booking Flow Integration Test', () => {
     const checkInDate = dayjs().add(1, 'day').startOf('day').toDate();
     const checkOutDate = dayjs().add(3, 'day').startOf('day').toDate();
 
+    // Use first 3 available rooms for the booking
+    const roomsToBook = availableRoomIds.slice(0, 3);
+    if (roomsToBook.length < 3) {
+      throw new Error('Need at least 3 available rooms for this test');
+    }
+
     const bookingData = {
       customerId,
-      rooms: [
-        { roomTypeId: roomTypeIds[0], count: 2 },
-        { roomTypeId: roomTypeIds[1] || roomTypeIds[0], count: 1 }
-      ],
+      rooms: roomsToBook.map((roomId) => ({ roomId })),
       checkInDate: checkInDate.toISOString(),
       checkOutDate: checkOutDate.toISOString(),
       totalGuests: 5
@@ -163,7 +169,9 @@ describe('Full Booking Flow Integration Test', () => {
       include: { bookingRooms: true }
     });
 
-    bookingRoomIds = bookingDetails!.bookingRooms.map((br) => br.id);
+    expect(bookingDetails).toBeDefined();
+    if (!bookingDetails) throw new Error('Booking details not found');
+    bookingRoomIds = bookingDetails.bookingRooms.map((br) => br.id);
     expect(bookingRoomIds).toHaveLength(3);
 
     // ==================== STEP 2: Make Deposit Payment ====================
@@ -194,8 +202,9 @@ describe('Full Booking Flow Integration Test', () => {
       include: { bookingRooms: true }
     });
 
-    expect(confirmedBooking!.status).toBe('CONFIRMED');
-    expect(confirmedBooking!.bookingRooms[0].status).toBe('CONFIRMED');
+    expect(confirmedBooking).toBeDefined();
+    expect(confirmedBooking?.status).toBe('CONFIRMED');
+    expect(confirmedBooking?.bookingRooms[0].status).toBe('CONFIRMED');
 
     // ==================== STEP 3: Check-in Rooms ====================
     const checkInData = {
@@ -214,7 +223,8 @@ describe('Full Booking Flow Integration Test', () => {
       include: { bookingRooms: true }
     });
 
-    expect(checkedInBooking!.status).toBe('CHECKED_IN');
+    expect(checkedInBooking).toBeDefined();
+    expect(checkedInBooking?.status).toBe('CHECKED_IN');
     expect(checkInResult.bookingRooms.every((br: any) => br.status === 'CHECKED_IN')).toBe(true);
 
     console.log(`✅ Checked in ${bookingRoomIds.length} rooms`);
@@ -267,9 +277,10 @@ describe('Full Booking Flow Integration Test', () => {
       include: { bookingRooms: true }
     });
 
-    const room1Balance = Number(bookingAfterPartial!.bookingRooms[0].balance);
-    const room2Balance = Number(bookingAfterPartial!.bookingRooms[1].balance);
-    const room3Balance = Number(bookingAfterPartial!.bookingRooms[2].balance);
+    expect(bookingAfterPartial).toBeDefined();
+    const room1Balance = Number(bookingAfterPartial?.bookingRooms[0].balance);
+    const room2Balance = Number(bookingAfterPartial?.bookingRooms[1].balance);
+    const room3Balance = Number(bookingAfterPartial?.bookingRooms[2].balance);
 
     expect(room1Balance).toBe(0); // Already paid by deposit
     expect(room2Balance).toBe(0); // Already paid by deposit
@@ -301,7 +312,8 @@ describe('Full Booking Flow Integration Test', () => {
       where: { id: serviceUsageId }
     });
 
-    expect(Number(paidService!.totalPaid)).toBe(Number(paidService!.totalPrice));
+    expect(paidService).toBeDefined();
+    expect(Number(paidService?.totalPaid)).toBe(Number(paidService?.totalPrice));
 
     // ==================== STEP 7: Full Payment (Services Only) ====================
     // All rooms are now paid (rooms 1 & 2 by deposit, room 3 by partial payment)
@@ -331,10 +343,11 @@ describe('Full Booking Flow Integration Test', () => {
       include: { bookingRooms: true, serviceUsages: true }
     });
 
-    expect(Number(bookingAfterFull!.balance)).toBe(0);
-    expect(bookingAfterFull!.bookingRooms.every((br) => Number(br.balance) === 0)).toBe(true);
+    expect(bookingAfterFull).toBeDefined();
+    expect(Number(bookingAfterFull?.balance)).toBe(0);
+    expect(bookingAfterFull?.bookingRooms.every((br) => Number(br.balance) === 0)).toBe(true);
     expect(
-      bookingAfterFull!.serviceUsages.every((su) => Number(su.totalPrice) === Number(su.totalPaid))
+      bookingAfterFull?.serviceUsages.every((su) => Number(su.totalPrice) === Number(su.totalPaid))
     ).toBe(true);
 
     // ==================== STEP 8: Check-out All Rooms ====================
@@ -351,7 +364,8 @@ describe('Full Booking Flow Integration Test', () => {
       include: { bookingRooms: true }
     });
 
-    expect(checkedOutBooking!.status).toBe('CHECKED_OUT');
+    expect(checkedOutBooking).toBeDefined();
+    expect(checkedOutBooking?.status).toBe('CHECKED_OUT');
     expect(checkOutResult.bookingRooms.every((br: any) => br.status === 'CHECKED_OUT')).toBe(true);
 
     console.log(`✅ Checked out ${bookingRoomIds.length} rooms`);
@@ -366,15 +380,16 @@ describe('Full Booking Flow Integration Test', () => {
       }
     });
 
-    expect(finalBooking!.status).toBe('CHECKED_OUT');
-    expect(Number(finalBooking!.balance)).toBe(0);
-    expect(Number(finalBooking!.totalPaid)).toBe(Number(finalBooking!.totalAmount));
-    expect(finalBooking!.transactions.length).toBeGreaterThanOrEqual(4);
+    expect(finalBooking).toBeDefined();
+    expect(finalBooking?.status).toBe('CHECKED_OUT');
+    expect(Number(finalBooking?.balance)).toBe(0);
+    expect(Number(finalBooking?.totalPaid)).toBe(Number(finalBooking?.totalAmount));
+    expect(finalBooking?.transactions.length).toBeGreaterThanOrEqual(4);
 
     console.log('\n✅ Full booking flow completed successfully!');
-    console.log(`   Booking: ${finalBooking!.bookingCode}`);
-    console.log(`   Total Amount: ${finalBooking!.totalAmount} VND`);
-    console.log(`   Total Paid: ${finalBooking!.totalPaid} VND`);
-    console.log(`   Transactions: ${finalBooking!.transactions.length}`);
+    console.log(`   Booking: ${finalBooking?.bookingCode}`);
+    console.log(`   Total Amount: ${finalBooking?.totalAmount} VND`);
+    console.log(`   Total Paid: ${finalBooking?.totalPaid} VND`);
+    console.log(`   Transactions: ${finalBooking?.transactions.length}`);
   }, 60000); // 60 second timeout for the full flow
 });

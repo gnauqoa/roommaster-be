@@ -5,6 +5,7 @@ import { employeeValidation, authValidation } from '@/validations';
 import EmployeeController from '@/controllers/employee/employee.controller';
 import { container, TOKENS } from '@/core/container';
 import { AuthService, EmployeeService, TokenService } from '@/services';
+import CaslService from '@/services/casl.service';
 
 export default function createProfileRoutes(): express.Router {
   const router = express.Router();
@@ -13,7 +14,13 @@ export default function createProfileRoutes(): express.Router {
   const authService = container.resolve<AuthService>(TOKENS.AuthService);
   const employeeService = container.resolve<EmployeeService>(TOKENS.EmployeeService);
   const tokenService = container.resolve<TokenService>(TOKENS.TokenService);
-  const employeeController = new EmployeeController(authService, employeeService, tokenService);
+  const caslService = container.resolve<CaslService>(TOKENS.CaslService);
+  const employeeController = new EmployeeController(
+    authService,
+    employeeService,
+    tokenService,
+    caslService
+  );
 
   /**
    * @swagger

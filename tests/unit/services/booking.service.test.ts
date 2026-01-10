@@ -10,6 +10,7 @@ describe('BookingService', () => {
   let mockPrisma: jest.Mocked<Partial<PrismaClient>>;
   let mockTransactionService: any;
   let mockActivityService: any;
+  let mockEmailService: any;
 
   beforeEach(() => {
     mockPrisma = createMockPrismaClient();
@@ -22,14 +23,18 @@ describe('BookingService', () => {
     const mockAppSettingService: any = {
       getCheckInTime: jest.fn(),
       getCheckOutTime: jest.fn(),
-      getDepositPercentage: (jest.fn() as any).mockResolvedValue(50)
+      getDepositPercentage: jest.fn(async () => 50)
+    };
+    mockEmailService = {
+      sendBookingConfirmation: jest.fn()
     };
 
     bookingService = new BookingService(
       mockPrisma as PrismaClient,
       mockTransactionService,
       mockActivityService,
-      mockAppSettingService
+      mockAppSettingService as any,
+      mockEmailService as any
     );
     jest.clearAllMocks();
   });

@@ -1,35 +1,63 @@
-version: '3.8'
-
 services:
-  node-app:
-    build: .
-    image: node-app
-    ports:
-      - '3000:3000'
-    depends_on:
-      - postgresdb
-    volumes:
-      - .:/usr/src/node-app
-    networks:
-      - node-network
-
+  # PostgreSQL Database
   postgresdb:
-    image: postgres
-    restart: always
+    image: postgres:14-alpine
+    container_name: roommaster-db
+    restart: unless-stopped
     environment:
-      - POSTGRES_USER=postgres
-      - POSTGRES_PASSWORD=secret
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: secret
+      POSTGRES_DB: postgres
     ports:
       - '5432:5432'
     volumes:
-      - dbdata:/var/lib/postgresql/data
+      - postgres_data:/var/lib/postgresql/data
     networks:
-      - node-network
+      - roommaster-network
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U postgres']
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # Node.js Application
+  node-app:
+    container_name: roommaster-app
+    build:
+      context: .
+      dockerfile: Dockerfile
+    command: yarn dev
+    ports:
+      - '8080:8080'
+    depends_on:
+      postgresdb:
+        condition: service_healthy
+    env_file:
+      - .env
+    environment:
+      # Override DATABASE_URL to use Docker service name
+      DATABASE_URL: postgresql://postgres:secret@postgresdb:5432/postgres
+    volumes:
+      # Mount source code for hot reload
+      - ./src:/app/src
+      - ./prisma:/app/prisma
+      # Persistent volume for seed marker (survives container rebuilds)
+      - seed_data:/data
+    networks:
+      - roommaster-network
+    healthcheck:
+      test: ['CMD', 'wget', '--no-verbose', '--tries=1', '--spider', 'http://localhost:8080/health']
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
 
 volumes:
-  dbdata:
+  postgres_data:
+    driver: local
+  seed_data:
     driver: local
 
 networks:
-  node-network:
+  roommaster-network:
     driver: bridge

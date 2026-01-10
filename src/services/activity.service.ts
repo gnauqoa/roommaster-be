@@ -334,7 +334,11 @@ export class ActivityService {
             select: {
               id: true,
               name: true,
-              role: true
+              roleRef: {
+                select: {
+                  name: true
+                }
+              }
             }
           },
           bookingRoom: {

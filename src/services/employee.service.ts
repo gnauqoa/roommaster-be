@@ -8,17 +8,17 @@ export interface CreateEmployeeData {
   name: string;
   username: string;
   password: string;
-  role?: string;
+  roleId?: string;
 }
 
 export interface UpdateEmployeeData {
   name?: string;
-  role?: string;
+  roleId?: string;
 }
 
 export interface EmployeeFilters {
   search?: string;
-  role?: string;
+  roleId?: string;
 }
 
 export interface PaginationOptions {
@@ -56,7 +56,7 @@ export class EmployeeService {
         name: employeeData.name,
         username: employeeData.username,
         password: hashedPassword,
-        role: employeeData.role || 'STAFF'
+        roleId: employeeData.roleId
       }
     });
 
@@ -73,8 +73,8 @@ export class EmployeeService {
     filters: EmployeeFilters = {},
     options: PaginationOptions = {}
   ): Promise<{ data: any[]; total: number; page: number; limit: number }> {
-    const { search, role } = filters;
-    const { page = 1, limit = 10, sortBy = 'updatedAt', sortOrder = 'desc' } = options;
+    const { search, roleId } = filters;
+    const { page = 1, limit = 10, sortBy = 'createdAt', sortOrder = 'desc' } = options;
 
     const where: Prisma.EmployeeWhereInput = {};
 
@@ -97,8 +97,8 @@ export class EmployeeService {
     }
 
     // Apply role filter
-    if (role) {
-      where.role = role;
+    if (roleId) {
+      where.roleId = roleId;
     }
 
     const skip = (page - 1) * limit;
@@ -113,7 +113,13 @@ export class EmployeeService {
           id: true,
           name: true,
           username: true,
-          role: true,
+          roleId: true,
+          roleRef: {
+            select: {
+              id: true,
+              name: true
+            }
+          },
           updatedAt: true
         }
       }),
