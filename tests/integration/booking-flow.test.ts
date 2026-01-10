@@ -29,7 +29,7 @@ describe('Full Booking Flow Integration Test', () => {
   let bookingId: string;
   let bookingRoomIds: string[] = [];
   let serviceUsageId: string;
-  let roomTypeIds: string[] = [];
+  let availableRoomIds: string[] = [];
   let serviceId: string;
 
   beforeAll(async () => {
@@ -105,7 +105,8 @@ describe('Full Booking Flow Integration Test', () => {
       throw new Error('No available rooms found. Please seed the database first.');
     }
 
-    roomTypeIds = roomTypes.map((rt) => rt.id);
+    // Store available room IDs for booking
+    availableRoomIds = roomTypes.flatMap((rt) => rt.rooms.map((r) => r.id));
 
     // Get a service
     const service = await prisma.service.findFirst({
@@ -137,12 +138,15 @@ describe('Full Booking Flow Integration Test', () => {
     const checkInDate = dayjs().add(1, 'day').startOf('day').toDate();
     const checkOutDate = dayjs().add(3, 'day').startOf('day').toDate();
 
+    // Use first 3 available rooms for the booking
+    const roomsToBook = availableRoomIds.slice(0, 3);
+    if (roomsToBook.length < 3) {
+      throw new Error('Need at least 3 available rooms for this test');
+    }
+
     const bookingData = {
       customerId,
-      rooms: [
-        { roomTypeId: roomTypeIds[0], count: 2 },
-        { roomTypeId: roomTypeIds[1] || roomTypeIds[0], count: 1 }
-      ],
+      rooms: roomsToBook.map((roomId) => ({ roomId })),
       checkInDate: checkInDate.toISOString(),
       checkOutDate: checkOutDate.toISOString(),
       totalGuests: 5
