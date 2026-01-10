@@ -1,62 +1,37 @@
-# ============================================
-# Stage 1: Build
-# ============================================
-FROM node:20-alpine AS builder
+FROM node:22-alpine
+
+# Install wget for health checks
+RUN apk add --no-cache wget
 
 WORKDIR /app
 
-# Install dependencies first (better caching)
+# Copy package files and install dependencies
 COPY package.json yarn.lock ./
 RUN yarn install --frozen-lockfile
 
-# Copy source and build
-COPY . .
-RUN yarn build
-
-# Generate Prisma client
+# Copy prisma schema and generate client
+COPY prisma ./prisma
 RUN npx prisma generate
 
-# ============================================
-# Stage 2: Production
-# ============================================
-FROM node:20-alpine AS production
+# Copy entrypoint script
+COPY docker-entrypoint.sh ./
+RUN chmod +x docker-entrypoint.sh
 
-# Add labels for container registry
-LABEL org.opencontainers.image.source="https://github.com/roommaster/roommaster-be"
-LABEL org.opencontainers.image.description="RoomMaster Backend API"
-
-# Create non-root user for security
-RUN addgroup -g 1001 -S nodejs && \
-    adduser -S nodejs -u 1001
-
-WORKDIR /app
-
-# Copy package files and install production dependencies only
-COPY package.json yarn.lock ./
-RUN yarn install --frozen-lockfile --production && yarn cache clean
-
-# Copy built files from builder stage
-COPY --from=builder /app/build ./build
-COPY --from=builder /app/node_modules/.prisma ./node_modules/.prisma
-COPY --from=builder /app/prisma ./prisma
-
-# Copy ecosystem config for PM2
-COPY ecosystem.config.json ./
-
-# Set ownership
-RUN chown -R nodejs:nodejs /app
-
-USER nodejs
+# Copy source code
+COPY . .
 
 # Environment variables
-ENV NODE_ENV=production
-ENV PORT=3000
+ENV NODE_ENV=development
+ENV PORT=8080
 
-EXPOSE 3000
+EXPOSE 8080
 
 # Health check
-HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
-    CMD wget --no-verbose --tries=1 --spider http://localhost:3000/health || exit 1
+HEALTHCHECK --interval=30s --timeout=10s --start-period=40s --retries=3 \
+    CMD wget --no-verbose --tries=1 --spider http://localhost:8080/health || exit 1
 
-# Start the application
-CMD ["yarn", "start"]
+# Use entrypoint script to handle migrations
+ENTRYPOINT ["./docker-entrypoint.sh"]
+
+# Start development server with hot reload
+CMD ["yarn", "dev"]
