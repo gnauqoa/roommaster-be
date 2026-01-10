@@ -25,10 +25,14 @@ describe('processFullBookingPayment', () => {
   let mockActivityService: any;
   let mockUsageServiceService: any;
   let mockPromotionService: any;
+  let mockEmailService: any;
   let mockTx: any;
 
   beforeEach(() => {
     mockPrisma = createMockPrismaClient();
+    mockEmailService = {
+      sendBookingConfirmation: jest.fn(async () => undefined)
+    };
 
     mockTx = {
       booking: {
@@ -100,7 +104,8 @@ describe('processFullBookingPayment', () => {
         mockPrisma,
         mockActivityService,
         mockUsageServiceService,
-        mockPromotionService
+        mockPromotionService,
+        mockEmailService
       )
     ).rejects.toThrow('Booking ID is required');
   });
@@ -121,7 +126,8 @@ describe('processFullBookingPayment', () => {
         mockPrisma,
         mockActivityService,
         mockUsageServiceService,
-        mockPromotionService
+        mockPromotionService,
+        mockEmailService
       )
     ).rejects.toThrow('Booking not found');
   });
@@ -138,6 +144,7 @@ describe('processFullBookingPayment', () => {
     const booking = {
       id: 'booking-123',
       bookingCode: 'BK123',
+      depositRequired: new Prisma.Decimal(50),
       bookingRooms: [
         {
           id: 'room-1',
@@ -179,7 +186,8 @@ describe('processFullBookingPayment', () => {
       mockPrisma,
       mockActivityService,
       mockUsageServiceService,
-      mockPromotionService
+      mockPromotionService,
+      mockEmailService
     );
 
     expect(result.transaction).toBeDefined();
@@ -206,6 +214,7 @@ describe('processFullBookingPayment', () => {
     const booking = {
       id: 'booking-123',
       bookingCode: 'BK123',
+      depositRequired: new Prisma.Decimal(50),
       bookingRooms: [
         {
           id: 'room-1',
@@ -258,7 +267,8 @@ describe('processFullBookingPayment', () => {
       mockPrisma,
       mockActivityService,
       mockUsageServiceService,
-      mockPromotionService
+      mockPromotionService,
+      mockEmailService
     );
 
     expect(mockTx.usedPromotion.create).toHaveBeenCalled();
@@ -282,6 +292,8 @@ describe('processFullBookingPayment', () => {
     const booking = {
       id: 'booking-123',
       bookingCode: 'BK123',
+      depositRequired: new Prisma.Decimal(50),
+      totalDeposit: new Prisma.Decimal(0),
       bookingRooms: [
         {
           id: 'room-1',
@@ -308,7 +320,8 @@ describe('processFullBookingPayment', () => {
       mockPrisma,
       mockActivityService,
       mockUsageServiceService,
-      mockPromotionService
+      mockPromotionService,
+      mockEmailService
     );
 
     expect(mockTx.booking.update).toHaveBeenCalledWith({
@@ -333,6 +346,8 @@ describe('processFullBookingPayment', () => {
     const booking = {
       id: 'booking-123',
       bookingCode: 'BK123',
+      depositRequired: new Prisma.Decimal(50),
+      totalDeposit: new Prisma.Decimal(0),
       bookingRooms: [
         {
           id: 'room-1',
@@ -366,7 +381,8 @@ describe('processFullBookingPayment', () => {
       mockPrisma,
       mockActivityService,
       mockUsageServiceService,
-      mockPromotionService
+      mockPromotionService,
+      mockEmailService
     );
 
     expect(mockTx.transactionDetail.create).not.toHaveBeenCalled();
@@ -383,6 +399,8 @@ describe('processFullBookingPayment', () => {
     const booking = {
       id: 'booking-123',
       bookingCode: 'BK123',
+      depositRequired: new Prisma.Decimal(50),
+      totalDeposit: new Prisma.Decimal(0),
       bookingRooms: [
         {
           id: 'room-1',
@@ -416,7 +434,8 @@ describe('processFullBookingPayment', () => {
       mockPrisma,
       mockActivityService,
       mockUsageServiceService,
-      mockPromotionService
+      mockPromotionService,
+      mockEmailService
     );
 
     expect(mockUsageServiceService.updateServiceUsagePayment).toHaveBeenCalledWith(
@@ -438,6 +457,8 @@ describe('processFullBookingPayment', () => {
     const booking = {
       id: 'booking-123',
       bookingCode: 'BK123',
+      depositRequired: new Prisma.Decimal(50),
+      totalDeposit: new Prisma.Decimal(0),
       bookingRooms: [
         {
           id: 'room-1',
@@ -464,7 +485,8 @@ describe('processFullBookingPayment', () => {
       mockPrisma,
       mockActivityService,
       mockUsageServiceService,
-      mockPromotionService
+      mockPromotionService,
+      mockEmailService
     );
 
     expect(mockUsageServiceService.updateServiceUsagePayment).not.toHaveBeenCalled();
@@ -487,6 +509,8 @@ describe('processFullBookingPayment', () => {
     const booking = {
       id: 'booking-123',
       bookingCode: 'BK123',
+      depositRequired: new Prisma.Decimal(50),
+      totalDeposit: new Prisma.Decimal(0),
       bookingRooms: [
         {
           id: 'room-1',
@@ -517,7 +541,8 @@ describe('processFullBookingPayment', () => {
       mockPrisma,
       mockActivityService,
       mockUsageServiceService,
-      mockPromotionService
+      mockPromotionService,
+      mockEmailService
     );
 
     // Should not crash, just skip the invalid promotion

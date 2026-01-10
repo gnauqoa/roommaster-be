@@ -4,6 +4,7 @@ import ApiError from '@/utils/ApiError';
 import { ActivityService } from '@/services/activity.service';
 import { UsageServiceService } from '@/services/usage-service.service';
 import { PromotionService } from '@/services/promotion.service';
+import EmailService from '@/services/email.service';
 import { CreateTransactionPayload, TransactionDetailData } from '@/services/transaction/types';
 import { validatePromotions } from '@/services/transaction/validators/promotion-validator';
 import {
@@ -22,7 +23,8 @@ export async function processSplitRoomPayment(
   prisma: PrismaClient,
   activityService: ActivityService,
   usageServiceService: UsageServiceService,
-  promotionService: PromotionService
+  promotionService: PromotionService,
+  emailService: EmailService
 ) {
   const {
     bookingId,
@@ -41,8 +43,11 @@ export async function processSplitRoomPayment(
   if (!bookingRoomIds || bookingRoomIds.length === 0) {
     throw new ApiError(httpStatus.BAD_REQUEST, 'Booking room IDs are required');
   }
-
-  return prisma.$transaction(async (tx) => {
+  const EmailConfirmationInfo = {
+    bookingId: '',
+    ShouldSendEmail: false
+  };
+  const transaction = prisma.$transaction(async (tx) => {
     // STEP 1: Fetch booking and validate rooms
     const booking = await tx.booking.findUnique({
       where: { id: bookingId }
@@ -227,6 +232,10 @@ export async function processSplitRoomPayment(
         },
         data: { status: BookingStatus.CONFIRMED }
       });
+
+      // Send booking confirmation email after successful status update
+      EmailConfirmationInfo.ShouldSendEmail = true;
+      EmailConfirmationInfo.bookingId = bookingId;
     }
 
     // Create activity
@@ -256,4 +265,10 @@ export async function processSplitRoomPayment(
       })
     };
   });
+  if (EmailConfirmationInfo.ShouldSendEmail && bookingId != '') {
+    emailService.sendBookingConfirmation(EmailConfirmationInfo.bookingId).catch((error) => {
+      console.error('Failed to send booking confirmation email:', error);
+    });
+  }
+  return transaction;
 }

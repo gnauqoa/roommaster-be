@@ -4,6 +4,7 @@ import httpStatus from 'http-status';
 import ApiError from '@/utils/ApiError';
 import dayjs from 'dayjs';
 import AppSettingService from './app-setting.service';
+import EmailService from './email.service';
 
 export interface RoomRequest {
   roomId: string;
@@ -38,7 +39,8 @@ export class BookingService {
     private readonly prisma: PrismaClient,
     private readonly transactionService: any,
     private readonly activityService: any,
-    private readonly appSettingService: AppSettingService
+    private readonly appSettingService: AppSettingService,
+    private readonly emailService: EmailService
   ) {}
 
   /**
@@ -690,6 +692,7 @@ export class BookingService {
    */
   async updateBooking(id: string, updateBody: any) {
     const booking = await this.getBookingById(id);
+    const oldStatus = booking.status;
 
     if (
       booking.status === BookingStatus.CANCELLED ||
@@ -705,6 +708,17 @@ export class BookingService {
         bookingRooms: true
       }
     });
+
+    // Trigger booking confirmation email if status changed to CONFIRMED
+    if (
+      oldStatus !== BookingStatus.CONFIRMED &&
+      updatedBooking.status === BookingStatus.CONFIRMED
+    ) {
+      // Send email asynchronously without blocking the response
+      this.emailService.sendBookingConfirmation(updatedBooking.id).catch((error) => {
+        console.error('Failed to send booking confirmation email:', error);
+      });
+    }
 
     return updatedBooking;
   }
