@@ -131,7 +131,9 @@ export const TOKENS = {
   ActivityService: Symbol('ActivityService'),
   PromotionService: Symbol('PromotionService'),
   AppSettingService: Symbol('AppSettingService'),
-  CaslService: Symbol('CaslService')
+  CaslService: Symbol('CaslService'),
+  TemplateService: Symbol('TemplateService'),
+  EmailService: Symbol('EmailService')
 } as const;
 
 export type TokenKey = keyof typeof TOKENS;
