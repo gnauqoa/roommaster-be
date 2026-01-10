@@ -45,6 +45,57 @@ export class BookingService {
   ) {}
 
   /**
+   * Calculate the correct room status based on current bookings
+   * Used after checkout/cancel to determine if room should be AVAILABLE or RESERVED
+   * @param roomId - Room ID to check
+   * @param tx - Optional Prisma transaction client
+   * @returns The appropriate RoomStatus
+   */
+  private async calculateRoomStatus(roomId: string, tx?: any): Promise<RoomStatus> {
+    const prisma = tx || this.prisma;
+    const today = dayjs().startOf('day').toDate();
+    const tomorrow = dayjs().add(1, 'day').startOf('day').toDate();
+
+    // Check if there's an active booking for TODAY (should be OCCUPIED or RESERVED)
+    const activeBookingToday = await prisma.bookingRoom.findFirst({
+      where: {
+        roomId,
+        checkInDate: { lte: tomorrow },
+        checkOutDate: { gt: today },
+        status: {
+          in: [BookingStatus.CONFIRMED, BookingStatus.CHECKED_IN]
+        }
+      }
+    });
+
+    if (activeBookingToday) {
+      if (activeBookingToday.status === BookingStatus.CHECKED_IN) {
+        return RoomStatus.OCCUPIED;
+      }
+      // Has a confirmed booking for today but not checked in yet
+      return RoomStatus.RESERVED;
+    }
+
+    // No active booking for today - room is available
+    return RoomStatus.AVAILABLE;
+  }
+
+  /**
+   * Update room status for multiple rooms based on their current bookings
+   * @param roomIds - Array of room IDs to update
+   * @param tx - Prisma transaction client
+   */
+  private async updateRoomStatuses(roomIds: string[], tx: any): Promise<void> {
+    for (const roomId of roomIds) {
+      const newStatus = await this.calculateRoomStatus(roomId, tx);
+      await tx.room.update({
+        where: { id: roomId },
+        data: { status: newStatus }
+      });
+    }
+  }
+
+  /**
    * Create a booking with automatic room allocation
    * Allocates available rooms based on room type and count
    */
@@ -95,19 +146,23 @@ export class BookingService {
 
     // Validate room availability and no overlapping bookings
     for (const room of selectedRooms) {
-      // Check if room is available
-      if (room.status !== RoomStatus.AVAILABLE) {
+      // Check if room is permanently unavailable (physical issues only)
+      // Note: OCCUPIED, RESERVED, CLEANING are temporary states and don't block future bookings
+      if (room.status === RoomStatus.OUT_OF_SERVICE || room.status === RoomStatus.MAINTENANCE) {
         throw new ApiError(
           httpStatus.CONFLICT,
-          `Room ${room.roomNumber} is not available (current status: ${room.status})`
+          `Room ${room.roomNumber} cannot be booked (current status: ${room.status})`
         );
       }
 
-      // Check for overlapping bookings
+      // Check for overlapping bookings - this is the core availability check
       if (room.bookingRooms.length > 0) {
+        const conflictingBooking = room.bookingRooms[0];
         throw new ApiError(
           httpStatus.CONFLICT,
-          `Room ${room.roomNumber} has overlapping bookings for the selected dates`
+          `Room ${room.roomNumber} is already booked from ${dayjs(
+            conflictingBooking.checkInDate
+          ).format('YYYY-MM-DD')} to ${dayjs(conflictingBooking.checkOutDate).format('YYYY-MM-DD')}`
         );
       }
     }
@@ -188,15 +243,10 @@ export class BookingService {
         }
       });
 
-      // Update room statuses to RESERVED
-      await tx.room.updateMany({
-        where: {
-          id: { in: allocatedRooms.map((ar) => ar.room.id) }
-        },
-        data: {
-          status: RoomStatus.RESERVED
-        }
-      });
+      // NOTE: We no longer update Room.status to RESERVED here.
+      // Room.status represents the CURRENT physical state, not future bookings.
+      // The overlapping BookingRoom check prevents double-booking.
+      // Room.status will be updated to OCCUPIED at check-in time.
 
       return newBooking;
     });
@@ -455,6 +505,7 @@ export class BookingService {
     }
 
     const now = dayjs();
+    const roomIds = bookingRooms.map((br) => br.roomId);
 
     // Perform check-out transaction
     const result = await this.prisma.$transaction(async (tx) => {
@@ -469,16 +520,9 @@ export class BookingService {
         }
       });
 
-      // Update all rooms to AVAILABLE
-      const roomIds = bookingRooms.map((br) => br.roomId);
-      await tx.room.updateMany({
-        where: {
-          id: { in: roomIds }
-        },
-        data: {
-          status: RoomStatus.AVAILABLE
-        }
-      });
+      // check if each room has another booking
+      // for today before setting to AVAILABLE (might need to stay RESERVED)
+      await this.updateRoomStatuses(roomIds, tx);
 
       // Create CHECKED_OUT activity for each booking room
       const transactionPromises = bookingRooms.map((br) =>
@@ -672,7 +716,9 @@ export class BookingService {
       throw new ApiError(httpStatus.BAD_REQUEST, 'Cannot cancel checked-in or checked-out booking');
     }
 
-    // Update booking status and release rooms
+    const roomIds = booking.bookingRooms.map((br: any) => br.roomId);
+
+    // Update booking status and recalculate room statuses
     await this.prisma.$transaction(async (tx) => {
       await tx.booking.update({
         where: { id },
@@ -689,14 +735,9 @@ export class BookingService {
         }
       });
 
-      // Release rooms
-      const roomIds = booking.bookingRooms.map((br: any) => br.roomId);
-      await tx.room.updateMany({
-        where: { id: { in: roomIds } },
-        data: {
-          status: RoomStatus.AVAILABLE
-        }
-      });
+      // Smart room status update: check if each room has other active bookings
+      // before setting to AVAILABLE (might need to be RESERVED for another booking)
+      await this.updateRoomStatuses(roomIds, tx);
     });
 
     return { message: 'Booking cancelled successfully' };
