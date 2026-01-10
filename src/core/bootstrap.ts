@@ -23,6 +23,8 @@ import {
   TransactionDetailsService,
   AppSettingService
 } from '@/services';
+import PricingRuleService from '@/services/pricing-rule.service';
+import PricingCalculatorService from '@/services/pricing-calculator.service';
 import CaslService from '@/services/casl.service';
 import TemplateService from '@/services/template.service';
 import EmailService from '@/services/email.service';
@@ -174,6 +176,20 @@ export function bootstrap(): void {
       TOKENS.AppSettingService,
       TOKENS.EmailService
     ]
+  );
+
+  // Register PricingRuleService
+  container.registerFactory(
+    TOKENS.PricingRuleService,
+    (...args: unknown[]) => new PricingRuleService(args[0] as PrismaClient),
+    [TOKENS.PrismaClient]
+  );
+
+  // Register PricingCalculatorService
+  container.registerFactory(
+    TOKENS.PricingCalculatorService,
+    (...args: unknown[]) => new PricingCalculatorService(args[0] as PrismaClient),
+    [TOKENS.PrismaClient]
   );
 
   // Initialize default configurations
