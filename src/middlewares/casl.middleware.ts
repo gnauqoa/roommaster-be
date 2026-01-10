@@ -1,6 +1,6 @@
 import { Request, Response, NextFunction } from 'express';
 import { ForbiddenError } from '@casl/ability';
-import { AppAbility, defineAbilitiesFor } from '@/config/casl-ability';
+import { defineAbilitiesFor } from '@/config/casl-ability';
 import ApiError from '@/utils/ApiError';
 import httpStatus from 'http-status';
 import prisma from '@/prisma';
