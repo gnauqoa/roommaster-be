@@ -1,4 +1,4 @@
-import { PrismaClient, BookingStatus, RoomStatus } from '@prisma/client';
+import { PrismaClient, BookingStatus, RoomStatus, ActivityType } from '@prisma/client';
 import { Injectable } from '@/core/decorators';
 import httpStatus from 'http-status';
 import ApiError from '@/utils/ApiError';
@@ -7,8 +7,7 @@ import AppSettingService from './app-setting.service';
 import EmailService from './email.service';
 
 export interface RoomRequest {
-  roomTypeId: string;
-  count: number;
+  roomId: string;
 }
 
 export interface CreateBookingPayload {
@@ -60,71 +59,63 @@ export class BookingService {
       throw new ApiError(httpStatus.BAD_REQUEST, 'Check-out date must be after check-in date');
     }
 
-    // Validate all room types exist
-    const roomTypeIds = rooms.map((r) => r.roomTypeId);
-    const roomTypes = await this.prisma.roomType.findMany({
+    // Extract room IDs from requests
+    const roomIds = rooms.map((r) => r.roomId);
+
+    // Validate all rooms exist and fetch with their room types
+    const selectedRooms = await this.prisma.room.findMany({
       where: {
-        id: { in: roomTypeIds }
+        id: { in: roomIds }
+      },
+      include: {
+        roomType: true,
+        bookingRooms: {
+          where: {
+            AND: [
+              { checkInDate: { lte: checkOut.toDate() } },
+              { checkOutDate: { gte: checkIn.toDate() } },
+              {
+                status: {
+                  in: [BookingStatus.PENDING, BookingStatus.CONFIRMED, BookingStatus.CHECKED_IN]
+                }
+              }
+            ]
+          }
+        }
       }
     });
 
-    if (roomTypes.length !== roomTypeIds.length) {
-      throw new ApiError(httpStatus.NOT_FOUND, 'One or more room types not found');
+    // Check if all requested rooms were found
+    if (selectedRooms.length !== roomIds.length) {
+      const foundIds = selectedRooms.map((r) => r.id);
+      const missingIds = roomIds.filter((id) => !foundIds.includes(id));
+      throw new ApiError(httpStatus.NOT_FOUND, `Rooms not found: ${missingIds.join(', ')}`);
     }
 
-    // Create a map for quick lookup
-    const roomTypeMap = new Map(roomTypes.map((rt) => [rt.id, rt]));
-
-    // Find available rooms for each room type
-    const allocatedRooms: Array<{
-      room: any;
-      roomType: any;
-    }> = [];
-
-    for (const roomRequest of rooms) {
-      const roomType = roomTypeMap.get(roomRequest.roomTypeId);
-      if (!roomType) continue;
-
-      // Find available rooms of this type
-      const availableRooms = await this.prisma.room.findMany({
-        where: {
-          roomTypeId: roomRequest.roomTypeId,
-          status: RoomStatus.AVAILABLE,
-          // Exclude rooms with overlapping bookings
-          bookingRooms: {
-            none: {
-              AND: [
-                { checkInDate: { lte: checkOut.toDate() } },
-                { checkOutDate: { gte: checkIn.toDate() } },
-                {
-                  status: {
-                    in: [BookingStatus.PENDING, BookingStatus.CONFIRMED, BookingStatus.CHECKED_IN]
-                  }
-                }
-              ]
-            }
-          }
-        },
-        take: roomRequest.count,
-        include: {
-          roomType: true
-        }
-      });
-
-      if (availableRooms.length < roomRequest.count) {
+    // Validate room availability and no overlapping bookings
+    for (const room of selectedRooms) {
+      // Check if room is available
+      if (room.status !== RoomStatus.AVAILABLE) {
         throw new ApiError(
           httpStatus.CONFLICT,
-          `Not enough available rooms for room type: ${roomType.name}. Requested: ${roomRequest.count}, Available: ${availableRooms.length}`
+          `Room ${room.roomNumber} is not available (current status: ${room.status})`
         );
       }
 
-      allocatedRooms.push(
-        ...availableRooms.map((room) => ({
-          room,
-          roomType: room.roomType
-        }))
-      );
+      // Check for overlapping bookings
+      if (room.bookingRooms.length > 0) {
+        throw new ApiError(
+          httpStatus.CONFLICT,
+          `Room ${room.roomNumber} has overlapping bookings for the selected dates`
+        );
+      }
     }
+
+    // Prepare allocated rooms data
+    const allocatedRooms = selectedRooms.map((room) => ({
+      room,
+      roomType: room.roomType
+    }));
 
     // Generate unique booking code
     const bookingCode = `BK${Date.now()}${Math.random()
@@ -207,6 +198,22 @@ export class BookingService {
       });
 
       return newBooking;
+    });
+
+    // Log booking creation activity
+    await this.activityService.createActivity({
+      type: ActivityType.CREATE_BOOKING,
+      description: `Booking created: ${booking.bookingCode}`,
+      customerId: booking.primaryCustomerId,
+      metadata: {
+        bookingId: booking.id,
+        bookingCode: booking.bookingCode,
+        totalAmount: booking.totalAmount.toString(),
+        totalGuests: booking.totalGuests,
+        depositRequired: depositRequired.toString(),
+        checkInDate: checkInDate,
+        checkOutDate: checkOutDate
+      }
     });
 
     return {

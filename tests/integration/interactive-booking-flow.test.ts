@@ -163,16 +163,18 @@ describe('Interactive Booking Flow Test', () => {
       include: { bookingRooms: true }
     });
 
-    bookingRoomIds = bookingDetails!.bookingRooms.map((br) => br.id);
+    expect(bookingDetails).toBeDefined();
+    if (!bookingDetails) throw new Error('Booking details not found');
+    bookingRoomIds = bookingDetails.bookingRooms.map((br) => br.id);
 
     logStep('STEP 1', 'Booking Details:', {
       bookingId,
       bookingCode: booking.bookingCode,
-      status: bookingDetails!.status,
-      totalAmount: Number(bookingDetails!.totalAmount),
-      depositRequired: Number(bookingDetails!.depositRequired),
-      balance: Number(bookingDetails!.balance),
-      totalPaid: Number(bookingDetails!.totalPaid),
+      status: bookingDetails?.status,
+      totalAmount: Number(bookingDetails?.totalAmount),
+      depositRequired: Number(bookingDetails?.depositRequired),
+      balance: Number(bookingDetails?.balance),
+      totalPaid: Number(bookingDetails?.totalPaid),
       rooms: bookingRoomIds.length,
       checkInDate: checkInDate.toISOString(),
       checkOutDate: checkOutDate.toISOString()
@@ -202,11 +204,12 @@ describe('Interactive Booking Flow Test', () => {
         select: { status: true, balance: true, totalPaid: true, depositRequired: true }
       });
 
+      expect(updatedBooking).toBeDefined();
       logStep('STEP 2', 'Booking Status After Deposit:', {
-        status: updatedBooking!.status,
-        depositRequired: Number(updatedBooking!.depositRequired),
-        totalPaid: Number(updatedBooking!.totalPaid),
-        balance: Number(updatedBooking!.balance)
+        status: updatedBooking?.status,
+        depositRequired: Number(updatedBooking?.depositRequired),
+        totalPaid: Number(updatedBooking?.totalPaid),
+        balance: Number(updatedBooking?.balance)
       });
 
       expect(depositResult.transaction.status).toBe('COMPLETED');
@@ -230,16 +233,17 @@ describe('Interactive Booking Flow Test', () => {
       include: { bookingRooms: true }
     });
 
+    expect(checkedInBooking).toBeDefined();
     logSuccess('STEP 3', `Checked in ${bookingRoomIds.length} rooms`);
     logStep('STEP 3', 'Booking Status After Check-in:', {
-      status: checkedInBooking!.status,
-      roomStatuses: checkedInBooking!.bookingRooms.map((br) => ({
+      status: checkedInBooking?.status,
+      roomStatuses: checkedInBooking?.bookingRooms.map((br) => ({
         roomId: br.roomId,
         status: br.status
       }))
     });
 
-    expect(checkedInBooking!.status).toBe('CHECKED_IN');
+    expect(checkedInBooking?.status).toBe('CHECKED_IN');
 
     // ==================== STEP 4: Create Service Usage ====================
     logStep('STEP 4', 'Creating service usage...');
@@ -260,15 +264,16 @@ describe('Interactive Booking Flow Test', () => {
       include: { service: true }
     });
 
+    expect(serviceDetails).toBeDefined();
     logSuccess('STEP 4', `Service usage created: ${serviceUsage.quantity} units`);
     logStep('STEP 4', 'Service Usage Details:', {
       serviceUsageId,
-      serviceName: serviceDetails!.service.name,
-      quantity: serviceDetails!.quantity,
-      unitPrice: Number(serviceDetails!.service.price),
-      totalPrice: Number(serviceDetails!.totalPrice),
-      totalPaid: Number(serviceDetails!.totalPaid),
-      status: serviceDetails!.status
+      serviceName: serviceDetails?.service.name,
+      quantity: serviceDetails?.quantity,
+      unitPrice: Number(serviceDetails?.service.price),
+      totalPrice: Number(serviceDetails?.totalPrice),
+      totalPaid: Number(serviceDetails?.totalPaid),
+      status: serviceDetails?.status
     });
 
     expect(serviceUsage.quantity).toBe(2);
@@ -298,14 +303,15 @@ describe('Interactive Booking Flow Test', () => {
         }
       });
 
+      expect(updatedBooking).toBeDefined();
       logStep('STEP 5', 'Booking Status After Partial Payment:', {
-        totalPaid: Number(updatedBooking!.totalPaid),
-        balance: Number(updatedBooking!.balance),
-        paidRooms: updatedBooking!.bookingRooms.filter((br) => Number(br.balance) === 0).length,
-        unpaidRooms: updatedBooking!.bookingRooms.filter((br) => Number(br.balance) > 0).length,
-        servicesPaid: updatedBooking!.serviceUsages.filter((su) => su.status === 'COMPLETED')
+        totalPaid: Number(updatedBooking?.totalPaid),
+        balance: Number(updatedBooking?.balance),
+        paidRooms: updatedBooking?.bookingRooms.filter((br) => Number(br.balance) === 0).length,
+        unpaidRooms: updatedBooking?.bookingRooms.filter((br) => Number(br.balance) > 0).length,
+        servicesPaid: updatedBooking?.serviceUsages.filter((su) => su.status === 'COMPLETED')
           .length,
-        servicesUnpaid: updatedBooking!.serviceUsages.filter((su) => su.status !== 'COMPLETED')
+        servicesUnpaid: updatedBooking?.serviceUsages.filter((su) => su.status !== 'COMPLETED')
           .length
       });
 
@@ -319,12 +325,13 @@ describe('Interactive Booking Flow Test', () => {
       select: { status: true, totalPrice: true, totalPaid: true }
     });
 
-    if (serviceCheck!.status === 'COMPLETED') {
+    expect(serviceCheck).toBeDefined();
+    if (serviceCheck?.status === 'COMPLETED') {
       logStep('STEP 6', '⏭️  Service already paid, skipping...');
       logStep('STEP 6', 'Service Status:', {
-        status: serviceCheck!.status,
-        totalPrice: Number(serviceCheck!.totalPrice),
-        totalPaid: Number(serviceCheck!.totalPaid)
+        status: serviceCheck?.status,
+        totalPrice: Number(serviceCheck?.totalPrice),
+        totalPaid: Number(serviceCheck?.totalPaid)
       });
     } else {
       logStep('STEP 6', 'Paying for service...');
@@ -348,10 +355,11 @@ describe('Interactive Booking Flow Test', () => {
           select: { status: true, totalPaid: true, totalPrice: true }
         });
 
+        expect(updatedService).toBeDefined();
         logStep('STEP 6', 'Service Status After Payment:', {
-          status: updatedService!.status,
-          totalPrice: Number(updatedService!.totalPrice),
-          totalPaid: Number(updatedService!.totalPaid)
+          status: updatedService?.status,
+          totalPrice: Number(updatedService?.totalPrice),
+          totalPaid: Number(updatedService?.totalPaid)
         });
 
         expect(servicePayment.transaction.status).toBe('COMPLETED');
@@ -379,15 +387,16 @@ describe('Interactive Booking Flow Test', () => {
         select: { balance: true, totalPaid: true, totalAmount: true }
       });
 
+      expect(finalBooking).toBeDefined();
       logStep('STEP 7', 'Final Booking Status:', {
-        totalAmount: Number(finalBooking!.totalAmount),
-        totalPaid: Number(finalBooking!.totalPaid),
-        balance: Number(finalBooking!.balance),
-        fullyPaid: Number(finalBooking!.balance) === 0
+        totalAmount: Number(finalBooking?.totalAmount),
+        totalPaid: Number(finalBooking?.totalPaid),
+        balance: Number(finalBooking?.balance),
+        fullyPaid: Number(finalBooking?.balance) === 0
       });
 
       expect(fullPayment.transaction.status).toBe('COMPLETED');
-      expect(Number(finalBooking!.balance)).toBe(0);
+      expect(Number(finalBooking?.balance)).toBe(0);
     }
 
     // ==================== STEP 8: Check-out ====================
@@ -405,16 +414,17 @@ describe('Interactive Booking Flow Test', () => {
       include: { bookingRooms: true }
     });
 
+    expect(checkedOutBooking).toBeDefined();
     logSuccess('STEP 8', `Checked out ${bookingRoomIds.length} rooms`);
     logStep('STEP 8', 'Final Booking Status:', {
-      status: checkedOutBooking!.status,
-      roomStatuses: checkedOutBooking!.bookingRooms.map((br) => ({
+      status: checkedOutBooking?.status,
+      roomStatuses: checkedOutBooking?.bookingRooms.map((br) => ({
         roomId: br.roomId,
         status: br.status
       }))
     });
 
-    expect(checkedOutBooking!.status).toBe('CHECKED_OUT');
+    expect(checkedOutBooking?.status).toBe('CHECKED_OUT');
 
     // ==================== FINAL SUMMARY ====================
     console.log('\n' + '='.repeat(60));
@@ -430,14 +440,15 @@ describe('Interactive Booking Flow Test', () => {
       }
     });
 
-    console.log(`\nBooking Code: ${finalBooking!.bookingCode}`);
-    console.log(`Status: ${finalBooking!.status}`);
-    console.log(`Total Amount: ${finalBooking!.totalAmount} VND`);
-    console.log(`Total Paid: ${finalBooking!.totalPaid} VND`);
-    console.log(`Balance: ${finalBooking!.balance} VND`);
-    console.log(`Rooms: ${finalBooking!.bookingRooms.length}`);
-    console.log(`Services: ${finalBooking!.serviceUsages.length}`);
-    console.log(`Transactions: ${finalBooking!.transactions.length}`);
+    expect(finalBooking).toBeDefined();
+    console.log(`\nBooking Code: ${finalBooking?.bookingCode}`);
+    console.log(`Status: ${finalBooking?.status}`);
+    console.log(`Total Amount: ${finalBooking?.totalAmount} VND`);
+    console.log(`Total Paid: ${finalBooking?.totalPaid} VND`);
+    console.log(`Balance: ${finalBooking?.balance} VND`);
+    console.log(`Rooms: ${finalBooking?.bookingRooms.length}`);
+    console.log(`Services: ${finalBooking?.serviceUsages.length}`);
+    console.log(`Transactions: ${finalBooking?.transactions.length}`);
 
     console.log('\n' + '='.repeat(60));
     console.log('✅ TEST COMPLETED');
