@@ -302,6 +302,7 @@ describe('processSplitRoomPayment', () => {
       {
         id: 'room-1',
         subtotalRoom: new Prisma.Decimal(100),
+        subtotalService: new Prisma.Decimal(50),
         totalPaid: new Prisma.Decimal(0),
         totalAmount: new Prisma.Decimal(150),
         room: { id: 'room-1' },
@@ -310,7 +311,7 @@ describe('processSplitRoomPayment', () => {
             id: 'service-1',
             totalPrice: new Prisma.Decimal(50),
             totalPaid: new Prisma.Decimal(0),
-            status: 'ACTIVE'
+            status: 'PENDING'
           }
         ]
       }

@@ -20,7 +20,8 @@ describe('BookingService', () => {
       createCheckInActivity: jest.fn(),
       createCheckOutActivity: jest.fn()
     };
-    const mockAppSettingService = {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const mockAppSettingService: any = {
       getCheckInTime: jest.fn(),
       getCheckOutTime: jest.fn(),
       getDepositPercentage: jest.fn(async () => 50)

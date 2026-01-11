@@ -120,8 +120,12 @@ export function bootstrap(): void {
   container.registerFactory(
     TOKENS.UsageServiceService,
     (...args: unknown[]) =>
-      new UsageServiceService(args[0] as PrismaClient, args[1] as ActivityService),
-    [TOKENS.PrismaClient, TOKENS.ActivityService]
+      new UsageServiceService(
+        args[0] as PrismaClient,
+        args[1] as ActivityService,
+        args[2] as AppSettingService
+      ),
+    [TOKENS.PrismaClient, TOKENS.ActivityService, TOKENS.AppSettingService]
   );
 
   container.registerFactory(

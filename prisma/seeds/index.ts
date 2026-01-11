@@ -61,6 +61,45 @@ const main = async () => {
     await seedCalendarEvents(prisma);
     await seedPricingRules(prisma);
 
+    // Update app settings with service IDs after services are seeded
+    console.log('Updating app settings with service IDs...');
+    const penaltyService = await prisma.service.findFirst({
+      where: { name: 'Phạt' }
+    });
+    const surchargeService = await prisma.service.findFirst({
+      where: { name: 'Phụ thu' }
+    });
+
+    if (penaltyService) {
+      await prisma.appSetting.upsert({
+        where: { key: APP_SETTING_KEYS.PENALTY_SERVICE_ID },
+        create: {
+          key: APP_SETTING_KEYS.PENALTY_SERVICE_ID,
+          value: { serviceId: penaltyService.id },
+          description: 'Penalty service ID for custom penalty charges'
+        },
+        update: {
+          value: { serviceId: penaltyService.id }
+        }
+      });
+      console.log('  ✓ Penalty service ID updated');
+    }
+
+    if (surchargeService) {
+      await prisma.appSetting.upsert({
+        where: { key: APP_SETTING_KEYS.SURCHARGE_SERVICE_ID },
+        create: {
+          key: APP_SETTING_KEYS.SURCHARGE_SERVICE_ID,
+          value: { serviceId: surchargeService.id },
+          description: 'Surcharge service ID for custom surcharge fees'
+        },
+        update: {
+          value: { serviceId: surchargeService.id }
+        }
+      });
+      console.log('  ✓ Surcharge service ID updated');
+    }
+
     console.log('');
     console.log('📋 Phase 2: Bookings and activities');
     await seedBookings(prisma); // Creates bookings, booking rooms, and booking customers

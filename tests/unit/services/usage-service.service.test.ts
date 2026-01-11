@@ -28,15 +28,26 @@ const createMockActivityService = () => ({
   createActivity: jest.fn()
 });
 
+const createMockAppSettingService = () => ({
+  getPenaltyServiceId: jest.fn(),
+  getSurchargeServiceId: jest.fn()
+});
+
 describe('UsageServiceService', () => {
   let usageServiceService: UsageServiceService;
   let mockPrisma: ReturnType<typeof createMockPrisma>;
   let mockActivityService: ReturnType<typeof createMockActivityService>;
+  let mockAppSettingService: ReturnType<typeof createMockAppSettingService>;
 
   beforeEach(() => {
     mockPrisma = createMockPrisma();
     mockActivityService = createMockActivityService();
-    usageServiceService = new UsageServiceService(mockPrisma as any, mockActivityService as any);
+    mockAppSettingService = createMockAppSettingService();
+    usageServiceService = new UsageServiceService(
+      mockPrisma as any,
+      mockActivityService as any,
+      mockAppSettingService as any
+    );
     jest.clearAllMocks();
   });
 

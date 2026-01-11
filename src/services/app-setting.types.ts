@@ -30,3 +30,10 @@ export type LateCheckOutFeeConfig = FeeConfig;
 export interface DepositPercentageConfig {
   percentage: number; // 0-100, e.g., 50 = 50%
 }
+
+export interface ServiceIdConfig {
+  serviceId: string;
+}
+
+export type PenaltyServiceIdConfig = ServiceIdConfig;
+export type SurchargeServiceIdConfig = ServiceIdConfig;

@@ -358,12 +358,15 @@ model ServiceUsage {
   bookingRoomId String?
   employeeId    String
 
-  serviceId  String
-  quantity   Int     @default(1)
-  unitPrice  Decimal @db.Decimal(10, 2)
-  totalPrice Decimal @db.Decimal(10, 2) // Total cost (unitPrice × quantity)
-  totalPaid  Decimal @default(0) @db.Decimal(10, 2) // Amount paid so far
+  serviceId   String
+  quantity    Int      @default(1)
+  unitPrice   Decimal  @db.Decimal(10, 2)
+  customPrice Decimal? @db.Decimal(10, 2) // Custom price override for penalty/surcharge
+  totalPrice  Decimal  @db.Decimal(10, 2) // Total cost (customPrice or unitPrice × quantity)
+  totalPaid   Decimal  @default(0) @db.Decimal(10, 2) // Amount paid so far
   // balance = totalPrice - totalPaid (calculated field, not stored)
+
+  note   String? @db.Text // Note/reason for penalty/surcharge or service usage details
 
   status ServiceUsageStatus @default(PENDING)
 
