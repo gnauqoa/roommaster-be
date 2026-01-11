@@ -153,6 +153,37 @@ export class EmailService {
       html: '<h1>Xin chào!</h1><p>Đây là email test từ RoomMaster.</p>'
     });
   }
+
+  /**
+   * Send email verification email
+   */
+  public async sendVerificationEmail(
+    customerEmail: string,
+    customerName: string,
+    verificationToken: string
+  ): Promise<void> {
+    try {
+      const verificationLink = `${config.apiUrl}/v1/customer/auth/verify-email?token=${verificationToken}`;
+
+      const templateData = {
+        customerName,
+        verificationLink
+      };
+
+      const html = this.templateService.render('verify-email', templateData);
+
+      await this.sendEmail({
+        to: customerEmail,
+        subject: '✅ Xác thực email - RoomMaster',
+        html
+      });
+
+      console.log(`✅ Verification email sent to ${customerEmail}`);
+    } catch (error) {
+      console.error('❌ Failed to send verification email:', error);
+      throw new ApiError(httpStatus.INTERNAL_SERVER_ERROR, 'Failed to send verification email');
+    }
+  }
 }
 
 export default EmailService;

@@ -162,6 +162,44 @@ export class AuthService {
       });
     }
   }
+
+  /**
+   * Verify customer email
+   * @param {string} verificationToken - Email verification token
+   * @returns {Promise<void>}
+   */
+  async verifyEmail(verificationToken: string): Promise<void> {
+    try {
+      const payload = this.tokenService.verifyToken(verificationToken, 'VERIFY_EMAIL');
+      const userId = payload.sub;
+
+      if (!userId) {
+        throw new Error('Invalid token');
+      }
+
+      const customer = await this.prisma.customer.findUnique({
+        where: { id: userId }
+      });
+
+      if (!customer) {
+        throw new ApiError(httpStatus.NOT_FOUND, 'Customer not found');
+      }
+
+      if (customer.isEmailVerified) {
+        throw new ApiError(httpStatus.BAD_REQUEST, 'Email already verified');
+      }
+
+      await this.prisma.customer.update({
+        where: { id: userId },
+        data: {
+          isEmailVerified: true,
+          emailVerificationToken: null
+        }
+      });
+    } catch (error) {
+      throw new ApiError(httpStatus.UNAUTHORIZED, 'Email verification failed');
+    }
+  }
 }
 
 export default AuthService;

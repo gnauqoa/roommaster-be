@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Xác thực email - RoomMaster</title>
+  <style>
+    body {
+      margin: 0;
+      padding: 0;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background-color: #f5f5f5;
+    }
+    .email-container {
+      max-width: 600px;
+      margin: 20px auto;
+      background-color: #ffffff;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    }
+    .header {
+      background: linear-gradient(135deg, #1e40af 0%, #3b82f6 100%);
+      color: white;
+      padding: 40px 20px;
+      text-align: center;
+    }
+    .header h1 {
+      margin: 0;
+      font-size: 32px;
+      font-weight: bold;
+    }
+    .header p {
+      margin: 10px 0 0 0;
+      font-size: 16px;
+      opacity: 0.9;
+    }
+    .content {
+      padding: 40px 30px;
+    }
+    .greeting {
+      margin-bottom: 25px;
+      line-height: 1.6;
+      color: #333;
+      font-size: 16px;
+    }
+    .greeting strong {
+      color: #1e40af;
+    }
+    .message-box {
+      background-color: #f0f9ff;
+      border-left: 4px solid #3b82f6;
+      padding: 20px;
+      margin: 25px 0;
+      border-radius: 4px;
+    }
+    .message-box p {
+      margin: 0;
+      color: #1e40af;
+      font-size: 15px;
+      line-height: 1.6;
+    }
+    .verify-button-container {
+      text-align: center;
+      margin: 35px 0;
+    }
+    .verify-button {
+      display: inline-block;
+      background: linear-gradient(135deg, #1e40af 0%, #3b82f6 100%);
+      color: white !important;
+      padding: 16px 50px;
+      text-decoration: none;
+      border-radius: 8px;
+      font-size: 18px;
+      font-weight: bold;
+      box-shadow: 0 4px 12px rgba(30, 64, 175, 0.3);
+      transition: transform 0.2s;
+    }
+    .verify-button:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 6px 16px rgba(30, 64, 175, 0.4);
+    }
+    .alternative-link {
+      margin-top: 25px;
+      padding: 20px;
+      background-color: #f9fafb;
+      border-radius: 8px;
+      font-size: 13px;
+      color: #666;
+    }
+    .alternative-link p {
+      margin: 0 0 10px 0;
+    }
+    .alternative-link a {
+      color: #3b82f6;
+      word-break: break-all;
+    }
+    .footer {
+      background-color: #f9fafb;
+      padding: 25px 30px;
+      text-align: center;
+      border-top: 1px solid #e5e7eb;
+      font-size: 13px;
+      color: #6b7280;
+    }
+    .footer p {
+      margin: 8px 0;
+    }
+    .warning {
+      margin-top: 25px;
+      padding: 15px;
+      background-color: #fef3c7;
+      border-left: 4px solid #f59e0b;
+      border-radius: 4px;
+      font-size: 14px;
+      color: #92400e;
+    }
+  </style>
+</head>
+<body>
+  <div class="email-container">
+    <!-- Header -->
+    <div class="header">
+      <h1>🏨 RoomMaster</h1>
+      <p>Xác thực địa chỉ email của bạn</p>
+    </div>
+
+    <!-- Content -->
+    <div class="content">
+      <div class="greeting">
+        <p>Xin chào <strong>{{customerName}}</strong>,</p>
+      </div>
+
+      <div class="message-box">
+        <p>
+          Cảm ơn bạn đã đăng ký tài khoản tại <strong>RoomMaster</strong>! 
+          Để hoàn tất quá trình đăng ký và bắt đầu sử dụng dịch vụ của chúng tôi, 
+          vui lòng xác thực địa chỉ email của bạn.
+        </p>
+      </div>
+
+      <!-- Verify Button -->
+      <div class="verify-button-container">
+        <a href="{{verificationLink}}" class="verify-button">
+          ✅ Xác thực email ngay
+        </a>
+      </div>
+
+      <!-- Alternative Link -->
+      <div class="alternative-link">
+        <p><strong>Hoặc sao chép và dán link sau vào trình duyệt:</strong></p>
+        <a href="{{verificationLink}}">{{verificationLink}}</a>
+      </div>
+
+      <!-- Warning -->
+      <div class="warning">
+        <p>
+          <strong>⚠️ Lưu ý:</strong> Link xác thực này sẽ hết hạn sau <strong>24 giờ</strong>. 
+          Nếu bạn không yêu cầu đăng ký tài khoản này, vui lòng bỏ qua email này.
+        </p>
+      </div>
+
+      <div class="greeting" style="margin-top: 30px;">
+        <p>
+          Sau khi xác thực email, bạn sẽ có thể:
+        </p>
+        <ul style="color: #333; line-height: 1.8;">
+          <li>Đặt phòng và quản lý booking</li>
+          <li>Xem lịch sử đặt phòng</li>
+          <li>Nhận thông báo và ưu đãi đặc biệt</li>
+          <li>Quản lý thông tin cá nhân</li>
+        </ul>
+      </div>
+
+      <div class="greeting" style="margin-top: 25px;">
+        <p>Trân trọng,</p>
+        <p><strong>Đội ngũ RoomMaster</strong></p>
+      </div>
+    </div>
+
+    <!-- Footer -->
+    <div class="footer">
+      <p>Email này được gửi từ <strong>RoomMaster</strong></p>
+      <p>© 2026 RoomMaster. All rights reserved.</p>
+      <p style="margin-top: 15px;">
+        Nếu bạn có bất kỳ câu hỏi nào, vui lòng liên hệ với chúng tôi qua email support@roommaster.com
+      </p>
+    </div>
+  </div>
+</body>
+</html>

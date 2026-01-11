@@ -5,6 +5,7 @@ import CustomerPromotionController from '@/controllers/customer/customer.promoti
 import { container, TOKENS } from '@/core/container';
 import { PromotionService } from '@/services/promotion.service';
 import { authCustomer } from '@/middlewares/auth';
+import { requireEmailVerified } from '@/middlewares/emailVerification';
 
 export default function createPromotionRoutes(): express.Router {
   const router = express.Router();
@@ -64,6 +65,7 @@ export default function createPromotionRoutes(): express.Router {
   router.post(
     '/claim',
     authCustomer,
+    requireEmailVerified,
     validate(promotionValidation.claimPromotion),
     customerPromotionController.claimPromotion
   );

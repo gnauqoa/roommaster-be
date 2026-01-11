@@ -5,6 +5,7 @@ import CustomerBookingController from '@/controllers/customer/customer.booking.c
 import { container, TOKENS } from '@/core/container';
 import { BookingService } from '@/services/booking.service';
 import { authCustomer } from '@/middlewares/auth';
+import { requireEmailVerified } from '@/middlewares/emailVerification';
 
 export default function createBookingRoutes(): express.Router {
   const router = express.Router();
@@ -102,6 +103,7 @@ export default function createBookingRoutes(): express.Router {
   router.post(
     '/',
     authCustomer,
+    requireEmailVerified,
     validate(bookingValidation.createBooking),
     customerBookingController.createBooking
   );

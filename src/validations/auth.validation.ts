@@ -42,6 +42,14 @@ const changePassword = {
   })
 };
 
+const verifyEmail = {
+  query: Joi.object().keys({
+    token: Joi.string().required()
+  })
+};
+
+const resendVerification = {};
+
 const getProfile = {};
 
 const updateProfile = {
@@ -60,6 +68,8 @@ export default {
   forgotPassword,
   resetPassword,
   changePassword,
+  verifyEmail,
+  resendVerification,
   getProfile,
   updateProfile
 };

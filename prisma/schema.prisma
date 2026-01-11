@@ -127,14 +127,16 @@ model Employee {
 }
 
 model Customer {
-  id       String  @id @default(cuid())
-  fullName String
-  email    String?
-  phone    String  @unique
-  idNumber String? // CMND/CCCD
-  address  String? @db.Text
-  password String
-  imageUrl String?
+  id                     String   @id @default(cuid())
+  fullName               String
+  email                  String?
+  phone                  String   @unique
+  idNumber               String? // CMND/CCCD
+  address                String?  @db.Text
+  password               String
+  imageUrl               String?
+  isEmailVerified        Boolean  @default(false)
+  emailVerificationToken String?
 
   bookings         Booking[]
   bookingCustomers BookingCustomer[]
