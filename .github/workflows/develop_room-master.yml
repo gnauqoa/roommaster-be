@@ -51,7 +51,7 @@ jobs:
             echo "❌ Build directory not found!"
             exit 1
           fi
-          if [ ! -f "build/src/index.js" ]; then
+          if [ ! -f "build/index.js" ]; then
             echo "❌ Entry point build/src/index.js not found!"
             ls -la build/
             exit 1
