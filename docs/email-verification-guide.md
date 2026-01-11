@@ -13,7 +13,7 @@ This document describes the email verification system implemented for customer r
 ### 2. Email Verification Flow
 
 #### Registration
-1. Customer registers with email (optional)
+1. Customer registers with email (required)
 2. System generates verification token (24-hour validity)
 3. Sends verification email with clickable link
 4. Customer can still login but access to certain features is restricted
