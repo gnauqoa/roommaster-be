@@ -237,6 +237,180 @@ export default function createRoomRoutes(): express.Router {
 
   /**
    * @swagger
+   * /employee/rooms/available:
+   *   get:
+   *     summary: Search rooms available for date range
+   *     description: Search for rooms that are available for booking in a specific date range. This is the primary endpoint for employees to find rooms when creating bookings.
+   *     tags: [Rooms]
+   *     security:
+   *       - bearerAuth: []
+   *     parameters:
+   *       - in: query
+   *         name: checkInDate
+   *         required: true
+   *         schema:
+   *           type: string
+   *           format: date
+   *         description: Check-in date (YYYY-MM-DD)
+   *       - in: query
+   *         name: checkOutDate
+   *         required: true
+   *         schema:
+   *           type: string
+   *           format: date
+   *         description: Check-out date (YYYY-MM-DD)
+   *       - in: query
+   *         name: search
+   *         schema:
+   *           type: string
+   *         description: Search by room number or code
+   *       - in: query
+   *         name: roomTypeId
+   *         schema:
+   *           type: string
+   *         description: Filter by room type ID
+   *       - in: query
+   *         name: floor
+   *         schema:
+   *           type: integer
+   *         description: Filter by floor number
+   *       - in: query
+   *         name: minCapacity
+   *         schema:
+   *           type: integer
+   *         description: Minimum room capacity
+   *       - in: query
+   *         name: maxCapacity
+   *         schema:
+   *           type: integer
+   *         description: Maximum room capacity
+   *       - in: query
+   *         name: minPrice
+   *         schema:
+   *           type: number
+   *         description: Minimum price per night
+   *       - in: query
+   *         name: maxPrice
+   *         schema:
+   *           type: number
+   *         description: Maximum price per night
+   *       - in: query
+   *         name: page
+   *         schema:
+   *           type: integer
+   *           default: 1
+   *       - in: query
+   *         name: limit
+   *         schema:
+   *           type: integer
+   *           default: 10
+   *     responses:
+   *       200:
+   *         description: Available rooms grouped by room type
+   *         content:
+   *           application/json:
+   *             schema:
+   *               type: object
+   *               properties:
+   *                 data:
+   *                   type: array
+   *                   items:
+   *                     type: object
+   *                     properties:
+   *                       roomType:
+   *                         type: object
+   *                       availableCount:
+   *                         type: integer
+   *                       rooms:
+   *                         type: array
+   *                 total:
+   *                   type: integer
+   *                 checkInDate:
+   *                   type: string
+   *                 checkOutDate:
+   *                   type: string
+   *       400:
+   *         description: Invalid date range
+   *       401:
+   *         $ref: '#/components/responses/Unauthorized'
+   */
+  roomRoute.get(
+    '/available',
+    authEmployee,
+    validate(roomValidation.searchAvailableRoomsByDate),
+    roomController.searchAvailableRoomsByDate
+  );
+
+  /**
+   * @swagger
+   * /employee/rooms/check-availability:
+   *   post:
+   *     summary: Bulk check room availability
+   *     description: Check if multiple rooms are available for a date range. Use before creating a booking.
+   *     tags: [Rooms]
+   *     security:
+   *       - bearerAuth: []
+   *     requestBody:
+   *       required: true
+   *       content:
+   *         application/json:
+   *           schema:
+   *             type: object
+   *             required:
+   *               - roomIds
+   *               - checkInDate
+   *               - checkOutDate
+   *             properties:
+   *               roomIds:
+   *                 type: array
+   *                 items:
+   *                   type: string
+   *                 description: Array of room IDs to check
+   *               checkInDate:
+   *                 type: string
+   *                 format: date
+   *                 description: Check-in date (YYYY-MM-DD)
+   *               checkOutDate:
+   *                 type: string
+   *                 format: date
+   *                 description: Check-out date (YYYY-MM-DD)
+   *     responses:
+   *       200:
+   *         description: Availability status for each room
+   *         content:
+   *           application/json:
+   *             schema:
+   *               type: object
+   *               properties:
+   *                 allAvailable:
+   *                   type: boolean
+   *                 results:
+   *                   type: array
+   *                   items:
+   *                     type: object
+   *                     properties:
+   *                       roomId:
+   *                         type: string
+   *                       available:
+   *                         type: boolean
+   *                       room:
+   *                         type: object
+   *                       conflictingBookings:
+   *                         type: array
+   *       400:
+   *         description: Validation error
+   *       401:
+   *         $ref: '#/components/responses/Unauthorized'
+   */
+  roomRoute.post(
+    '/check-availability',
+    authEmployee,
+    validate(roomValidation.checkMultipleRoomsAvailability),
+    roomController.checkMultipleRoomsAvailability
+  );
+
+  /**
+   * @swagger
    * /employee/rooms/{roomId}:
    *   get:
    *     summary: Get room by ID
@@ -409,6 +583,64 @@ export default function createRoomRoutes(): express.Router {
     .get(authEmployee, validate(roomValidation.getRoom), roomController.getRoom)
     .put(authEmployee, validate(roomValidation.updateRoom), roomController.updateRoom)
     .delete(authEmployee, validate(roomValidation.deleteRoom), roomController.deleteRoom);
+
+  /**
+   * @swagger
+   * /employee/rooms/{roomId}/availability:
+   *   get:
+   *     summary: Check single room availability
+   *     description: Check if a specific room is available for a date range. Returns conflicting bookings if any.
+   *     tags: [Rooms]
+   *     security:
+   *       - bearerAuth: []
+   *     parameters:
+   *       - in: path
+   *         name: roomId
+   *         required: true
+   *         schema:
+   *           type: string
+   *         description: Room ID
+   *       - in: query
+   *         name: checkInDate
+   *         required: true
+   *         schema:
+   *           type: string
+   *           format: date
+   *         description: Check-in date (YYYY-MM-DD)
+   *       - in: query
+   *         name: checkOutDate
+   *         required: true
+   *         schema:
+   *           type: string
+   *           format: date
+   *         description: Check-out date (YYYY-MM-DD)
+   *     responses:
+   *       200:
+   *         description: Room availability status
+   *         content:
+   *           application/json:
+   *             schema:
+   *               type: object
+   *               properties:
+   *                 available:
+   *                   type: boolean
+   *                 room:
+   *                   type: object
+   *                 conflictingBookings:
+   *                   type: array
+   *       400:
+   *         description: Validation error
+   *       401:
+   *         $ref: '#/components/responses/Unauthorized'
+   *       404:
+   *         description: Room not found
+   */
+  roomRoute.get(
+    '/:roomId/availability',
+    authEmployee,
+    validate(roomValidation.checkRoomAvailability),
+    roomController.checkRoomAvailability
+  );
 
   return roomRoute;
 }
