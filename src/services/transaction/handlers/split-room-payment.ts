@@ -1,4 +1,5 @@
-import { PrismaClient, TransactionStatus, BookingStatus } from '@prisma/client';
+import dayjs from 'dayjs';
+import { PrismaClient, TransactionStatus, BookingStatus, Prisma } from '@prisma/client';
 import httpStatus from 'http-status';
 import ApiError from '@/utils/ApiError';
 import { ActivityService } from '@/services/activity.service';
@@ -79,11 +80,14 @@ export async function processSplitRoomPayment(
     const transactionDetails: TransactionDetailData[] = [];
 
     for (const room of bookingRooms) {
+      const nights = dayjs(room.checkOutDate).diff(dayjs(room.checkInDate), 'day');
+      const subtotalRoom = new Prisma.Decimal(room.pricePerNight).mul(nights);
+
       transactionDetails.push({
         bookingRoomId: room.id,
-        baseAmount: room.subtotalRoom.toNumber(),
+        baseAmount: subtotalRoom.toNumber(),
         discountAmount: 0,
-        amount: room.subtotalRoom.toNumber()
+        amount: subtotalRoom.toNumber()
       });
     }
 
