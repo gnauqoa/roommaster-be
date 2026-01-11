@@ -8,6 +8,7 @@ import { AuthService, CustomerService, TokenService, EmailService } from '@/serv
 import exclude from '@/utils/exclude';
 import { sendData, sendNoContent } from '@/utils/responseWrapper';
 import ApiError from '@/utils/ApiError';
+import path from 'path';
 
 @Injectable()
 export class CustomerController {
@@ -117,7 +118,7 @@ export class CustomerController {
 
   verifyEmail = catchAsync(async (req: Request, res: Response) => {
     await this.authService.verifyEmail(req.query.token as string);
-    sendData(res, { message: 'Email verified successfully' });
+    res.sendFile(path.join(process.cwd(), 'src/templates/email-verified.html'));
   });
 
   resendVerification = catchAsync(async (req: Request, res: Response) => {

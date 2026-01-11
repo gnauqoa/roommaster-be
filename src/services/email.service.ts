@@ -176,7 +176,8 @@ export class EmailService {
     verificationToken: string
   ): Promise<void> {
     try {
-      const verificationLink = `${config.apiUrl}/v1/customer/auth/verify-email?token=${verificationToken}`;
+      const baseUrl = config.apiUrl.replace(/\/v1\/?$/, '');
+      const verificationLink = `${baseUrl}/v1/customer/auth/verify-email?token=${verificationToken}`;
 
       const templateData = {
         customerName,
