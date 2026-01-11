@@ -17,7 +17,7 @@ export default function createUsageServiceRoutes(): express.Router {
    * @swagger
    * tags:
    *   name: Customer Services
-   *   description: Customer service usage management endpoints (DEPRECATED - Employee only)
+   *   description: Customer service usage endpoints (DEPRECATED - Employee only operations)
    */
 
   /**
@@ -25,14 +25,29 @@ export default function createUsageServiceRoutes(): express.Router {
    * /customer/service/service-usage:
    *   post:
    *     summary: Create a service usage record (DEPRECATED)
-   *     description: Service usage creation is now employee-only. Customers should contact staff.
+   *     description: |-
+   *       **This endpoint is deprecated and no longer available for customers.**
+   *       
+   *       Service usage creation is now employee-only for better inventory control.
+   *       Customers should contact staff to request services.
    *     deprecated: true
    *     tags: [Customer Services]
    *     security:
    *       - bearerAuth: []
    *     responses:
    *       501:
-   *         description: Service usage is now employee-only
+   *         description: Not Implemented - Service usage is now employee-only
+   *         content:
+   *           application/json:
+   *             schema:
+   *               type: object
+   *               properties:
+   *                 code:
+   *                   type: number
+   *                   example: 501
+   *                 message:
+   *                   type: string
+   *                   example: Service usage creation is now employee-only. Please contact staff.
    */
   router.post(
     '/service-usage',
@@ -46,14 +61,35 @@ export default function createUsageServiceRoutes(): express.Router {
    * /customer/service/service-usage/{id}:
    *   patch:
    *     summary: Update own service usage (DEPRECATED)
-   *     description: Service usage updates are now employee-only. Customers should contact staff.
+   *     description: |-
+   *       **This endpoint is deprecated and no longer available for customers.**
+   *       
+   *       Service usage updates are now employee-only.
+   *       Customers should contact staff to modify service requests.
    *     deprecated: true
    *     tags: [Customer Services]
    *     security:
    *       - bearerAuth: []
+   *     parameters:
+   *       - in: path
+   *         name: id
+   *         required: true
+   *         schema:
+   *           type: string
    *     responses:
    *       501:
-   *         description: Service usage updates are now employee-only
+   *         description: Not Implemented - Service usage updates are now employee-only
+   *         content:
+   *           application/json:
+   *             schema:
+   *               type: object
+   *               properties:
+   *                 code:
+   *                   type: number
+   *                   example: 501
+   *                 message:
+   *                   type: string
+   *                   example: Service usage updates are now employee-only. Please contact staff.
    */
   router.patch(
     '/service-usage/:id',
