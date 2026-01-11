@@ -27,19 +27,20 @@ export class CustomerController {
       try {
         const verificationToken = this.tokenService.generateEmailVerificationToken(customer.id);
 
-        // Save verification token to customer
+        // Save verification token to customer first
         await this.customerService.updateCustomer(customer.id, {
           emailVerificationToken: verificationToken
         });
 
+        // Send verification email after token is saved
         await this.emailService.sendVerificationEmail(
           customer.email,
           customer.fullName,
           verificationToken
         );
       } catch (error) {
-        console.error('Failed to send verification email:', error);
-        // Don't fail registration if email sending fails
+        console.error('Failed to prepare verification email:', error);
+        // Don't fail registration if email preparation fails
       }
     }
 
@@ -135,24 +136,25 @@ export class CustomerController {
       throw new ApiError(httpStatus.BAD_REQUEST, 'No email address associated with this account');
     }
 
-    const verificationToken = this.tokenService.generateEmailVerificationToken(customer.id);
-
-    await this.customerService.updateCustomer(customer.id, {
-      emailVerificationToken: verificationToken
-    });
-
-    // Send verification email
+    // Check email service availability first
     if (!this.emailService) {
       throw new ApiError(httpStatus.INTERNAL_SERVER_ERROR, 'Email service is not available');
     }
 
-    const emailService = this.emailService;
+    const verificationToken = this.tokenService.generateEmailVerificationToken(customer.id);
 
-    await emailService.sendVerificationEmail(
+    // Save verification token to customer first
+    await this.customerService.updateCustomer(customer.id, {
+      emailVerificationToken: verificationToken
+    });
+
+    // Send verification email after token is saved
+    await this.emailService.sendVerificationEmail(
       customer.email,
       customer.fullName,
       verificationToken
     );
+
     sendData(res, { message: 'Verification email sent' });
   });
 }
