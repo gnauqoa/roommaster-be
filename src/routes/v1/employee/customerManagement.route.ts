@@ -65,6 +65,9 @@ export default function createCustomerManagementRoutes(): express.Router {
    *                 type: string
    *                 description: Customer address
    *             example:
+   *               isEmailVerified:
+   *                 type: boolean
+   *                 description: Whether email is verified (employee can set directly)
    *               fullName: "Nguyễn Văn A"
    *               phone: "0901234567"
    *               password: "password123"

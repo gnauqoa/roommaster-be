@@ -84,6 +84,7 @@ export default function createProfileRoutes(): express.Router {
    *             properties:
    *               name:
    *                 type: string
+   *                 maxLength: 100
    *                 description: Employee name
    *             example:
    *               name: Nguyễn Văn Updated

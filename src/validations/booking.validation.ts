@@ -101,7 +101,7 @@ const updateBooking = {
     checkInDate: Joi.date().iso(),
     checkOutDate: Joi.date().iso().greater(Joi.ref('checkInDate')),
     totalGuests: Joi.number().integer().min(1),
-    status: Joi.string().valid(BookingStatus),
+    status: Joi.string().valid(...Object.values(BookingStatus)),
     rooms: Joi.array().items(
       Joi.object().keys({
         roomId: Joi.string().required()

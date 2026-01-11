@@ -3,7 +3,8 @@ import validate from '@/middlewares/validate';
 import { customerValidation, authValidation } from '@/validations';
 import CustomerController from '@/controllers/customer/customer.controller';
 import { container, TOKENS } from '@/core/container';
-import { AuthService, CustomerService, TokenService } from '@/services';
+import { AuthService, CustomerService, TokenService, EmailService } from '@/services';
+import { authCustomer } from '@/middlewares/auth';
 
 export default function createAuthRoutes(): express.Router {
   const router = express.Router();
@@ -12,7 +13,13 @@ export default function createAuthRoutes(): express.Router {
   const authService = container.resolve<AuthService>(TOKENS.AuthService);
   const customerService = container.resolve<CustomerService>(TOKENS.CustomerService);
   const tokenService = container.resolve<TokenService>(TOKENS.TokenService);
-  const customerController = new CustomerController(authService, customerService, tokenService);
+  const emailService = container.resolve<EmailService>(TOKENS.EmailService);
+  const customerController = new CustomerController(
+    authService,
+    customerService,
+    tokenService,
+    emailService
+  );
 
   /**
    * @swagger
@@ -38,29 +45,33 @@ export default function createAuthRoutes(): express.Router {
    *             required:
    *               - fullName
    *               - phone
+   *               - email
    *               - password
    *             properties:
    *               fullName:
    *                 type: string
+   *                 maxLength: 100
    *                 description: Customer full name
    *               phone:
    *                 type: string
+   *                 maxLength: 20
    *                 description: Customer phone number (unique)
    *               email:
    *                 type: string
    *                 format: email
-   *                 description: Customer email (optional)
-   *               idNumber:
-   *                 type: string
-   *                 description: ID number (CMND/CCCD)
-   *               address:
-   *                 type: string
-   *                 description: Customer address
+   *                 description: Customer email (REQUIRED)
    *               password:
    *                 type: string
    *                 format: password
    *                 minLength: 8
-   *                 description: Customer password
+   *                 description: Customer password (must contain letter and number)
+   *               idNumber:
+   *                 type: string
+   *                 maxLength: 20
+   *                 description: ID number (CMND/CCCD) - optional
+   *               address:
+   *                 type: string
+   *                 description: Customer address - optional
    *             example:
    *               fullName: Nguyễn Văn A
    *               phone: "0901234567"
@@ -317,6 +328,75 @@ export default function createAuthRoutes(): express.Router {
     '/reset-password',
     validate(authValidation.resetPassword),
     customerController.resetPassword
+  );
+
+  /**
+   * @swagger
+   * /customer/auth/verify-email:
+   *   get:
+   *     summary: Verify customer email
+   *     description: Verify customer email address using the token from verification email
+   *     tags: [Customer Auth]
+   *     security: []
+   *     parameters:
+   *       - in: query
+   *         name: token
+   *         required: true
+   *         schema:
+   *           type: string
+   *         description: Email verification token
+   *     responses:
+   *       200:
+   *         description: Email verified successfully
+   *         content:
+   *           application/json:
+   *             schema:
+   *               type: object
+   *               properties:
+   *                 data:
+   *                   type: object
+   *                   properties:
+   *                     message:
+   *                       type: string
+   *       400:
+   *         description: Email already verified or invalid token
+   *       401:
+   *         description: Invalid or expired verification token
+   */
+  router.get('/verify-email', validate(authValidation.verifyEmail), customerController.verifyEmail);
+
+  /**
+   * @swagger
+   * /customer/auth/resend-verification:
+   *   post:
+   *     summary: Resend email verification
+   *     description: Resend verification email to customer
+   *     tags: [Customer Auth]
+   *     security:
+   *       - bearerAuth: []
+   *     responses:
+   *       200:
+   *         description: Verification email sent successfully
+   *         content:
+   *           application/json:
+   *             schema:
+   *               type: object
+   *               properties:
+   *                 data:
+   *                   type: object
+   *                   properties:
+   *                     message:
+   *                       type: string
+   *       400:
+   *         description: Email already verified or no email address
+   *       401:
+   *         description: Unauthorized
+   */
+  router.post(
+    '/resend-verification',
+    authCustomer,
+    validate(authValidation.resendVerification),
+    customerController.resendVerification
   );
 
   return router;

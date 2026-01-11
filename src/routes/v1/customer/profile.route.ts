@@ -83,6 +83,7 @@ export default function createProfileRoutes(): express.Router {
    *             properties:
    *               fullName:
    *                 type: string
+   *                 maxLength: 100
    *                 description: Customer full name
    *               email:
    *                 type: string
@@ -90,6 +91,7 @@ export default function createProfileRoutes(): express.Router {
    *                 description: Customer email
    *               idNumber:
    *                 type: string
+   *                 maxLength: 20
    *                 description: ID number (CMND/CCCD)
    *               address:
    *                 type: string

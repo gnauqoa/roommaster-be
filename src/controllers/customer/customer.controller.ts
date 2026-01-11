@@ -4,21 +4,47 @@ import { Injectable } from '@/core/decorators';
 import { Request, Response } from 'express';
 import httpStatus from 'http-status';
 import catchAsync from '@/utils/catchAsync';
-import { AuthService, CustomerService, TokenService } from '@/services';
+import { AuthService, CustomerService, TokenService, EmailService } from '@/services';
 import exclude from '@/utils/exclude';
 import { sendData, sendNoContent } from '@/utils/responseWrapper';
+import ApiError from '@/utils/ApiError';
+import path from 'path';
 
 @Injectable()
 export class CustomerController {
   constructor(
     private readonly authService: AuthService,
     private readonly customerService: CustomerService,
-    private readonly tokenService: TokenService
+    private readonly tokenService: TokenService,
+    private readonly emailService?: EmailService
   ) {}
 
   register = catchAsync(async (req: Request, res: Response) => {
     const customer = await this.customerService.createCustomer(req.body);
     const tokens = await this.tokenService.generateAuthTokens(customer.id, 'customer');
+
+    // Send verification email if email is provided
+    if (customer.email && this.emailService) {
+      try {
+        const verificationToken = this.tokenService.generateEmailVerificationToken(customer.id);
+
+        // Save verification token to customer first
+        await this.customerService.updateCustomer(customer.id, {
+          emailVerificationToken: verificationToken
+        });
+
+        // Send verification email after token is saved
+        await this.emailService.sendVerificationEmail(
+          customer.email,
+          customer.fullName,
+          verificationToken
+        );
+      } catch (error) {
+        console.error('Failed to prepare verification email:', error);
+        // Don't fail registration if email preparation fails
+      }
+    }
+
     const customerWithoutPassword = exclude(customer, ['password']);
     sendData(res, { customer: customerWithoutPassword, tokens }, httpStatus.CREATED);
   });
@@ -88,6 +114,49 @@ export class CustomerController {
       req.body.newPassword
     );
     sendNoContent(res);
+  });
+
+  verifyEmail = catchAsync(async (req: Request, res: Response) => {
+    await this.authService.verifyEmail(req.query.token as string);
+    res.sendFile(path.join(process.cwd(), 'src/templates/email-verified.html'));
+  });
+
+  resendVerification = catchAsync(async (req: Request, res: Response) => {
+    if (!req.customer?.id) {
+      throw new Error('Customer not authenticated');
+    }
+    const authenticatedCustomer = req.customer;
+
+    const customer = await this.customerService.getCustomerById(authenticatedCustomer.id);
+
+    if (customer.isEmailVerified) {
+      throw new ApiError(httpStatus.BAD_REQUEST, 'Email already verified');
+    }
+
+    if (!customer.email) {
+      throw new ApiError(httpStatus.BAD_REQUEST, 'No email address associated with this account');
+    }
+
+    // Check email service availability first
+    if (!this.emailService) {
+      throw new ApiError(httpStatus.INTERNAL_SERVER_ERROR, 'Email service is not available');
+    }
+
+    const verificationToken = this.tokenService.generateEmailVerificationToken(customer.id);
+
+    // Save verification token to customer first
+    await this.customerService.updateCustomer(customer.id, {
+      emailVerificationToken: verificationToken
+    });
+
+    // Send verification email after token is saved
+    await this.emailService.sendVerificationEmail(
+      customer.email,
+      customer.fullName,
+      verificationToken
+    );
+
+    sendData(res, { message: 'Verification email sent' });
   });
 }
 

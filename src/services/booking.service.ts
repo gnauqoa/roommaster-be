@@ -856,7 +856,8 @@ export class BookingService {
         const newCustomer = await this.prisma.customer.create({
           data: {
             ...input.customer,
-            password: await encryptPassword('12345678') // Default password
+            password: await encryptPassword('12345678'), // Default password
+            isEmailVerified: true
           }
         });
         customerId = newCustomer.id;

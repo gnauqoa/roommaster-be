@@ -109,6 +109,10 @@ export default function createUsageServiceRoutes(): express.Router {
    *                 type: integer
    *                 minimum: 1
    *                 description: Quantity of service consumed
+   *               note:
+   *                 type: string
+   *                 maxLength: 500
+   *                 description: Optional note for service usage
    *             example:
    *               bookingId: "booking_id_123"
    *               bookingRoomId: "booking_room_id_456"

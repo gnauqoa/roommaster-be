@@ -77,7 +77,9 @@ export default function createBookingRoutes(): express.Router {
    *         description: Unauthorized
    *   post:
    *     summary: Create a booking
-   *     description: Create a booking for walk-in customers or phone reservations
+   *     description: |
+   *       Create a booking for walk-in customers or phone reservations.
+   *       Must provide either customerId (existing customer) OR customer object (new customer), not both.
    *     tags: [Employee Bookings]
    *     security:
    *       - bearerAuth: []
@@ -87,12 +89,20 @@ export default function createBookingRoutes(): express.Router {
    *         application/json:
    *           schema:
    *             type: object
+   *             required:
+   *               - rooms
+   *               - checkInDate
+   *               - checkOutDate
+   *               - totalGuests
    *             properties:
    *               customerId:
    *                 type: string
-   *                 description: Existing customer ID
+   *                 description: Existing customer ID (use this OR customer, not both)
    *               customer:
    *                 type: object
+   *                 required:
+   *                   - fullName
+   *                   - phone
    *                 properties:
    *                   fullName:
    *                     type: string
@@ -104,7 +114,7 @@ export default function createBookingRoutes(): express.Router {
    *                     type: string
    *                   address:
    *                     type: string
-   *                 description: New customer details (if customerId not provided)
+   *                 description: New customer details (use this OR customerId, not both)
    *               rooms:
    *                 type: array
    *                 items:
@@ -123,6 +133,7 @@ export default function createBookingRoutes(): express.Router {
    *                 format: date-time
    *               totalGuests:
    *                 type: integer
+   *                 minimum: 1
    *     responses:
    *       201:
    *         description: Booking created successfully
@@ -149,7 +160,10 @@ export default function createBookingRoutes(): express.Router {
    * /employee/bookings/check-in:
    *   post:
    *     summary: Check in specific booking rooms with customer assignments
-   *     description: Check in one or more booking rooms and assign customers to each room
+   *     description: |
+   *       Check in one or more booking rooms and assign customers to each room.
+   *       **Important:** All booking rooms must be in CONFIRMED status (not PENDING).
+   *       Rooms must also be in AVAILABLE or RESERVED status.
    *     tags: [Employee Bookings]
    *     security:
    *       - bearerAuth: []
@@ -289,7 +303,12 @@ export default function createBookingRoutes(): express.Router {
    *       404:
    *         $ref: '#/components/responses/NotFound'
    */
-  router.get('/:id', authorize('read', 'Booking'), employeeBookingController.getBooking);
+  router.get(
+    '/:id',
+    authorize('read', 'Booking'),
+    validate(bookingValidation.getBooking),
+    employeeBookingController.getBooking
+  );
 
   /**
    * @swagger
