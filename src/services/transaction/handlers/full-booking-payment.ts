@@ -1,3 +1,4 @@
+import dayjs from 'dayjs';
 import {
   PrismaClient,
   Prisma,
@@ -74,36 +75,45 @@ export async function processFullBookingPayment(
     // STEP 2: Build transaction details
     const transactionDetails: TransactionDetailData[] = [];
 
-    // For DEPOSIT transactions, pay depositRequired amount
-    if (transactionType === TransactionType.DEPOSIT) {
-      const depositRequired = new Prisma.Decimal(booking.depositRequired);
+    // Helper to calculate subtotalRoom
+    const getSubtotalRoom = (room: any) => {
+      const nights = dayjs(room.checkOutDate).diff(dayjs(room.checkInDate), 'day');
+      return new Prisma.Decimal(room.pricePerNight).mul(nights);
+    };
 
-      // Distribute deposit across rooms proportionally
-      const totalRoomAmount = booking.bookingRooms.reduce(
-        (sum, room) => sum.add(room.subtotalRoom),
-        new Prisma.Decimal(0)
-      );
+    if (transactionType === TransactionType.DEPOSIT) {
+      // Calculate total room amount (this is now the deposit required for single payment flow)
+      // const totalRoomAmount = booking.bookingRooms.reduce(
+      //   (sum, room) => sum.add(getSubtotalRoom(room)),
+      //   new Prisma.Decimal(0)
+      // );
+
+      // In single payment flow, deposit is 100% of total amount
+      // const depositRequired = totalRoomAmount;
 
       for (const room of booking.bookingRooms) {
-        // Calculate proportional deposit for this room
-        const roomProportion = new Prisma.Decimal(room.subtotalRoom).div(totalRoomAmount);
-        const roomDeposit = depositRequired.mul(roomProportion);
+        // Calculate proportional deposit for this room (which is just the room price now)
+        const subtotal = getSubtotalRoom(room);
+        // const roomProportion = subtotal.div(totalRoomAmount);
+        // const roomDeposit = depositRequired.mul(roomProportion);
+        // Since depositRequired == totalRoomAmount, roomDeposit == subtotal
 
         transactionDetails.push({
           bookingRoomId: room.id,
-          baseAmount: roomDeposit.toNumber(),
+          baseAmount: subtotal.toNumber(),
           discountAmount: 0,
-          amount: roomDeposit.toNumber()
+          amount: subtotal.toNumber()
         });
       }
     } else {
       // For non-DEPOSIT transactions, pay all rooms and services
       for (const room of booking.bookingRooms) {
+        const subtotal = getSubtotalRoom(room);
         transactionDetails.push({
           bookingRoomId: room.id,
-          baseAmount: room.subtotalRoom.toNumber(),
+          baseAmount: subtotal.toNumber(),
           discountAmount: 0,
-          amount: room.subtotalRoom.toNumber()
+          amount: subtotal.toNumber()
         });
 
         for (const service of room.serviceUsages) {

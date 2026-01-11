@@ -5,6 +5,7 @@ import createBookingRoute from './booking.route';
 import createUsageServiceRoute from './usage-service.route';
 import createPromotionRoute from './promotion.route';
 import createRoomRoute from './room.route';
+import createCustomerRankRoutes from './rank.route';
 
 export default function createCustomerRoutes(): express.Router {
   const router = express.Router();
@@ -15,6 +16,7 @@ export default function createCustomerRoutes(): express.Router {
   router.use('/service', createUsageServiceRoute());
   router.use('/promotions', createPromotionRoute());
   router.use('/rooms', createRoomRoute());
+  router.use('/ranks', createCustomerRankRoutes());
 
   return router;
 }

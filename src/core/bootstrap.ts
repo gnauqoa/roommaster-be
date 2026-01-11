@@ -28,6 +28,7 @@ import PricingCalculatorService from '@/services/pricing-calculator.service';
 import CaslService from '@/services/casl.service';
 import TemplateService from '@/services/template.service';
 import EmailService from '@/services/email.service';
+import CustomerRankService from '@/services/customer-rank.service';
 
 /**
  * Bootstrap the application by registering all dependencies
@@ -193,6 +194,13 @@ export function bootstrap(): void {
   container.registerFactory(
     TOKENS.PricingCalculatorService,
     (...args: unknown[]) => new PricingCalculatorService(args[0] as PrismaClient),
+    [TOKENS.PrismaClient]
+  );
+
+  // Register CustomerRankService
+  container.registerFactory(
+    TOKENS.CustomerRankService,
+    (...args: unknown[]) => new CustomerRankService(args[0] as PrismaClient),
     [TOKENS.PrismaClient]
   );
 

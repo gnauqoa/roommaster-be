@@ -55,7 +55,13 @@ const PERMISSIONS = {
       action: 'access',
       description: 'System Settings'
     },
-    { name: 'screen:role', subject: 'Role', action: 'access', description: 'Role Management' }
+    { name: 'screen:role', subject: 'Role', action: 'access', description: 'Role Management' },
+    {
+      name: 'screen:rank',
+      subject: 'CustomerRank',
+      action: 'access',
+      description: 'Customer Rank Management'
+    }
   ],
 
   // ============ ACTION PERMISSIONS ============
@@ -126,7 +132,13 @@ const PERMISSIONS = {
     { name: 'role:create', subject: 'Role', action: 'create', screen: 'screen:role' },
     { name: 'role:read', subject: 'Role', action: 'read', screen: 'screen:role' },
     { name: 'role:update', subject: 'Role', action: 'update', screen: 'screen:role' },
-    { name: 'role:delete', subject: 'Role', action: 'delete', screen: 'screen:role' }
+    { name: 'role:delete', subject: 'Role', action: 'delete', screen: 'screen:role' },
+
+    // Customer Rank actions
+    { name: 'rank:create', subject: 'CustomerRank', action: 'create', screen: 'screen:rank' },
+    { name: 'rank:read', subject: 'CustomerRank', action: 'read', screen: 'screen:rank' },
+    { name: 'rank:update', subject: 'CustomerRank', action: 'update', screen: 'screen:rank' },
+    { name: 'rank:delete', subject: 'CustomerRank', action: 'delete', screen: 'screen:rank' }
   ]
 };
 

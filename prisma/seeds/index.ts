@@ -10,6 +10,7 @@ import { seedActivities } from './activity.seed';
 import { seedRBAC } from './permissions.seed';
 import { seedCalendarEvents } from './calendar-event.seed';
 import { seedPricingRules } from './pricing-rule.seed';
+import { seedCustomerRanks } from './customer-rank.seed';
 import { APP_SETTING_KEYS } from '../../src/constants/app-settings.constant';
 
 const prisma = new PrismaClient();
@@ -58,6 +59,7 @@ const main = async () => {
     await seedServices(prisma);
     await seedPromotions(prisma);
     await seedCustomerPromotions(prisma);
+    await seedCustomerRanks(prisma);
     await seedCalendarEvents(prisma);
     await seedPricingRules(prisma);
 
@@ -121,6 +123,7 @@ const main = async () => {
       prisma.service.count(),
       prisma.promotion.count(),
       prisma.customerPromotion.count(),
+      prisma.customerRank.count(),
       prisma.calendarEvent.count(),
       prisma.pricingRule.count(),
       prisma.booking.count(),
@@ -139,11 +142,12 @@ const main = async () => {
     console.log(`  - Services: ${counts[8]}`);
     console.log(`  - Promotions: ${counts[9]}`);
     console.log(`  - Customer Promotions: ${counts[10]}`);
-    console.log(`  - Calendar Events: ${counts[11]}`);
-    console.log(`  - Pricing Rules: ${counts[12]}`);
-    console.log(`  - Bookings: ${counts[13]}`);
-    console.log(`  - Booking Rooms: ${counts[14]}`);
-    console.log(`  - Activities: ${counts[15]}`);
+    console.log(`  - Customer Ranks: ${counts[11]}`);
+    console.log(`  - Calendar Events: ${counts[12]}`);
+    console.log(`  - Pricing Rules: ${counts[13]}`);
+    console.log(`  - Bookings: ${counts[14]}`);
+    console.log(`  - Booking Rooms: ${counts[15]}`);
+    console.log(`  - Activities: ${counts[16]}`);
   } catch (error) {
     console.error('❌ Error during seeding:', error);
     throw error;

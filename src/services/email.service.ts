@@ -1,5 +1,6 @@
 import nodemailer, { Transporter } from 'nodemailer';
-import { PrismaClient } from '@prisma/client';
+import dayjs from 'dayjs';
+import { PrismaClient, Prisma } from '@prisma/client';
 import { Injectable } from '@/core/decorators';
 import config from '@/config/env';
 import TemplateService from './template.service';
@@ -92,6 +93,13 @@ export class EmailService {
         return;
       }
 
+      // Calculate total amount from rooms
+      const totalAmount = booking.bookingRooms.reduce((sum, br) => {
+        const nights = dayjs(br.checkOutDate).diff(dayjs(br.checkInDate), 'day');
+        const roomPrice = br.pricePerNight.mul(nights);
+        return sum.add(roomPrice);
+      }, new Prisma.Decimal(0));
+
       // Prepare template data
       const templateData: BookingConfirmationData = {
         bookingCode: booking.bookingCode,
@@ -103,23 +111,28 @@ export class EmailService {
         checkInDate: booking.checkInDate,
         checkOutDate: booking.checkOutDate,
         totalGuests: booking.totalGuests,
-        bookingRooms: booking.bookingRooms.map((br) => ({
-          room: {
-            roomNumber: br.room.roomNumber,
-            floor: br.room.floor
-          },
-          roomType: {
-            name: br.roomType.name,
-            capacity: br.roomType.capacity
-          },
-          pricePerNight: br.pricePerNight.toString(),
-          checkInDate: br.checkInDate,
-          checkOutDate: br.checkOutDate,
-          subtotalRoom: br.subtotalRoom.toString(),
-          totalAmount: br.totalAmount.toString()
-        })),
-        totalAmount: booking.totalAmount.toString(),
-        depositRequired: booking.depositRequired.toString(),
+        bookingRooms: booking.bookingRooms.map((br) => {
+          const nights = dayjs(br.checkOutDate).diff(dayjs(br.checkInDate), 'day');
+          const subtotalRoom = br.pricePerNight.mul(nights);
+
+          return {
+            room: {
+              roomNumber: br.room.roomNumber,
+              floor: br.room.floor
+            },
+            roomType: {
+              name: br.roomType.name,
+              capacity: br.roomType.capacity
+            },
+            pricePerNight: br.pricePerNight.toString(),
+            checkInDate: br.checkInDate,
+            checkOutDate: br.checkOutDate,
+            subtotalRoom: subtotalRoom.toString(),
+            totalAmount: subtotalRoom.toString()
+          };
+        }),
+        totalAmount: totalAmount.toString(),
+        depositRequired: totalAmount.toString(), // Single payment means 100% deposit/payment
         isPaid: booking.status === 'CONFIRMED'
       };
 
