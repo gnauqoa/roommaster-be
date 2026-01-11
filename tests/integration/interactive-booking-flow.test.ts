@@ -177,8 +177,6 @@ describe('Interactive Booking Flow Test', () => {
       status: bookingDetails?.status,
       totalAmount: Number(bookingDetails?.totalAmount),
       depositRequired: Number(bookingDetails?.depositRequired),
-      balance: Number(bookingDetails?.balance),
-      totalPaid: Number(bookingDetails?.totalPaid),
       rooms: bookingRoomIds.length,
       checkInDate: checkInDate.toISOString(),
       checkOutDate: checkOutDate.toISOString()
@@ -205,15 +203,13 @@ describe('Interactive Booking Flow Test', () => {
 
       const updatedBooking = await prisma.booking.findUnique({
         where: { id: bookingId },
-        select: { status: true, balance: true, totalPaid: true, depositRequired: true }
+        select: { status: true, depositRequired: true }
       });
 
       expect(updatedBooking).toBeDefined();
       logStep('STEP 2', 'Booking Status After Deposit:', {
         status: updatedBooking?.status,
-        depositRequired: Number(updatedBooking?.depositRequired),
-        totalPaid: Number(updatedBooking?.totalPaid),
-        balance: Number(updatedBooking?.balance)
+        depositRequired: Number(updatedBooking?.depositRequired)
       });
 
       expect(depositResult.transaction.status).toBe('COMPLETED');
@@ -309,10 +305,7 @@ describe('Interactive Booking Flow Test', () => {
 
       expect(updatedBooking).toBeDefined();
       logStep('STEP 5', 'Booking Status After Partial Payment:', {
-        totalPaid: Number(updatedBooking?.totalPaid),
-        balance: Number(updatedBooking?.balance),
-        paidRooms: updatedBooking?.bookingRooms.filter((br) => Number(br.balance) === 0).length,
-        unpaidRooms: updatedBooking?.bookingRooms.filter((br) => Number(br.balance) > 0).length,
+        totalRooms: updatedBooking?.bookingRooms.length,
         servicesPaid: updatedBooking?.serviceUsages.filter((su) => su.status === 'COMPLETED')
           .length,
         servicesUnpaid: updatedBooking?.serviceUsages.filter((su) => su.status !== 'COMPLETED')
@@ -388,19 +381,15 @@ describe('Interactive Booking Flow Test', () => {
 
       const finalBooking = await prisma.booking.findUnique({
         where: { id: bookingId },
-        select: { balance: true, totalPaid: true, totalAmount: true }
+        select: { totalAmount: true }
       });
 
       expect(finalBooking).toBeDefined();
       logStep('STEP 7', 'Final Booking Status:', {
-        totalAmount: Number(finalBooking?.totalAmount),
-        totalPaid: Number(finalBooking?.totalPaid),
-        balance: Number(finalBooking?.balance),
-        fullyPaid: Number(finalBooking?.balance) === 0
+        totalAmount: Number(finalBooking?.totalAmount)
       });
 
       expect(fullPayment.transaction.status).toBe('COMPLETED');
-      expect(Number(finalBooking?.balance)).toBe(0);
     }
 
     // ==================== STEP 8: Check-out ====================
@@ -448,8 +437,6 @@ describe('Interactive Booking Flow Test', () => {
     console.log(`\nBooking Code: ${finalBooking?.bookingCode}`);
     console.log(`Status: ${finalBooking?.status}`);
     console.log(`Total Amount: ${finalBooking?.totalAmount} VND`);
-    console.log(`Total Paid: ${finalBooking?.totalPaid} VND`);
-    console.log(`Balance: ${finalBooking?.balance} VND`);
     console.log(`Rooms: ${finalBooking?.bookingRooms.length}`);
     console.log(`Services: ${finalBooking?.serviceUsages.length}`);
     console.log(`Transactions: ${finalBooking?.transactions.length}`);

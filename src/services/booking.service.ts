@@ -191,6 +191,9 @@ export class BookingService {
       const subtotal = Number(roomType.basePrice) * nights;
       totalAmount += subtotal;
 
+      // Note: 'balance' field was removed from BookingRoom schema
+      // Balance tracking is now handled at Booking level through transactions
+      // The initial balance would have been: subtotal (unpaid amount)
       return {
         roomId: room.id,
         roomTypeId: roomType.id,
