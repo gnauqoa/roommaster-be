@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeAll, afterAll, beforeEach } from '@jest/globals';
-import { PrismaClient, EventType, AdjustmentType } from '@prisma/client';
+import { PrismaClient, AdjustmentType } from '@prisma/client';
 import PricingCalculatorService from '@/services/pricing-calculator.service';
 import { LexoRank } from 'lexorank';
 
@@ -26,7 +26,6 @@ describe('PricingCalculatorService', () => {
     const event = await prisma.calendarEvent.create({
       data: {
         name: 'Test Holiday',
-        type: EventType.HOLIDAY,
         startDate: new Date('2026-02-01'),
         endDate: new Date('2026-02-07')
       }

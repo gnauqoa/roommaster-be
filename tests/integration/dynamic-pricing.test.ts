@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeAll, afterAll } from '@jest/globals';
-import { PrismaClient, EventType } from '@prisma/client';
+import { PrismaClient } from '@prisma/client';
 import PricingCalculatorService from '@/services/pricing-calculator.service';
 import PricingRuleService from '@/services/pricing-rule.service';
 
@@ -28,7 +28,6 @@ describe('Dynamic Pricing Integration Tests', () => {
     const tetEvent = await prisma.calendarEvent.create({
       data: {
         name: 'Integration Test Tết',
-        type: EventType.HOLIDAY,
         startDate: new Date('2026-02-17'),
         endDate: new Date('2026-02-23')
       }
@@ -38,7 +37,6 @@ describe('Dynamic Pricing Integration Tests', () => {
     const summerEvent = await prisma.calendarEvent.create({
       data: {
         name: 'Integration Test Summer',
-        type: EventType.SEASONAL,
         startDate: new Date('2026-06-01'),
         endDate: new Date('2026-08-31')
       }

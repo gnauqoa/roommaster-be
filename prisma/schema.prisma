@@ -366,7 +366,7 @@ model ServiceUsage {
   totalPaid   Decimal  @default(0) @db.Decimal(10, 2) // Amount paid so far
   // balance = totalPrice - totalPaid (calculated field, not stored)
 
-  note   String? @db.Text // Note/reason for penalty/surcharge or service usage details
+  note String? @db.Text // Note/reason for penalty/surcharge or service usage details
 
   status ServiceUsageStatus @default(PENDING)
 
@@ -517,6 +517,11 @@ model CalendarEvent {
 
   startDate DateTime
   endDate   DateTime
+
+  // RRule for recurring events (RFC 5545 format)
+  // Example: "FREQ=YEARLY;BYMONTH=2;BYMONTHDAY=17" for annual event on Feb 17
+  // If null, event is non-recurring
+  rrule String?
 
   // Quan hệ ngược
   pricingRules PricingRule[]

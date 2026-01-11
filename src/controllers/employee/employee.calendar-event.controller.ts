@@ -30,9 +30,6 @@ export class EmployeeCalendarEventController {
    *                 type: string
    *               description:
    *                 type: string
-   *               type:
-   *                 type: string
-   *                 enum: [HOLIDAY, SEASONAL, SPECIAL_EVENT]
    *               startDate:
    *                 type: string
    *                 format: date-time
@@ -58,11 +55,6 @@ export class EmployeeCalendarEventController {
    *     tags: [Employee - Calendar Events]
    *     parameters:
    *       - in: query
-   *         name: type
-   *         schema:
-   *           type: string
-   *           enum: [HOLIDAY, SEASONAL, SPECIAL_EVENT]
-   *       - in: query
    *         name: startDate
    *         schema:
    *           type: string
@@ -77,10 +69,9 @@ export class EmployeeCalendarEventController {
    *         description: List of calendar events
    */
   getEvents = catchAsync(async (req: Request, res: Response) => {
-    const { type, startDate, endDate } = req.query;
+    const { startDate, endDate } = req.query;
 
     const where: any = {};
-    if (type) where.type = type;
     if (startDate || endDate) {
       where.AND = [];
       if (startDate) where.AND.push({ endDate: { gte: new Date(startDate as string) } });
