@@ -200,8 +200,6 @@ export class BookingService {
         checkInDate: checkIn.toDate(),
         checkOutDate: checkOut.toDate(),
         pricePerNight: roomType.basePrice,
-        subtotalRoom: subtotal,
-        totalAmount: subtotal,
         status: BookingStatus.PENDING
       };
     });
