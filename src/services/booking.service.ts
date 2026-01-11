@@ -744,6 +744,7 @@ export class BookingService {
 
   /**
    * Update booking details
+   * Validates room availability if dates are changed
    */
   async updateBooking(id: string, updateBody: any) {
     const booking = await this.getBookingById(id);
@@ -754,6 +755,65 @@ export class BookingService {
       booking.status === BookingStatus.CHECKED_OUT
     ) {
       throw new ApiError(httpStatus.BAD_REQUEST, 'Cannot update cancelled or checked-out booking');
+    }
+
+    // Check if dates are being changed
+    const datesChanged = updateBody.checkInDate || updateBody.checkOutDate;
+
+    if (datesChanged) {
+      // Determine the new date range
+      const newCheckIn = updateBody.checkInDate
+        ? dayjs(updateBody.checkInDate)
+        : dayjs(booking.checkInDate);
+      const newCheckOut = updateBody.checkOutDate
+        ? dayjs(updateBody.checkOutDate)
+        : dayjs(booking.checkOutDate);
+
+      // Validate date range
+      if (newCheckOut.isBefore(newCheckIn) || newCheckOut.isSame(newCheckIn)) {
+        throw new ApiError(httpStatus.BAD_REQUEST, 'Check-out date must be after check-in date');
+      }
+
+      // Validate room availability for each booking room in the new date range
+      for (const bookingRoom of booking.bookingRooms) {
+        const conflicts = await this.prisma.bookingRoom.findMany({
+          where: {
+            AND: [
+              { roomId: bookingRoom.roomId },
+              { id: { not: bookingRoom.id } }, // Exclude current booking room
+              {
+                status: {
+                  in: [BookingStatus.PENDING, BookingStatus.CONFIRMED, BookingStatus.CHECKED_IN]
+                }
+              },
+              { checkInDate: { lt: newCheckOut.toDate() } },
+              { checkOutDate: { gt: newCheckIn.toDate() } }
+            ]
+          },
+          include: {
+            room: true
+          }
+        });
+
+        if (conflicts.length > 0) {
+          const conflict = conflicts[0];
+          throw new ApiError(
+            httpStatus.CONFLICT,
+            `Room ${bookingRoom.room.roomNumber} is already booked from ${dayjs(
+              conflict.checkInDate
+            ).format('YYYY-MM-DD')} to ${dayjs(conflict.checkOutDate).format('YYYY-MM-DD')}`
+          );
+        }
+      }
+
+      // Update BookingRoom dates to match new Booking dates
+      await this.prisma.bookingRoom.updateMany({
+        where: { bookingId: id },
+        data: {
+          checkInDate: newCheckIn.toDate(),
+          checkOutDate: newCheckOut.toDate()
+        }
+      });
     }
 
     const updatedBooking = await this.prisma.booking.update({
