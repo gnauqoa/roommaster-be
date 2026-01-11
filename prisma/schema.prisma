@@ -24,6 +24,7 @@ enum ActivityType {
   CREATE_PROMOTION
   UPDATE_PROMOTION
   CLAIM_PROMOTION
+  UPDATE_CUSTOMER_RANK
 }
 
 enum ServiceUsageStatus {
@@ -136,6 +137,11 @@ model Customer {
   password String
   imageUrl String?
 
+  // VIP Rank System
+  rankId     String?
+  rank       CustomerRank? @relation(fields: [rankId], references: [id])
+  totalSpent Decimal       @default(0) @db.Decimal(10, 2) // Cached total spending
+
   bookings         Booking[]
   bookingCustomers BookingCustomer[]
 
@@ -145,6 +151,7 @@ model Customer {
   customerPromotions CustomerPromotion[]
 
   @@index([phone])
+  @@index([rankId])
 }
 
 model RoomType {
@@ -570,6 +577,28 @@ model PricingRule {
   updatedAt DateTime @updatedAt
 
   @@index([rank]) // Quan trọng để query sort nhanh
+}
+
+// ==================== CUSTOMER RANK SYSTEM ====================
+
+model CustomerRank {
+  id          String  @id @default(cuid())
+  name        String  @unique // "VIP1", "VIP2", "VIP3", "VIP4", "VIP5"
+  displayName String // "Thành viên Đồng", "Thành viên Bạc", etc.
+  description String?
+
+  minSpending Decimal  @db.Decimal(10, 2) // Minimum spending to achieve this rank
+  maxSpending Decimal? @db.Decimal(10, 2) // Max spending (null for highest tier)
+
+  benefits String? @db.Text // JSON string describing benefits
+  color    String? // Hex color for UI display
+
+  customers Customer[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([minSpending])
 }
 
 model RolePermission {
