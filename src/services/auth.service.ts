@@ -197,6 +197,9 @@ export class AuthService {
         }
       });
     } catch (error) {
+      if (error instanceof ApiError) {
+        throw error;
+      }
       throw new ApiError(httpStatus.UNAUTHORIZED, 'Email verification failed');
     }
   }
