@@ -27,19 +27,22 @@ export class CustomerController {
       try {
         const verificationToken = this.tokenService.generateEmailVerificationToken(customer.id);
 
-        // Save verification token to customer
+        // Save verification token to customer first
         await this.customerService.updateCustomer(customer.id, {
           emailVerificationToken: verificationToken
         });
 
-        await this.emailService.sendVerificationEmail(
+        // Send email without awaiting (fire-and-forget) to avoid blocking the response
+        this.emailService.sendVerificationEmail(
           customer.email,
           customer.fullName,
           verificationToken
-        );
+        ).catch((error) => {
+          console.error('Failed to send verification email:', error);
+        });
       } catch (error) {
-        console.error('Failed to send verification email:', error);
-        // Don't fail registration if email sending fails
+        console.error('Failed to prepare verification email:', error);
+        // Don't fail registration if email preparation fails
       }
     }
 
@@ -137,22 +140,24 @@ export class CustomerController {
 
     const verificationToken = this.tokenService.generateEmailVerificationToken(customer.id);
 
+    // Save verification token to customer first
     await this.customerService.updateCustomer(customer.id, {
       emailVerificationToken: verificationToken
     });
 
-    // Send verification email
+    // Send verification email without awaiting (fire-and-forget)
     if (!this.emailService) {
       throw new ApiError(httpStatus.INTERNAL_SERVER_ERROR, 'Email service is not available');
     }
 
-    const emailService = this.emailService;
-
-    await emailService.sendVerificationEmail(
+    this.emailService.sendVerificationEmail(
       customer.email,
       customer.fullName,
       verificationToken
-    );
+    ).catch((error) => {
+      console.error('Failed to send verification email:', error);
+    });
+
     sendData(res, { message: 'Verification email sent' });
   });
 }
