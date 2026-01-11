@@ -142,14 +142,17 @@ export class CustomerController {
     });
 
     // Send verification email
-    if (this.emailService) {
-      await this.emailService.sendVerificationEmail(
-        customer.email,
-        customer.fullName,
-        verificationToken
-      );
+    if (!this.emailService) {
+      throw new ApiError(httpStatus.INTERNAL_SERVER_ERROR, 'Email service is not available');
     }
 
+    const emailService = this.emailService;
+
+    await emailService.sendVerificationEmail(
+      customer.email,
+      customer.fullName,
+      verificationToken
+    );
     sendData(res, { message: 'Verification email sent' });
   });
 }
