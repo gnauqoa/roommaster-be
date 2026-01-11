@@ -893,6 +893,22 @@ export class BookingService {
       );
     }
 
+    // 5b. Additional check: Room must be AVAILABLE for immediate occupancy
+    // CLEANING/OCCUPIED status means room is not ready even if no booking conflict
+    const currentRoomStatus = availability.room.status;
+    if (currentRoomStatus === RoomStatus.CLEANING) {
+      throw new ApiError(
+        httpStatus.CONFLICT,
+        `Room ${availability.room.roomNumber} is currently being cleaned. Please wait until cleaning is complete.`
+      );
+    }
+    if (currentRoomStatus === RoomStatus.OCCUPIED) {
+      // This shouldn't happen if data is consistent, but check as safety net
+      throw new ApiError(
+        httpStatus.CONFLICT,
+        `Room ${availability.room.roomNumber} is currently occupied.`
+      );
+    }
     // 6. Calculate price adjustment for remaining nights
     const remainingNights = Math.max(dayjs(checkToDate).diff(dayjs(), 'day'), 1);
     const oldPricePerNight = Number(bookingRoom.pricePerNight);
