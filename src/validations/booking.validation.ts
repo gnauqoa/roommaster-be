@@ -138,6 +138,16 @@ const createBookingEmployee = {
     .xor('customerId', 'customer')
 };
 
+const changeRoom = {
+  params: Joi.object().keys({
+    bookingRoomId: Joi.string().required()
+  }),
+  body: Joi.object().keys({
+    newRoomId: Joi.string().required(),
+    reason: Joi.string().max(500).optional()
+  })
+};
+
 export default {
   createBooking,
   checkIn,
@@ -148,5 +158,6 @@ export default {
   getBooking,
   cancelBooking,
   updateBooking,
-  createBookingEmployee
+  createBookingEmployee,
+  changeRoom
 };

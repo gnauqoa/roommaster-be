@@ -385,5 +385,80 @@ export default function createBookingRoutes(): express.Router {
     employeeBookingController.cancelBooking
   );
 
+  /**
+   * @swagger
+   * /employee/bookings/rooms/{bookingRoomId}/change-room:
+   *   post:
+   *     summary: Change room for a checked-in booking
+   *     description: Transfer a customer from their current room to a new available room. Only works for bookings that are currently checked in. The new room must be available for the remaining duration of the stay.
+   *     tags: [Employee Bookings]
+   *     security:
+   *       - bearerAuth: []
+   *     parameters:
+   *       - in: path
+   *         name: bookingRoomId
+   *         required: true
+   *         schema:
+   *           type: string
+   *         description: The booking room ID (not the room ID)
+   *     requestBody:
+   *       required: true
+   *       content:
+   *         application/json:
+   *           schema:
+   *             type: object
+   *             required:
+   *               - newRoomId
+   *             properties:
+   *               newRoomId:
+   *                 type: string
+   *                 description: The ID of the new room to transfer to
+   *               reason:
+   *                 type: string
+   *                 maxLength: 500
+   *                 description: Optional reason for the room change
+   *           example:
+   *             newRoomId: "room-456"
+   *             reason: "Customer requested quieter room"
+   *     responses:
+   *       200:
+   *         description: Room changed successfully
+   *         content:
+   *           application/json:
+   *             schema:
+   *               type: object
+   *               properties:
+   *                 data:
+   *                   type: object
+   *                   properties:
+   *                     bookingRoom:
+   *                       type: object
+   *                       description: Updated booking room with new room details
+   *                     priceAdjustment:
+   *                       type: object
+   *                       properties:
+   *                         oldPricePerNight:
+   *                           type: number
+   *                         newPricePerNight:
+   *                           type: number
+   *                         remainingNights:
+   *                           type: integer
+   *                         priceDifference:
+   *                           type: number
+   *                           description: Positive for upgrade, negative for downgrade
+   *       400:
+   *         description: Invalid request - booking not checked in or same room
+   *       404:
+   *         description: Booking room or new room not found
+   *       409:
+   *         description: New room is not available for the remaining stay period
+   */
+  router.post(
+    '/rooms/:bookingRoomId/change-room',
+    authorize('update', 'Booking'),
+    validate(bookingValidation.changeRoom),
+    employeeBookingController.changeRoom
+  );
+
   return router;
 }
