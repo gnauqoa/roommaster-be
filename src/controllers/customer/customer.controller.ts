@@ -138,6 +138,11 @@ export class CustomerController {
       throw new ApiError(httpStatus.BAD_REQUEST, 'No email address associated with this account');
     }
 
+    // Check email service availability first
+    if (!this.emailService) {
+      throw new ApiError(httpStatus.INTERNAL_SERVER_ERROR, 'Email service is not available');
+    }
+
     const verificationToken = this.tokenService.generateEmailVerificationToken(customer.id);
 
     // Save verification token to customer first
@@ -146,10 +151,6 @@ export class CustomerController {
     });
 
     // Send verification email without awaiting (fire-and-forget)
-    if (!this.emailService) {
-      throw new ApiError(httpStatus.INTERNAL_SERVER_ERROR, 'Email service is not available');
-    }
-
     this.emailService.sendVerificationEmail(
       customer.email,
       customer.fullName,
