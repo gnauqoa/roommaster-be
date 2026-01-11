@@ -57,7 +57,7 @@ jobs:
             exit 1
           fi
           echo "✅ Build structure verified"
-          ls -la build/src/
+          ls -la build/
 
       - name: Create logs directory
         run: mkdir -p logs
