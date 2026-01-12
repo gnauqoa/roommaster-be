@@ -17,6 +17,8 @@ import createAppSettingRoute from './app-setting.route';
 import createPricingRuleRoutes from './pricing-rule.route';
 import createCalendarEventRoutes from './calendar-event.route';
 import createEmployeeCustomerRankRoutes from './customer-rank.route';
+import createRoleRoutes from './role.route';
+import createPermissionRoutes from './permission.route';
 
 export default function createEmployeeRoutes(): express.Router {
   const router = express.Router();
@@ -39,6 +41,8 @@ export default function createEmployeeRoutes(): express.Router {
   router.use('/pricing-rules', createPricingRuleRoutes());
   router.use('/calendar-events', createCalendarEventRoutes());
   router.use('/ranks', createEmployeeCustomerRankRoutes());
+  router.use('/roles', createRoleRoutes());
+  router.use('/permissions', createPermissionRoutes());
 
   return router;
 }
