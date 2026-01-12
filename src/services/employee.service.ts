@@ -9,11 +9,13 @@ export interface CreateEmployeeData {
   username: string;
   password: string;
   roleId?: string;
+  role?: string; // Can accept role name and convert to roleId
 }
 
 export interface UpdateEmployeeData {
   name?: string;
   roleId?: string;
+  role?: string; // Can accept role name and convert to roleId
 }
 
 export interface EmployeeFilters {
@@ -50,13 +52,34 @@ export class EmployeeService {
     // Hash password
     const hashedPassword = await encryptPassword(employeeData.password);
 
+    // If role (string) is provided, convert it to roleId
+    const createPayload: any = {
+      name: employeeData.name,
+      username: employeeData.username,
+      password: hashedPassword,
+      roleId: employeeData.roleId
+    };
+
+    if (employeeData.role && !employeeData.roleId) {
+      const role = await this.prisma.role.findUnique({
+        where: { name: employeeData.role }
+      });
+      if (!role) {
+        throw new ApiError(httpStatus.BAD_REQUEST, `Role '${employeeData.role}' not found`);
+      }
+      createPayload.roleId = role.id;
+    }
+
     // Create employee
     const employee = await this.prisma.employee.create({
-      data: {
-        name: employeeData.name,
-        username: employeeData.username,
-        password: hashedPassword,
-        roleId: employeeData.roleId
+      data: createPayload,
+      include: {
+        roleRef: {
+          select: {
+            id: true,
+            name: true
+          }
+        }
       }
     });
 
@@ -141,7 +164,15 @@ export class EmployeeService {
    */
   async getEmployeeById(employeeId: string): Promise<Employee> {
     const employee = await this.prisma.employee.findUnique({
-      where: { id: employeeId }
+      where: { id: employeeId },
+      include: {
+        roleRef: {
+          select: {
+            id: true,
+            name: true
+          }
+        }
+      }
     });
 
     if (!employee) {
@@ -171,9 +202,30 @@ export class EmployeeService {
   async updateEmployee(employeeId: string, updateData: UpdateEmployeeData): Promise<Employee> {
     await this.getEmployeeById(employeeId);
 
+    // If role (string) is provided, convert it to roleId
+    const updatePayload: any = { ...updateData };
+    if (updateData.role && !updateData.roleId) {
+      const role = await this.prisma.role.findUnique({
+        where: { name: updateData.role }
+      });
+      if (!role) {
+        throw new ApiError(httpStatus.BAD_REQUEST, `Role '${updateData.role}' not found`);
+      }
+      updatePayload.roleId = role.id;
+      delete updatePayload.role; // Remove role string from payload
+    }
+
     const updatedEmployee = await this.prisma.employee.update({
       where: { id: employeeId },
-      data: updateData
+      data: updatePayload,
+      include: {
+        roleRef: {
+          select: {
+            id: true,
+            name: true
+          }
+        }
+      }
     });
 
     return updatedEmployee;
