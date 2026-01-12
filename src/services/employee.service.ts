@@ -189,6 +189,17 @@ export class EmployeeService {
   async updateEmployee(employeeId: string, updateData: UpdateEmployeeData): Promise<Employee> {
     await this.getEmployeeById(employeeId);
 
+    // Validate role exists if roleId is being updated
+    if (updateData.roleId) {
+      const roleExists = await this.prisma.role.findUnique({
+        where: { id: updateData.roleId }
+      });
+
+      if (!roleExists) {
+        throw new ApiError(httpStatus.BAD_REQUEST, 'Role not found');
+      }
+    }
+
     const updatedEmployee = await this.prisma.employee.update({
       where: { id: employeeId },
       data: updateData
