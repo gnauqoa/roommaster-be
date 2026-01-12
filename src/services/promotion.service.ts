@@ -236,24 +236,48 @@ export class PromotionService {
         throw new ApiError(httpStatus.BAD_REQUEST, 'Promotion is not valid at this time');
       }
 
-      // Check remaining quantity
+      // Check remaining quantity - will be enforced atomically below
       if (promotion.remainingQty !== null && promotion.remainingQty <= 0) {
         throw new ApiError(httpStatus.BAD_REQUEST, 'Promotion is no longer available');
       }
 
-      // Check per-customer limit
-      const customerPromotionCount = await tx.customerPromotion.count({
-        where: {
-          customerId,
-          promotionId: promotion.id
-        }
-      });
+      // Check per-customer limit (with null safety check)
+      if (promotion.perCustomerLimit !== null) {
+        const customerPromotionCount = await tx.customerPromotion.count({
+          where: {
+            customerId,
+            promotionId: promotion.id
+          }
+        });
 
-      if (customerPromotionCount >= promotion.perCustomerLimit) {
-        throw new ApiError(
-          httpStatus.BAD_REQUEST,
-          `You have already claimed this promotion ${promotion.perCustomerLimit} time(s)`
-        );
+        if (customerPromotionCount >= promotion.perCustomerLimit) {
+          throw new ApiError(
+            httpStatus.BAD_REQUEST,
+            `You have already claimed this promotion ${promotion.perCustomerLimit} time(s)`
+          );
+        }
+      }
+
+      // CRITICAL FIX: Atomic decrement with constraint to prevent negative inventory
+      // This prevents race conditions where multiple users claim simultaneously
+      if (promotion.remainingQty !== null) {
+        const updateResult = await tx.promotion.updateMany({
+          where: {
+            id: promotion.id,
+            remainingQty: { gt: 0 } // Atomic check: only update if quantity > 0
+          },
+          data: {
+            remainingQty: { decrement: 1 }
+          }
+        });
+
+        // If no rows were updated, promotion was sold out between our check and now
+        if (updateResult.count === 0) {
+          throw new ApiError(
+            httpStatus.BAD_REQUEST,
+            'Promotion sold out. Please try another promotion.'
+          );
+        }
       }
 
       // Create customer promotion
@@ -264,16 +288,6 @@ export class PromotionService {
           status: CustomerPromotionStatus.AVAILABLE
         }
       });
-
-      // Decrement remaining quantity
-      if (promotion.remainingQty !== null) {
-        await tx.promotion.update({
-          where: { id: promotion.id },
-          data: {
-            remainingQty: promotion.remainingQty - 1
-          }
-        });
-      }
 
       // Create activity
       await this.activityService.createActivity(
