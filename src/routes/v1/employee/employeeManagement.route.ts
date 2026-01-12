@@ -25,7 +25,7 @@ export default function createEmployeeManagementRoutes(): express.Router {
    * /employee/employees:
    *   post:
    *     summary: Create a new employee
-   *     description: Create a new employee account (admin only)
+   *     description: Create a new employee account with assigned role (admin only)
    *     tags: [Employee Management]
    *     security:
    *       - bearerAuth: []
@@ -39,6 +39,7 @@ export default function createEmployeeManagementRoutes(): express.Router {
    *               - name
    *               - username
    *               - password
+   *               - roleId
    *             properties:
    *               name:
    *                 type: string
@@ -53,16 +54,14 @@ export default function createEmployeeManagementRoutes(): express.Router {
    *                 format: password
    *                 minLength: 8
    *                 description: Employee password (min 8 characters, must contain letter and number)
-   *               role:
+   *               roleId:
    *                 type: string
-   *                 enum: [ADMIN, RECEPTIONIST, HOUSEKEEPING, STAFF]
-   *                 default: STAFF
-   *                 description: Employee role
+   *                 description: Role ID (required - use /employee/roles to get available roles)
    *             example:
    *               name: "Trần Văn B"
    *               username: "tranvanb"
    *               password: "password123"
-   *               role: "RECEPTIONIST"
+   *               roleId: "clq1234567890abcdef"
    *     responses:
    *       201:
    *         description: Employee created successfully
@@ -83,14 +82,23 @@ export default function createEmployeeManagementRoutes(): express.Router {
    *                     username:
    *                       type: string
    *                       example: "tranvanb"
-   *                     role:
+   *                     roleId:
    *                       type: string
-   *                       example: "RECEPTIONIST"
+   *                       example: "clq1234567890abcdef"
+   *                     roleRef:
+   *                       type: object
+   *                       properties:
+   *                         id:
+   *                           type: string
+   *                         name:
+   *                           type: string
+   *                         description:
+   *                           type: string
    *                     updatedAt:
    *                       type: string
    *                       format: date-time
    *       400:
-   *         description: Username already exists or validation error
+   *         description: Username already exists, role not found, or validation error
    *       401:
    *         $ref: '#/components/responses/Unauthorized'
    *
@@ -107,11 +115,10 @@ export default function createEmployeeManagementRoutes(): express.Router {
    *           type: string
    *         description: Search by name or username
    *       - in: query
-   *         name: role
+   *         name: roleId
    *         schema:
    *           type: string
-   *           enum: [ADMIN, RECEPTIONIST, HOUSEKEEPING, STAFF]
-   *         description: Filter by role
+   *         description: Filter by role ID
    *       - in: query
    *         name: page
    *         schema:
@@ -131,7 +138,7 @@ export default function createEmployeeManagementRoutes(): express.Router {
    *         name: sortBy
    *         schema:
    *           type: string
-   *           enum: [name, username, role, createdAt, updatedAt]
+   *           enum: [name, username, roleId, createdAt, updatedAt]
    *           default: createdAt
    *         description: Field to sort by
    *       - in: query
@@ -265,13 +272,12 @@ export default function createEmployeeManagementRoutes(): express.Router {
    *                 type: string
    *                 maxLength: 100
    *                 description: Employee name
-   *               role:
+   *               roleId:
    *                 type: string
-   *                 enum: [ADMIN, RECEPTIONIST, HOUSEKEEPING, STAFF]
-   *                 description: Employee role
+   *                 description: Role ID
    *             example:
    *               name: "Trần Văn C"
-   *               role: "ADMIN"
+   *               roleId: "clq1234567890abcdef"
    *     responses:
    *       200:
    *         description: Employee updated successfully

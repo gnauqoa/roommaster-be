@@ -20,7 +20,7 @@ export class EmployeeManagementController {
   });
 
   getEmployees = catchAsync(async (req: Request, res: Response) => {
-    const filters = pick(req.query, ['search', 'role']);
+    const filters = pick(req.query, ['search', 'roleId']);
     const options = pick(req.query, ['page', 'limit', 'sortBy', 'sortOrder']);
 
     // Convert string query params to numbers
