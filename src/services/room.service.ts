@@ -162,7 +162,16 @@ export class RoomService {
     const room = await this.prisma.room.findUnique({
       where: { id: roomId },
       include: {
-        roomType: true,
+        roomType: {
+          include: {
+            images: {
+              orderBy: { sortOrder: 'asc' }
+            }
+          }
+        },
+        images: {
+          orderBy: { sortOrder: 'asc' }
+        },
         _count: {
           select: {
             bookingRooms: true
@@ -336,12 +345,18 @@ export class RoomService {
         include: {
           roomType: {
             include: {
+              images: {
+                orderBy: { sortOrder: 'asc' }
+              },
               roomTypeTags: {
                 include: {
                   roomTag: true
                 }
               }
             }
+          },
+          images: {
+            orderBy: { sortOrder: 'asc' }
           },
           _count: {
             select: {
@@ -456,12 +471,18 @@ export class RoomService {
       include: {
         roomType: {
           include: {
+            images: {
+              orderBy: { sortOrder: 'asc' }
+            },
             roomTypeTags: {
               include: {
                 roomTag: true
               }
             }
           }
+        },
+        images: {
+          orderBy: { sortOrder: 'asc' }
         },
         // Find any overlapping bookings for the requested date range
         bookingRooms: {
@@ -544,7 +565,16 @@ export class RoomService {
     const room = await this.prisma.room.findUnique({
       where: { id: roomId },
       include: {
-        roomType: true,
+        roomType: {
+          include: {
+            images: {
+              orderBy: { sortOrder: 'asc' }
+            }
+          }
+        },
+        images: {
+          orderBy: { sortOrder: 'asc' }
+        },
         bookingRooms: {
           where: {
             AND: [
