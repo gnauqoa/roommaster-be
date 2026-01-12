@@ -61,6 +61,24 @@ const PERMISSIONS = {
       subject: 'CustomerRank',
       action: 'access',
       description: 'Customer Rank Management'
+    },
+    {
+      name: 'screen:promotion',
+      subject: 'Promotion',
+      action: 'access',
+      description: 'Promotion Management'
+    },
+    {
+      name: 'screen:pricing',
+      subject: 'PricingRule',
+      action: 'access',
+      description: 'Pricing Rule Management'
+    },
+    {
+      name: 'screen:activity',
+      subject: 'Activity',
+      action: 'access',
+      description: 'Activity Log Management'
     }
   ],
 
@@ -138,7 +156,44 @@ const PERMISSIONS = {
     { name: 'rank:create', subject: 'CustomerRank', action: 'create', screen: 'screen:rank' },
     { name: 'rank:read', subject: 'CustomerRank', action: 'read', screen: 'screen:rank' },
     { name: 'rank:update', subject: 'CustomerRank', action: 'update', screen: 'screen:rank' },
-    { name: 'rank:delete', subject: 'CustomerRank', action: 'delete', screen: 'screen:rank' }
+    { name: 'rank:delete', subject: 'CustomerRank', action: 'delete', screen: 'screen:rank' },
+
+    // Promotion actions
+    {
+      name: 'promotion:create',
+      subject: 'Promotion',
+      action: 'create',
+      screen: 'screen:promotion'
+    },
+    { name: 'promotion:read', subject: 'Promotion', action: 'read', screen: 'screen:promotion' },
+    {
+      name: 'promotion:update',
+      subject: 'Promotion',
+      action: 'update',
+      screen: 'screen:promotion'
+    },
+    {
+      name: 'promotion:delete',
+      subject: 'Promotion',
+      action: 'delete',
+      screen: 'screen:promotion'
+    },
+    {
+      name: 'promotion:approve',
+      subject: 'Promotion',
+      action: 'approve',
+      screen: 'screen:promotion'
+    },
+
+    // Pricing Rule actions
+    { name: 'pricing:create', subject: 'PricingRule', action: 'create', screen: 'screen:pricing' },
+    { name: 'pricing:read', subject: 'PricingRule', action: 'read', screen: 'screen:pricing' },
+    { name: 'pricing:update', subject: 'PricingRule', action: 'update', screen: 'screen:pricing' },
+    { name: 'pricing:delete', subject: 'PricingRule', action: 'delete', screen: 'screen:pricing' },
+
+    // Activity Log actions
+    { name: 'activity:read', subject: 'Activity', action: 'read', screen: 'screen:activity' },
+    { name: 'activity:export', subject: 'Activity', action: 'export', screen: 'screen:activity' }
   ]
 };
 
@@ -160,6 +215,9 @@ const ROLES = [
       'screen:customer',
       'screen:service',
       'screen:transaction',
+      'screen:promotion',
+      'screen:rank',
+      'screen:activity',
       'screen:report'
     ],
     actions: [
@@ -182,6 +240,12 @@ const ROLES = [
       // Transaction
       'transaction:create',
       'transaction:read',
+      // Promotion
+      'promotion:read',
+      // Rank
+      'rank:read',
+      // Activity
+      'activity:read',
       // Report
       'report:view'
     ]

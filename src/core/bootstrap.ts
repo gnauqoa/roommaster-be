@@ -233,6 +233,7 @@ export function bootstrap(): void {
   // Initialize default configurations
   const appSettingService = container.resolve<AppSettingService>(TOKENS.AppSettingService);
   appSettingService.initializeDefaults().catch((error) => {
+    // Note: logger not available yet during bootstrap, will be caught by main error handler
     console.error('Failed to initialize default configurations:', error);
   });
 }

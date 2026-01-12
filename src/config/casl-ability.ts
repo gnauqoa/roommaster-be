@@ -20,6 +20,7 @@ type Actions =
   | 'refund'
   | 'view'
   | 'export'
+  | 'approve'
   | 'manage'; // Special: grants all actions
 
 /**
@@ -37,6 +38,10 @@ type Subjects =
   | 'Report'
   | 'Settings'
   | 'Role'
+  | 'CustomerRank'
+  | 'Promotion'
+  | 'PricingRule'
+  | 'Activity'
   | 'all'; // Special: grants access to all subjects
 
 /**
