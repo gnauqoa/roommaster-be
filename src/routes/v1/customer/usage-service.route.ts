@@ -27,7 +27,7 @@ export default function createUsageServiceRoutes(): express.Router {
    *     summary: Create a service usage record (DEPRECATED)
    *     description: |-
    *       **This endpoint is deprecated and no longer available for customers.**
-   *       
+   *
    *       Service usage creation is now employee-only for better inventory control.
    *       Customers should contact staff to request services.
    *     deprecated: true
@@ -63,7 +63,7 @@ export default function createUsageServiceRoutes(): express.Router {
    *     summary: Update own service usage (DEPRECATED)
    *     description: |-
    *       **This endpoint is deprecated and no longer available for customers.**
-   *       
+   *
    *       Service usage updates are now employee-only.
    *       Customers should contact staff to modify service requests.
    *     deprecated: true

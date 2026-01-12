@@ -8,7 +8,7 @@ export interface CreateEmployeeData {
   name: string;
   username: string;
   password: string;
-  roleId?: string;
+  roleId: string;
 }
 
 export interface UpdateEmployeeData {
@@ -47,6 +47,15 @@ export class EmployeeService {
       throw new ApiError(httpStatus.BAD_REQUEST, 'Username already exists');
     }
 
+    // Validate role exists
+    const roleExists = await this.prisma.role.findUnique({
+      where: { id: employeeData.roleId }
+    });
+
+    if (!roleExists) {
+      throw new ApiError(httpStatus.BAD_REQUEST, 'Role not found');
+    }
+
     // Hash password
     const hashedPassword = await encryptPassword(employeeData.password);
 
@@ -57,6 +66,15 @@ export class EmployeeService {
         username: employeeData.username,
         password: hashedPassword,
         roleId: employeeData.roleId
+      },
+      include: {
+        roleRef: {
+          select: {
+            id: true,
+            name: true,
+            description: true
+          }
+        }
       }
     });
 

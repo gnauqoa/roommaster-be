@@ -6,6 +6,7 @@ import dayjs from 'dayjs';
 import AppSettingService from './app-setting.service';
 import { encryptPassword } from '@/utils/encryption';
 import EmailService from './email.service';
+import { RoomService } from './room.service';
 
 export interface RoomRequest {
   roomId: string;
@@ -34,6 +35,13 @@ export interface CheckOutPayload {
   employeeId: string;
 }
 
+export interface ChangeRoomPayload {
+  bookingRoomId: string;
+  newRoomId: string;
+  employeeId: string;
+  reason?: string;
+}
+
 @Injectable()
 export class BookingService {
   constructor(
@@ -41,7 +49,8 @@ export class BookingService {
     private readonly transactionService: any,
     private readonly activityService: any,
     private readonly appSettingService: AppSettingService,
-    private readonly emailService: EmailService
+    private readonly emailService: EmailService,
+    private readonly roomService: RoomService
   ) {}
 
   /**
@@ -242,8 +251,6 @@ export class BookingService {
         }
       });
 
-      // NOTE: We no longer update Room.status to RESERVED here.
-      // Room.status represents the CURRENT physical state, not future bookings.
       // The overlapping BookingRoom check prevents double-booking.
       // Room.status will be updated to OCCUPIED at check-in time.
 
@@ -872,6 +879,198 @@ export class BookingService {
       ...input,
       customerId
     });
+  }
+
+  /**
+   * Change room for a checked-in booking
+   * Transfers customer from current room to a new available room
+   * Validates availability for the remaining stay period
+   */
+  async changeRoom(input: ChangeRoomPayload) {
+    const { bookingRoomId, newRoomId, employeeId, reason } = input;
+
+    // 1. Fetch current booking room with details
+    const bookingRoom = await this.prisma.bookingRoom.findUnique({
+      where: { id: bookingRoomId },
+      include: {
+        room: true,
+        roomType: true,
+        booking: true,
+        bookingCustomers: true
+      }
+    });
+
+    if (!bookingRoom) {
+      throw new ApiError(httpStatus.NOT_FOUND, 'Booking room not found');
+    }
+
+    // 2. Validate booking room is CHECKED_IN
+    if (bookingRoom.status !== BookingStatus.CHECKED_IN) {
+      throw new ApiError(httpStatus.BAD_REQUEST, 'Can only change room for checked-in bookings');
+    }
+
+    // 3. Cannot change to the same room
+    if (bookingRoom.roomId === newRoomId) {
+      throw new ApiError(httpStatus.BAD_REQUEST, 'Cannot change to the same room');
+    }
+
+    // 4. Define the date range to check availability
+    // From: today (start of day for overlap check)
+    // To: original checkOutDate
+    const today = dayjs().startOf('day').toDate();
+    const checkFromDate = today;
+    const checkToDate = bookingRoom.checkOutDate;
+
+    // 5. Use RoomService to check new room availability
+    // Exclude current booking to avoid false conflicts
+    const availability = await this.roomService.isRoomAvailableForDates(
+      newRoomId,
+      checkFromDate,
+      checkToDate,
+      bookingRoom.bookingId // Exclude current booking from conflict check
+    );
+
+    if (!availability.available) {
+      const conflicts = availability.conflictingBookings;
+      if (conflicts.length > 0 && conflicts[0].reason) {
+        // Room status issue (OUT_OF_SERVICE, MAINTENANCE)
+        throw new ApiError(
+          httpStatus.CONFLICT,
+          `Room ${availability.room.roomNumber} is not available: ${conflicts[0].reason}`
+        );
+      }
+      // Has overlapping bookings
+      const conflictDetails = conflicts
+        .map(
+          (c: any) =>
+            `${dayjs(c.checkInDate).format('YYYY-MM-DD')} to ${dayjs(c.checkOutDate).format(
+              'YYYY-MM-DD'
+            )}`
+        )
+        .join(', ');
+      throw new ApiError(
+        httpStatus.CONFLICT,
+        `Room ${availability.room.roomNumber} is not available for the remaining stay. Conflicting bookings: ${conflictDetails}`
+      );
+    }
+
+    // 5b. Additional check: Room must be AVAILABLE for immediate occupancy
+    // CLEANING/OCCUPIED status means room is not ready even if no booking conflict
+    const currentRoomStatus = availability.room.status;
+    if (currentRoomStatus === RoomStatus.CLEANING) {
+      throw new ApiError(
+        httpStatus.CONFLICT,
+        `Room ${availability.room.roomNumber} is currently being cleaned. Please wait until cleaning is complete.`
+      );
+    }
+    if (currentRoomStatus === RoomStatus.OCCUPIED) {
+      // This shouldn't happen if data is consistent, but check as safety net
+      throw new ApiError(
+        httpStatus.CONFLICT,
+        `Room ${availability.room.roomNumber} is currently occupied.`
+      );
+    }
+    // 6. Calculate price adjustment for remaining nights
+    const remainingNights = Math.max(dayjs(checkToDate).diff(dayjs(), 'day'), 1);
+    const oldPricePerNight = Number(bookingRoom.pricePerNight);
+    const newPricePerNight = Number(availability.room.roomType.basePrice);
+    const priceDifference = (newPricePerNight - oldPricePerNight) * remainingNights;
+
+    const oldRoomId = bookingRoom.roomId;
+    const oldRoomNumber = bookingRoom.room.roomNumber;
+
+    // 7. Perform room change in transaction
+    await this.prisma.$transaction(async (tx) => {
+      // Update BookingRoom with new room
+      await tx.bookingRoom.update({
+        where: { id: bookingRoomId },
+        data: {
+          roomId: newRoomId,
+          roomTypeId: availability.room.roomType.id,
+          pricePerNight: newPricePerNight,
+          subtotalRoom: { increment: priceDifference },
+          totalAmount: { increment: priceDifference }
+        }
+      });
+
+      // Update old room status (AVAILABLE or RESERVED based on other bookings)
+      await this.updateRoomStatuses([oldRoomId], tx);
+
+      // Update new room to OCCUPIED
+      await tx.room.update({
+        where: { id: newRoomId },
+        data: { status: RoomStatus.OCCUPIED }
+      });
+
+      // Update booking total if price changed
+      if (priceDifference !== 0) {
+        await tx.booking.update({
+          where: { id: bookingRoom.bookingId },
+          data: { totalAmount: { increment: priceDifference } }
+        });
+      }
+    });
+
+    // 8. Log activity
+    await this.activityService.createActivity({
+      type: ActivityType.UPDATE_BOOKING_ROOM,
+      description: `Room changed: ${oldRoomNumber} → ${availability.room.roomNumber}`,
+      employeeId,
+      metadata: {
+        bookingRoomId,
+        bookingId: bookingRoom.bookingId,
+        oldRoomId,
+        newRoomId,
+        oldRoomNumber,
+        newRoomNumber: availability.room.roomNumber,
+        remainingNights,
+        priceDifference: priceDifference.toString(),
+        reason: reason || 'Not specified'
+      }
+    });
+
+    // 9. Return updated booking room with full details
+    const updatedBookingRoom = await this.prisma.bookingRoom.findUnique({
+      where: { id: bookingRoomId },
+      include: {
+        room: true,
+        roomType: true,
+        booking: {
+          include: {
+            primaryCustomer: {
+              select: {
+                id: true,
+                fullName: true,
+                phone: true,
+                email: true
+              }
+            }
+          }
+        },
+        bookingCustomers: {
+          include: {
+            customer: {
+              select: {
+                id: true,
+                fullName: true,
+                phone: true,
+                email: true
+              }
+            }
+          }
+        }
+      }
+    });
+
+    return {
+      bookingRoom: updatedBookingRoom,
+      priceAdjustment: {
+        oldPricePerNight,
+        newPricePerNight,
+        remainingNights,
+        priceDifference
+      }
+    };
   }
 }
 
