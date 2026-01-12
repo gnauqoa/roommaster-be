@@ -11,6 +11,7 @@ describe('BookingService', () => {
   let mockTransactionService: any;
   let mockActivityService: any;
   let mockEmailService: any;
+  let mockRoomService: any;
 
   beforeEach(() => {
     mockPrisma = createMockPrismaClient();
@@ -29,13 +30,17 @@ describe('BookingService', () => {
     mockEmailService = {
       sendBookingConfirmation: jest.fn()
     };
+    mockRoomService = {
+      isRoomAvailableForDates: jest.fn()
+    };
 
     bookingService = new BookingService(
       mockPrisma as PrismaClient,
       mockTransactionService,
       mockActivityService,
       mockAppSettingService as any,
-      mockEmailService as any
+      mockEmailService as any,
+      mockRoomService as any
     );
     jest.clearAllMocks();
   });

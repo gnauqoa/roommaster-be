@@ -163,7 +163,7 @@ export function bootstrap(): void {
     [TOKENS.TemplateService, TOKENS.PrismaClient]
   );
 
-  // Re-register BookingService with EmailService dependency
+  // Re-register BookingService with EmailService and RoomService dependencies
   container.registerFactory(
     TOKENS.BookingService,
     (...args: unknown[]) =>
@@ -172,14 +172,16 @@ export function bootstrap(): void {
         args[1] as TransactionService,
         args[2] as ActivityService,
         args[3] as AppSettingService,
-        args[4] as EmailService
+        args[4] as EmailService,
+        args[5] as RoomService
       ),
     [
       TOKENS.PrismaClient,
       TOKENS.TransactionService,
       TOKENS.ActivityService,
       TOKENS.AppSettingService,
-      TOKENS.EmailService
+      TOKENS.EmailService,
+      TOKENS.RoomService
     ]
   );
 
