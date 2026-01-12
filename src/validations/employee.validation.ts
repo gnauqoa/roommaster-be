@@ -6,17 +6,20 @@ const createEmployee = {
     name: Joi.string().required().max(100),
     username: Joi.string().required().max(50),
     password: Joi.string().required().custom(password),
-    role: Joi.string().valid('ADMIN', 'RECEPTIONIST', 'HOUSEKEEPING', 'STAFF').optional()
+    roleId: Joi.string().required().messages({
+      'any.required': 'Role is required',
+      'string.empty': 'Role cannot be empty'
+    })
   })
 };
 
 const getEmployees = {
   query: Joi.object().keys({
     search: Joi.string().optional(),
-    role: Joi.string().valid('ADMIN', 'RECEPTIONIST', 'HOUSEKEEPING', 'STAFF').optional(),
+    roleId: Joi.string().optional(),
     page: Joi.number().integer().min(1).optional(),
     limit: Joi.number().integer().min(1).max(100).optional(),
-    sortBy: Joi.string().valid('name', 'username', 'role', 'createdAt', 'updatedAt').optional(),
+    sortBy: Joi.string().valid('name', 'username', 'roleId', 'createdAt', 'updatedAt').optional(),
     sortOrder: Joi.string().valid('asc', 'desc').optional()
   })
 };
@@ -34,7 +37,7 @@ const updateEmployee = {
   body: Joi.object()
     .keys({
       name: Joi.string().max(100),
-      role: Joi.string().valid('ADMIN', 'RECEPTIONIST', 'HOUSEKEEPING', 'STAFF')
+      roleId: Joi.string()
     })
     .min(1)
 };
