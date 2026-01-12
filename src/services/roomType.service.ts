@@ -261,6 +261,23 @@ export class RoomTypeService {
       );
     }
 
+    // Check if room type has associated bookings
+    const bookingCount = await this.prisma.bookingRoom.count({
+      where: { roomTypeId }
+    });
+
+    if (bookingCount > 0) {
+      throw new ApiError(
+        httpStatus.BAD_REQUEST,
+        'Cannot delete room type with associated bookings. This room type is part of historical data.'
+      );
+    }
+
+    // Delete related tags first (since no cascade delete in schema)
+    await this.prisma.roomTypeTag.deleteMany({
+      where: { roomTypeId }
+    });
+
     await this.prisma.roomType.delete({
       where: { id: roomTypeId }
     });
