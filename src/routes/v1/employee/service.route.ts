@@ -3,8 +3,10 @@ import { authEmployee } from '@/middlewares/auth';
 import validate from '@/middlewares/validate';
 import { serviceValidation } from '@/validations';
 import { container, TOKENS } from '@/core/container';
-import { ServiceService } from '@/services';
+import { ServiceService, ImageService } from '@/services';
 import { ServiceController } from '@/controllers/employee/employee.service.controller';
+import { ImageController } from '@/controllers/employee/employee.image.controller';
+import { uploadServiceImage } from '@/middlewares/upload.middleware';
 
 export default function createServiceRoutes(): express.Router {
   const serviceRoute = express.Router();
@@ -12,6 +14,10 @@ export default function createServiceRoutes(): express.Router {
   // Resolve services from container
   const serviceService = container.resolve<ServiceService>(TOKENS.ServiceService);
   const serviceController = new ServiceController(serviceService);
+
+  // Image controller for image management endpoints
+  const imageService = container.resolve<ImageService>(TOKENS.ImageService);
+  const imageController = new ImageController(imageService);
 
   /**
    * @swagger
@@ -373,6 +379,198 @@ export default function createServiceRoutes(): express.Router {
       validate(serviceValidation.deleteService),
       serviceController.deleteService
     );
+
+  // ==================== SERVICE IMAGE ROUTES ====================
+
+  /**
+   * @swagger
+   * /employee/services/{serviceId}/images:
+   *   post:
+   *     summary: Upload single image for service
+   *     description: Upload a single image and associate it with a service
+   *     tags: [Services]
+   *     security:
+   *       - bearerAuth: []
+   *     parameters:
+   *       - in: path
+   *         name: serviceId
+   *         required: true
+   *         schema:
+   *           type: string
+   *         description: Service ID
+   *     requestBody:
+   *       required: true
+   *       content:
+   *         multipart/form-data:
+   *           schema:
+   *             type: object
+   *             required:
+   *               - image
+   *             properties:
+   *               image:
+   *                 type: string
+   *                 format: binary
+   *                 description: Image file (JPEG, PNG, or WebP, max 5MB)
+   *               isDefault:
+   *                 type: string
+   *                 enum: ["true", "false"]
+   *               sortOrder:
+   *                 type: integer
+   *     responses:
+   *       201:
+   *         description: Image uploaded successfully
+   *       400:
+   *         description: No file uploaded or invalid file type
+   *       401:
+   *         $ref: '#/components/responses/Unauthorized'
+   *
+   *   get:
+   *     summary: Get all images for a service
+   *     description: Retrieve all images associated with a service
+   *     tags: [Services]
+   *     security:
+   *       - bearerAuth: []
+   *     parameters:
+   *       - in: path
+   *         name: serviceId
+   *         required: true
+   *         schema:
+   *           type: string
+   *         description: Service ID
+   *     responses:
+   *       200:
+   *         description: Images retrieved successfully
+   *       401:
+   *         $ref: '#/components/responses/Unauthorized'
+   */
+  serviceRoute
+    .route('/:serviceId/images')
+    .post(authEmployee, uploadServiceImage.single('image'), imageController.uploadServiceImage)
+    .get(authEmployee, imageController.getServiceImages);
+
+  /**
+   * @swagger
+   * /employee/services/{serviceId}/images/batch:
+   *   post:
+   *     summary: Upload multiple images for service
+   *     tags: [Services]
+   *     security:
+   *       - bearerAuth: []
+   *     parameters:
+   *       - in: path
+   *         name: serviceId
+   *         required: true
+   *         schema:
+   *           type: string
+   *     requestBody:
+   *       required: true
+   *       content:
+   *         multipart/form-data:
+   *           schema:
+   *             type: object
+   *             required:
+   *               - images
+   *             properties:
+   *               images:
+   *                 type: array
+   *                 items:
+   *                   type: string
+   *                   format: binary
+   *     responses:
+   *       200:
+   *         description: All images uploaded successfully
+   *       207:
+   *         description: Partial success
+   */
+  serviceRoute.post(
+    '/:serviceId/images/batch',
+    authEmployee,
+    uploadServiceImage.array('images', 10),
+    imageController.uploadServiceImagesBatch
+  );
+
+  /**
+   * @swagger
+   * /employee/services/{serviceId}/images/reorder:
+   *   put:
+   *     summary: Reorder service images
+   *     tags: [Services]
+   *     security:
+   *       - bearerAuth: []
+   *     parameters:
+   *       - in: path
+   *         name: serviceId
+   *         required: true
+   *         schema:
+   *           type: string
+   *     requestBody:
+   *       required: true
+   *       content:
+   *         application/json:
+   *           schema:
+   *             type: object
+   *             required:
+   *               - imageIds
+   *             properties:
+   *               imageIds:
+   *                 type: array
+   *                 items:
+   *                   type: string
+   *     responses:
+   *       200:
+   *         description: Images reordered successfully
+   */
+  serviceRoute.put(
+    '/:serviceId/images/reorder',
+    authEmployee,
+    imageController.reorderServiceImages
+  );
+
+  /**
+   * @swagger
+   * /employee/services/images/{imageId}:
+   *   delete:
+   *     summary: Delete service image
+   *     tags: [Services]
+   *     security:
+   *       - bearerAuth: []
+   *     parameters:
+   *       - in: path
+   *         name: imageId
+   *         required: true
+   *         schema:
+   *           type: string
+   *     responses:
+   *       204:
+   *         description: Image deleted successfully
+   *       404:
+   *         description: Image not found
+   */
+  serviceRoute.delete('/images/:imageId', authEmployee, imageController.deleteServiceImage);
+
+  /**
+   * @swagger
+   * /employee/services/images/{imageId}/default:
+   *   put:
+   *     summary: Set image as default for service
+   *     tags: [Services]
+   *     security:
+   *       - bearerAuth: []
+   *     parameters:
+   *       - in: path
+   *         name: imageId
+   *         required: true
+   *         schema:
+   *           type: string
+   *     responses:
+   *       200:
+   *         description: Default image set successfully
+   */
+  serviceRoute.put(
+    '/images/:imageId/default',
+    authEmployee,
+    imageController.setDefaultServiceImage
+  );
 
   return serviceRoute;
 }

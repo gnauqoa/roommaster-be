@@ -72,6 +72,7 @@ export default function createRoomRoutes(): express.Router {
    *       **Primary endpoint for room search before booking.**
    *       Returns rooms that have no overlapping bookings for the specified date range.
    *       Results are grouped by room type for easy display.
+   *       **Includes images:** Each room and room type includes associated images with full metadata.
    *     tags: [Customer Rooms]
    *     security:
    *       - bearerAuth: []
@@ -291,7 +292,7 @@ export default function createRoomRoutes(): express.Router {
    * /customer/rooms/{roomId}:
    *   get:
    *     summary: Get room details
-   *     description: Get detailed information about a specific room
+   *     description: Get detailed information about a specific room including images for both the room and its room type
    *     tags: [Customer Rooms]
    *     security:
    *       - bearerAuth: []

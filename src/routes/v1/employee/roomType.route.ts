@@ -3,8 +3,10 @@ import { authEmployee } from '@/middlewares/auth';
 import validate from '@/middlewares/validate';
 import { roomTypeValidation } from '@/validations';
 import { container, TOKENS } from '@/core/container';
-import { RoomTypeService } from '@/services';
+import { RoomTypeService, ImageService } from '@/services';
 import { RoomTypeController } from '@/controllers/employee/employee.roomType.controller';
+import { ImageController } from '@/controllers/employee/employee.image.controller';
+import { uploadRoomTypeImage } from '@/middlewares/upload.middleware';
 
 export default function createRoomTypeRoutes(): express.Router {
   const roomTypeRoute = express.Router();
@@ -12,6 +14,10 @@ export default function createRoomTypeRoutes(): express.Router {
   // Manually instantiate controller with dependencies
   const roomTypeService = container.resolve<RoomTypeService>(TOKENS.RoomTypeService);
   const roomTypeController = new RoomTypeController(roomTypeService);
+
+  // Image controller for image management endpoints
+  const imageService = container.resolve<ImageService>(TOKENS.ImageService);
+  const imageController = new ImageController(imageService);
 
   /**
    * @swagger
@@ -406,6 +412,305 @@ export default function createRoomTypeRoutes(): express.Router {
       validate(roomTypeValidation.deleteRoomType),
       roomTypeController.deleteRoomType
     );
+
+  // ==================== ROOM TYPE IMAGE ROUTES ====================
+
+  /**
+   * @swagger
+   * /employee/room-types/{roomTypeId}/images:
+   *   post:
+   *     summary: Upload single image for room type
+   *     description: Upload a single image and associate it with a room type
+   *     tags: [Room Types]
+   *     security:
+   *       - bearerAuth: []
+   *     parameters:
+   *       - in: path
+   *         name: roomTypeId
+   *         required: true
+   *         schema:
+   *           type: string
+   *         description: Room type ID
+   *     requestBody:
+   *       required: true
+   *       content:
+   *         multipart/form-data:
+   *           schema:
+   *             type: object
+   *             required:
+   *               - image
+   *             properties:
+   *               image:
+   *                 type: string
+   *                 format: binary
+   *                 description: Image file (JPEG, PNG, or WebP, max 5MB)
+   *               isDefault:
+   *                 type: string
+   *                 enum: ["true", "false"]
+   *                 description: Set as default image
+   *               sortOrder:
+   *                 type: integer
+   *                 description: Sort order for the image
+   *     responses:
+   *       201:
+   *         description: Image uploaded successfully
+   *       400:
+   *         description: No file uploaded or invalid file type
+   *       401:
+   *         $ref: '#/components/responses/Unauthorized'
+   *
+   *   get:
+   *     summary: Get all images for a room type
+   *     description: Retrieve all images associated with a room type
+   *     tags: [Room Types]
+   *     security:
+   *       - bearerAuth: []
+   *     parameters:
+   *       - in: path
+   *         name: roomTypeId
+   *         required: true
+   *         schema:
+   *           type: string
+   *         description: Room type ID
+   *     responses:
+   *       200:
+   *         description: Images retrieved successfully
+   *       401:
+   *         $ref: '#/components/responses/Unauthorized'
+   */
+  roomTypeRoute
+    .route('/:roomTypeId/images')
+    .post(authEmployee, uploadRoomTypeImage.single('image'), imageController.uploadRoomTypeImage)
+    .get(authEmployee, imageController.getRoomTypeImages);
+
+  /**
+   * @swagger
+   * /employee/room-types/{roomTypeId}/images/batch:
+   *   post:
+   *     summary: Upload multiple images for room type
+   *     description: Upload multiple images (up to 10) and associate them with a room type
+   *     tags: [Room Types]
+   *     security:
+   *       - bearerAuth: []
+   *     parameters:
+   *       - in: path
+   *         name: roomTypeId
+   *         required: true
+   *         schema:
+   *           type: string
+   *         description: Room type ID
+   *     requestBody:
+   *       required: true
+   *       content:
+   *         multipart/form-data:
+   *           schema:
+   *             type: object
+   *             required:
+   *               - images
+   *             properties:
+   *               images:
+   *                 type: array
+   *                 items:
+   *                   type: string
+   *                   format: binary
+   *                 description: Image files (JPEG, PNG, or WebP, max 5MB each, up to 10 files)
+   *     responses:
+   *       200:
+   *         description: All images uploaded successfully
+   *       207:
+   *         description: Partial success - some images failed to upload
+   *       400:
+   *         description: No files uploaded
+   *       401:
+   *         $ref: '#/components/responses/Unauthorized'
+   */
+  roomTypeRoute.post(
+    '/:roomTypeId/images/batch',
+    authEmployee,
+    uploadRoomTypeImage.array('images', 10),
+    imageController.uploadRoomTypeImagesBatch
+  );
+
+  /**
+   * @swagger
+   * /employee/room-types/{roomTypeId}/images/reorder:
+   *   put:
+   *     summary: Reorder room type images
+   *     description: Update the sort order of images for a room type
+   *     tags: [Room Types]
+   *     security:
+   *       - bearerAuth: []
+   *     parameters:
+   *       - in: path
+   *         name: roomTypeId
+   *         required: true
+   *         schema:
+   *           type: string
+   *         description: Room type ID
+   *     requestBody:
+   *       required: true
+   *       content:
+   *         application/json:
+   *           schema:
+   *             type: object
+   *             required:
+   *               - imageIds
+   *             properties:
+   *               imageIds:
+   *                 type: array
+   *                 items:
+   *                   type: string
+   *                 description: Array of image IDs in desired order
+   *     responses:
+   *       200:
+   *         description: Images reordered successfully
+   *       401:
+   *         $ref: '#/components/responses/Unauthorized'
+   */
+  roomTypeRoute.put(
+    '/:roomTypeId/images/reorder',
+    authEmployee,
+    imageController.reorderRoomTypeImages
+  );
+
+  /**
+   * @swagger
+   * /employee/room-types/{roomTypeId}/upload-signature:
+   *   get:
+   *     summary: Get upload signature for direct upload (Mobile)
+   *     description: Generate signed parameters for direct upload to Cloudinary from mobile app
+   *     tags: [Room Types]
+   *     security:
+   *       - bearerAuth: []
+   *     parameters:
+   *       - in: path
+   *         name: roomTypeId
+   *         required: true
+   *         schema:
+   *           type: string
+   *         description: Room type ID
+   *     responses:
+   *       200:
+   *         description: Upload signature generated
+   *       401:
+   *         $ref: '#/components/responses/Unauthorized'
+   */
+  roomTypeRoute.get(
+    '/:roomTypeId/upload-signature',
+    authEmployee,
+    imageController.getRoomTypeUploadSignature
+  );
+
+  /**
+   * @swagger
+   * /employee/room-types/{roomTypeId}/images/direct:
+   *   post:
+   *     summary: Save image metadata after direct upload
+   *     description: Save image metadata to database after direct upload to Cloudinary from mobile app
+   *     tags: [Room Types]
+   *     security:
+   *       - bearerAuth: []
+   *     parameters:
+   *       - in: path
+   *         name: roomTypeId
+   *         required: true
+   *         schema:
+   *           type: string
+   *         description: Room type ID
+   *     requestBody:
+   *       required: true
+   *       content:
+   *         application/json:
+   *           schema:
+   *             type: object
+   *             required:
+   *               - cloudinaryId
+   *               - url
+   *               - secureUrl
+   *             properties:
+   *               cloudinaryId:
+   *                 type: string
+   *               url:
+   *                 type: string
+   *               secureUrl:
+   *                 type: string
+   *               width:
+   *                 type: integer
+   *               height:
+   *                 type: integer
+   *               format:
+   *                 type: string
+   *               isDefault:
+   *                 type: boolean
+   *               sortOrder:
+   *                 type: integer
+   *     responses:
+   *       201:
+   *         description: Image metadata saved successfully
+   *       401:
+   *         $ref: '#/components/responses/Unauthorized'
+   */
+  roomTypeRoute.post(
+    '/:roomTypeId/images/direct',
+    authEmployee,
+    imageController.saveRoomTypeDirectUpload
+  );
+
+  /**
+   * @swagger
+   * /employee/room-types/images/{imageId}:
+   *   delete:
+   *     summary: Delete room type image
+   *     description: Delete an image from both Cloudinary and database
+   *     tags: [Room Types]
+   *     security:
+   *       - bearerAuth: []
+   *     parameters:
+   *       - in: path
+   *         name: imageId
+   *         required: true
+   *         schema:
+   *           type: string
+   *         description: Image ID
+   *     responses:
+   *       204:
+   *         description: Image deleted successfully
+   *       404:
+   *         description: Image not found
+   *       401:
+   *         $ref: '#/components/responses/Unauthorized'
+   */
+  roomTypeRoute.delete('/images/:imageId', authEmployee, imageController.deleteRoomTypeImage);
+
+  /**
+   * @swagger
+   * /employee/room-types/images/{imageId}/default:
+   *   put:
+   *     summary: Set image as default for room type
+   *     description: Set a specific image as the default image for its room type
+   *     tags: [Room Types]
+   *     security:
+   *       - bearerAuth: []
+   *     parameters:
+   *       - in: path
+   *         name: imageId
+   *         required: true
+   *         schema:
+   *           type: string
+   *         description: Image ID
+   *     responses:
+   *       200:
+   *         description: Default image set successfully
+   *       404:
+   *         description: Image not found
+   *       401:
+   *         $ref: '#/components/responses/Unauthorized'
+   */
+  roomTypeRoute.put(
+    '/images/:imageId/default',
+    authEmployee,
+    imageController.setDefaultRoomTypeImage
+  );
 
   return roomTypeRoute;
 }
