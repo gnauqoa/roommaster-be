@@ -107,6 +107,12 @@ export const PERMISSIONS = {
 
   // Report management
   REPORT_READ: 'report.read',
+  REPORT_ROOM_READ: 'report.room.read',
+  REPORT_CUSTOMER_READ: 'report.customer.read',
+  REPORT_EMPLOYEE_READ: 'report.employee.read',
+  REPORT_SERVICE_READ: 'report.service.read',
+  REPORT_REVENUE_READ: 'report.revenue.read',
+  REPORT_EXPORT: 'report.export',
 
   // Nightly job management
   NIGHTLY_JOB_RUN: 'nightly_job.run',
