@@ -3,8 +3,10 @@ import { authEmployee } from '@/middlewares/auth';
 import validate from '@/middlewares/validate';
 import { roomValidation } from '@/validations';
 import { container, TOKENS } from '@/core/container';
-import { RoomService } from '@/services';
+import { RoomService, ImageService } from '@/services';
 import { RoomController } from '@/controllers/employee/employee.room.controller';
+import { ImageController } from '@/controllers/employee/employee.image.controller';
+import { uploadRoomImage } from '@/middlewares/upload.middleware';
 
 export default function createRoomRoutes(): express.Router {
   const roomRoute = express.Router();
@@ -12,6 +14,10 @@ export default function createRoomRoutes(): express.Router {
   // Manually instantiate controller with dependencies
   const roomService = container.resolve<RoomService>(TOKENS.RoomService);
   const roomController = new RoomController(roomService);
+
+  // Image controller for image management endpoints
+  const imageService = container.resolve<ImageService>(TOKENS.ImageService);
+  const imageController = new ImageController(imageService);
 
   /**
    * @swagger
@@ -583,6 +589,121 @@ export default function createRoomRoutes(): express.Router {
     .get(authEmployee, validate(roomValidation.getRoom), roomController.getRoom)
     .put(authEmployee, validate(roomValidation.updateRoom), roomController.updateRoom)
     .delete(authEmployee, validate(roomValidation.deleteRoom), roomController.deleteRoom);
+
+  // ==================== ROOM IMAGE ROUTES ====================
+
+  /**
+   * @swagger
+   * /employee/rooms/{roomId}/images:
+   *   post:
+   *     summary: Upload single image for room
+   *     tags: [Rooms]
+   *     security:
+   *       - bearerAuth: []
+   *     parameters:
+   *       - in: path
+   *         name: roomId
+   *         required: true
+   *         schema:
+   *           type: string
+   *     requestBody:
+   *       required: true
+   *       content:
+   *         multipart/form-data:
+   *           schema:
+   *             type: object
+   *             required:
+   *               - image
+   *             properties:
+   *               image:
+   *                 type: string
+   *                 format: binary
+   *               isDefault:
+   *                 type: string
+   *                 enum: ["true", "false"]
+   *               sortOrder:
+   *                 type: integer
+   *     responses:
+   *       201:
+   *         description: Image uploaded successfully
+   */
+  roomRoute
+    .route('/:roomId/images')
+    .post(authEmployee, uploadRoomImage.single('image'), imageController.uploadRoomImage)
+    .get(authEmployee, imageController.getRoomImages);
+
+  /**
+   * @swagger
+   * /employee/rooms/{roomId}/images/reorder:
+   *   put:
+   *     summary: Reorder room images
+   *     tags: [Rooms]
+   *     security:
+   *       - bearerAuth: []
+   *     parameters:
+   *       - in: path
+   *         name: roomId
+   *         required: true
+   *         schema:
+   *           type: string
+   *     requestBody:
+   *       required: true
+   *       content:
+   *         application/json:
+   *           schema:
+   *             type: object
+   *             required:
+   *               - imageIds
+   *             properties:
+   *               imageIds:
+   *                 type: array
+   *                 items:
+   *                   type: string
+   *     responses:
+   *       200:
+   *         description: Images reordered successfully
+   */
+  roomRoute.put('/:roomId/images/reorder', authEmployee, imageController.reorderRoomImages);
+
+  /**
+   * @swagger
+   * /employee/rooms/images/{imageId}:
+   *   delete:
+   *     summary: Delete room image
+   *     tags: [Rooms]
+   *     security:
+   *       - bearerAuth: []
+   *     parameters:
+   *       - in: path
+   *         name: imageId
+   *         required: true
+   *         schema:
+   *           type: string
+   *     responses:
+   *       204:
+   *         description: Image deleted successfully
+   */
+  roomRoute.delete('/images/:imageId', authEmployee, imageController.deleteRoomImage);
+
+  /**
+   * @swagger
+   * /employee/rooms/images/{imageId}/default:
+   *   put:
+   *     summary: Set image as default for room
+   *     tags: [Rooms]
+   *     security:
+   *       - bearerAuth: []
+   *     parameters:
+   *       - in: path
+   *         name: imageId
+   *         required: true
+   *         schema:
+   *           type: string
+   *     responses:
+   *       200:
+   *         description: Default image set successfully
+   */
+  roomRoute.put('/images/:imageId/default', authEmployee, imageController.setDefaultRoomImage);
 
   /**
    * @swagger

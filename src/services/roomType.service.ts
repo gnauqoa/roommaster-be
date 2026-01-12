@@ -212,12 +212,13 @@ export class RoomTypeService {
     }
 
     // Handle tag updates if provided
-    const { tagIds, ...basicUpdateData } = updateData;
+    const { tagIds, pricePerNight, ...basicUpdateData } = updateData;
 
     const updatedRoomType = await this.prisma.roomType.update({
       where: { id: roomTypeId },
       data: {
         ...basicUpdateData,
+        ...(pricePerNight !== undefined && { basePrice: pricePerNight }),
         ...(tagIds !== undefined && {
           roomTypeTags: {
             deleteMany: {},

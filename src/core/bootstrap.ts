@@ -21,7 +21,8 @@ import {
   ActivityService,
   PromotionService,
   TransactionDetailsService,
-  AppSettingService
+  AppSettingService,
+  ImageService
 } from '@/services';
 import PricingRuleService from '@/services/pricing-rule.service';
 import PricingCalculatorService from '@/services/pricing-calculator.service';
@@ -201,6 +202,13 @@ export function bootstrap(): void {
   container.registerFactory(
     TOKENS.CustomerRankService,
     (...args: unknown[]) => new CustomerRankService(args[0] as PrismaClient),
+    [TOKENS.PrismaClient]
+  );
+
+  // Register ImageService
+  container.registerFactory(
+    TOKENS.ImageService,
+    (...args: unknown[]) => new ImageService(args[0] as PrismaClient),
     [TOKENS.PrismaClient]
   );
 
