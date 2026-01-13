@@ -15,9 +15,16 @@
 | **Xác thực đa đối tượng** | Hỗ trợ đăng nhập cho cả Khách hàng (Customer) và Nhân viên (Employee) với JWT |
 | **Quản lý đặt phòng**     | Tạo, xác nhận, hủy booking với tự động phân bổ phòng                          |
 | **Check-in/Check-out**    | Quản lý quá trình nhận/trả phòng với theo dõi trạng thái chi tiết             |
-| **Giao dịch tài chính**   | Quản lý tiền đặt cọc, thanh toán, hoàn tiền                                   |
+| **Giao dịch tài chính**   | Quản lý tiền đặt cọc, thanh toán, hoàn tiền với transaction details           |
 | **Sử dụng dịch vụ**       | Theo dõi các dịch vụ khách hàng sử dụng (spa, giặt ủi, minibar...)            |
 | **Lịch sử hoạt động**     | Ghi nhận đầy đủ lịch sử thay đổi booking (audit trail)                        |
+| **Hệ thống xếp hạng VIP** | Phân hạng khách hàng dựa trên chi tiêu tích lũy với ưu đãi theo từng rank     |
+| **Định giá động**         | Điều chỉnh giá phòng theo thời gian, sự kiện, mùa vụ với priority-based rules |
+| **Quản lý khuyến mãi**    | Tạo, áp dụng mã giảm giá theo phạm vi (phòng/dịch vụ) với giới hạn số lượng   |
+| **Phân quyền CASL**       | Kiểm soát truy cập dựa trên Role-Permission với CASL Ability                  |
+| **Quản lý hình ảnh**      | Upload và quản lý ảnh phòng/dịch vụ/khách hàng qua Cloudinary                 |
+| **Email automation**      | Gửi email xác thực, thông báo booking với template engine Handlebars          |
+| **Hệ thống báo cáo**      | Báo cáo phòng trống, doanh thu, khách hàng, nhân viên, dịch vụ                |
 
 ---
 
@@ -25,19 +32,23 @@
 
 ### 4.3.1. Bảng tổng hợp công nghệ
 
-| Danh mục            | Công nghệ         | Mô tả                                                  |
-| ------------------- | ----------------- | ------------------------------------------------------ |
-| **Runtime**         | Node.js           | Môi trường chạy JavaScript phía server                 |
-| **Ngôn ngữ**        | TypeScript        | JavaScript với kiểu dữ liệu tĩnh, tăng độ an toàn code |
-| **Framework**       | Express.js        | Framework web nhẹ, linh hoạt cho Node.js               |
-| **ORM**             | Prisma            | ORM thế hệ mới với type-safe và auto-generated queries |
-| **Database**        | PostgreSQL        | Hệ quản trị CSDL quan hệ mạnh mẽ, hỗ trợ JSON          |
-| **Xác thực**        | Passport.js + JWT | Xác thực người dùng với JSON Web Token                 |
-| **Validation**      | Joi               | Thư viện validate dữ liệu đầu vào mạnh mẽ              |
-| **Tài liệu API**    | Swagger (OpenAPI) | Tự động sinh tài liệu API tương tác                    |
-| **Logging**         | Winston + Morgan  | Ghi log ứng dụng và HTTP request                       |
-| **Process Manager** | PM2               | Quản lý process Node.js trong production               |
-| **Container**       | Docker            | Đóng gói và triển khai ứng dụng                        |
+| Danh mục            | Công nghệ               | Mô tả                                                    |
+| ------------------- | ----------------------- | -------------------------------------------------------- |
+| **Runtime**         | Node.js                 | Môi trường chạy JavaScript phía server                   |
+| **Ngôn ngữ**        | TypeScript              | JavaScript với kiểu dữ liệu tĩnh, tăng độ an toàn code   |
+| **Framework**       | Express.js              | Framework web nhẹ, linh hoạt cho Node.js                 |
+| **ORM**             | Prisma                  | ORM thế hệ mới với type-safe và auto-generated queries   |
+| **Database**        | PostgreSQL              | Hệ quản trị CSDL quan hệ mạnh mẽ, hỗ trợ JSON            |
+| **Xác thực**        | Passport.js + JWT       | Xác thực người dùng với JSON Web Token                   |
+| **Phân quyền**      | CASL                    | Authorization framework với ability-based access control |
+| **Validation**      | Joi                     | Thư viện validate dữ liệu đầu vào mạnh mẽ                |
+| **Tài liệu API**    | Swagger (OpenAPI)       | Tự động sinh tài liệu API tương tác                      |
+| **Logging**         | Winston + Morgan        | Ghi log ứng dụng và HTTP request                         |
+| **Email**           | Nodemailer + Handlebars | Gửi email với template engine                            |
+| **File Upload**     | Multer + Cloudinary     | Upload và lưu trữ ảnh trên cloud                         |
+| **Date/Time**       | Day.js + RRule          | Xử lý ngày tháng và recurring events                     |
+| **Process Manager** | PM2                     | Quản lý process Node.js trong production                 |
+| **Container**       | Docker                  | Đóng gói và triển khai ứng dụng                          |
 
 ### 4.3.2. Lý do lựa chọn
 
@@ -75,13 +86,13 @@
 
 ### 4.4.2. Chi tiết từng tầng
 
-| Tầng           | Thư mục            | Trách nhiệm                                                                  | Ví dụ                                |
-| -------------- | ------------------ | ---------------------------------------------------------------------------- | ------------------------------------ |
-| **Routes**     | `src/routes/`      | Định nghĩa các API endpoint, gắn middleware vào route, viết tài liệu Swagger | `auth.route.ts`, `booking.route.ts`  |
-| **Middleware** | `src/middlewares/` | Xử lý các concern xuyên suốt: xác thực, validation, xử lý lỗi, bảo mật       | `auth.ts`, `validate.ts`, `error.ts` |
-| **Controller** | `src/controllers/` | Nhận HTTP request, gọi service tương ứng, format và trả về response          | `auth.controller.ts`                 |
-| **Service**    | `src/services/`    | Chứa toàn bộ logic nghiệp vụ, thao tác database, áp dụng business rules      | `booking.service.ts`                 |
-| **Data**       | `prisma/`          | Định nghĩa schema database, quản lý migrations, Prisma Client                | `schema.prisma`                      |
+| Tầng           | Thư mục            | Trách nhiệm                                                                  | Ví dụ                                                      |
+| -------------- | ------------------ | ---------------------------------------------------------------------------- | ---------------------------------------------------------- |
+| **Routes**     | `src/routes/`      | Định nghĩa các API endpoint, gắn middleware vào route, viết tài liệu Swagger | `auth.route.ts`, `booking.route.ts`                        |
+| **Middleware** | `src/middlewares/` | Xử lý các concern xuyên suốt: xác thực, validation, xử lý lỗi, bảo mật, CASL | `auth.ts`, `validate.ts`, `error.ts`, `casl.middleware.ts` |
+| **Controller** | `src/controllers/` | Nhận HTTP request, gọi service tương ứng, format và trả về response          | `auth.controller.ts`, `employee.booking.controller.ts`     |
+| **Service**    | `src/services/`    | Chứa toàn bộ logic nghiệp vụ, thao tác database, áp dụng business rules      | `booking.service.ts`, `pricing-calculator.service.ts`      |
+| **Data**       | `prisma/`          | Định nghĩa schema database, quản lý migrations, Prisma Client                | `schema.prisma`                                            |
 
 ### 4.4.3. Nguyên tắc thiết kế
 
@@ -176,14 +187,34 @@ const controller = new SomeController(authService);
 ```
 PrismaClient (Gốc - không có dependency)
     │
-    ├── TokenService         (cần PrismaClient)
-    ├── CustomerService      (cần PrismaClient)
-    ├── EmployeeService      (cần PrismaClient)
-    ├── BookingService       (cần PrismaClient)
-    ├── RoomService          (cần PrismaClient)
-    ├── RoomTypeService      (cần PrismaClient)
-    ├── ServiceService       (cần PrismaClient)
-    └── TransactionService   (cần PrismaClient)
+    ├── TokenService
+    ├── CustomerService
+    ├── EmployeeService
+    ├── RoomService
+    ├── RoomTypeService
+    ├── RoomTagService
+    ├── ServiceService
+    ├── ActivityService
+    ├── AppSettingService
+    ├── CaslService
+    ├── PricingRuleService
+    ├── PricingCalculatorService
+    ├── CustomerRankService
+    ├── ImageService
+    ├── RoleService
+    ├── PermissionService
+    └── Report Services (Room, Customer, Employee, Service, Revenue)
+
+TemplateService (không có dependency)
+    └── EmailService (cần TemplateService, PrismaClient)
+
+BookingService (complex dependencies)
+    ├── PrismaClient
+    ├── TransactionService
+    ├── ActivityService
+    ├── AppSettingService
+    ├── EmailService
+    └── RoomService
 
 AuthService (cần nhiều dependencies)
     ├── PrismaClient
@@ -191,6 +222,12 @@ AuthService (cần nhiều dependencies)
     ├── CustomerService
     └── EmployeeService
 ```
+
+    ├── TokenService
+    ├── CustomerService
+    └── EmployeeService
+
+````
 
 ---
 
@@ -208,7 +245,7 @@ Hệ thống sử dụng **JWT (JSON Web Token)** để xác thực người dù
   iat: number; // Thời điểm tạo (issued at)
   exp: number; // Thời điểm hết hạn (expiration)
 }
-```
+````
 
 ### 4.7.2. Các loại Token
 
@@ -239,11 +276,15 @@ Hệ thống hỗ trợ **hai loại người dùng riêng biệt** với routes
 
 Sau khi xác thực, hệ thống kiểm tra quyền của user:
 
-- **Customer**: Chỉ được truy cập dữ liệu của chính mình
-- **Employee**: Phân quyền theo role (Admin, Receptionist, Housekeeping...)
-  - **Admin**: Toàn quyền trên hệ thống
-  - **Receptionist**: Quản lý booking, check-in/out, giao dịch
-  - **Housekeeping**: Cập nhật trạng thái phòng (cleaning)
+- **Customer**: Chỉ được truy cập dữ liệu của chính mình, xem promotion, xem rank
+- **Employee**: Phân quyền động dựa trên **Role-Permission model** với **CASL**
+  - Mỗi Employee có một Role (VD: Admin, Receptionist, Housekeeping)
+  - Mỗi Role có nhiều Permissions (screen access hoặc action permissions)
+  - CASL middleware kiểm tra ability của user trước khi cho phép truy cập
+  - Permission types:
+    - **SCREEN**: Quyền truy cập màn hình (VD: `screen:booking`, `screen:employee`)
+    - **ACTION**: Quyền thực hiện hành động (VD: `booking:create`, `room:update`, `transaction:delete`)
+  - CaslService build Ability từ permissions và kiểm tra theo subject và action
 
 ---
 
@@ -251,21 +292,28 @@ Sau khi xác thực, hệ thống kiểm tra quyền của user:
 
 ### 4.8.1. Tổng quan các Entity
 
-| Entity                | Mô tả                                                   | Quan hệ chính                               |
-| --------------------- | ------------------------------------------------------- | ------------------------------------------- |
-| **Employee**          | Nhân viên khách sạn (Admin, Receptionist, Housekeeping) | → Transactions, BookingHistory              |
-| **Customer**          | Khách hàng đặt phòng                                    | → Bookings, BookingCustomers                |
-| **RoomType**          | Loại phòng với giá và tiện nghi                         | → Rooms, BookingRooms                       |
-| **Room**              | Phòng vật lý trong khách sạn                            | → BookingRooms                              |
-| **Booking**           | Bản ghi đặt phòng                                       | → BookingRooms, Transactions, ServiceUsages |
-| **BookingRoom**       | Phân bổ phòng trong booking                             | → Transactions, ServiceUsages               |
-| **BookingCustomer**   | Gán khách vào booking/phòng                             | M:N Customer ↔ Booking                      |
-| **Transaction**       | Bản ghi giao dịch thanh toán                            | → TransactionDetails                        |
-| **TransactionDetail** | Chi tiết từng khoản trong giao dịch                     | → BookingRoom, ServiceUsage                 |
-| **Service**           | Dịch vụ khách sạn (spa, giặt ủi...)                     | → ServiceUsages                             |
-| **ServiceUsage**      | Bản ghi sử dụng dịch vụ                                 | → TransactionDetails                        |
-| **BookingHistory**    | Log kiểm toán (audit log)                               | → Booking, Employee                         |
-| **Activity**          | Log hoạt động hệ thống                                  | Metadata JSON                               |
+| Entity                | Mô tả                                               | Quan hệ chính                               |
+| --------------------- | --------------------------------------------------- | ------------------------------------------- |
+| **Employee**          | Nhân viên khách sạn với role-based permissions      | → Transactions, Activities, Role            |
+| **Customer**          | Khách hàng đặt phòng với rank và email verification | → Bookings, BookingCustomers, CustomerRank  |
+| **RoomType**          | Loại phòng với giá cơ bản và multiple images        | → Rooms, BookingRooms, RoomTypeImages       |
+| **Room**              | Phòng vật lý với trạng thái và multiple images      | → BookingRooms, RoomImages                  |
+| **Booking**           | Bản ghi đặt phòng với pricing và deposit            | → BookingRooms, Transactions, ServiceUsages |
+| **BookingRoom**       | Phân bổ phòng với dynamic pricing tracking          | → Transactions, ServiceUsages, PricingRule  |
+| **BookingCustomer**   | Gán khách vào booking/phòng                         | M:N Customer ↔ Booking                      |
+| **Transaction**       | Bản ghi giao dịch với promotion support             | → TransactionDetails, UsedPromotions        |
+| **TransactionDetail** | Chi tiết từng khoản trong giao dịch                 | → BookingRoom, ServiceUsage                 |
+| **Service**           | Dịch vụ khách sạn với multiple images               | → ServiceUsages, ServiceImages              |
+| **ServiceUsage**      | Bản ghi sử dụng dịch vụ với custom pricing          | → TransactionDetails, Activities            |
+| **Activity**          | Log hoạt động hệ thống với metadata                 | → Employee, Customer, BookingRoom           |
+| **Promotion**         | Mã khuyến mãi với scope và limit                    | → CustomerPromotions, UsedPromotions        |
+| **CustomerPromotion** | Promotion đã claim của khách hàng                   | → Customer, Promotion                       |
+| **CustomerRank**      | Hạng VIP của khách hàng (Đồng, Bạc, Vàng...)        | → Customers                                 |
+| **PricingRule**       | Quy tắc điều chỉnh giá động theo thời gian/sự kiện  | → BookingRooms, CalendarEvent               |
+| **CalendarEvent**     | Sự kiện lịch (Tết, Hè, Blackpink...) với recurring  | → PricingRules                              |
+| **Role**              | Vai trò nhân viên với permissions                   | → Employees, RolePermissions                |
+| **Permission**        | Quyền hạn CASL (screen/action based)                | → RolePermissions                           |
+| **AppSetting**        | Cấu hình hệ thống (JSON values)                     | Key-value store                             |
 
 ## 4.9. Xử lý lỗi
 
@@ -1095,8 +1143,9 @@ src/
 │   ├── passport.ts       # JWT strategy cho Passport
 │   ├── logger.ts         # Cấu hình Winston logger
 │   ├── morgan.ts         # Logging HTTP request
-│   ├── roles.ts          # Định nghĩa roles và permissions
-│   └── swagger.ts        # Cấu hình Swagger UI
+│   ├── roles.ts          # Export permissions từ constants
+│   ├── swagger.ts        # Cấu hình Swagger UI
+│   └── cloudinary.ts     # Cấu hình Cloudinary cho upload ảnh
 │
 ├── core/                 # DI & bootstrapping
 │   ├── container.ts      # DI container & tokens
@@ -1105,43 +1154,115 @@ src/
 │   └── index.ts          # Barrel export
 │
 ├── routes/v1/            # Định nghĩa API routes
-│   ├── index.ts          # Router chính, gộp tất cả routes
+│   ├── index.ts          # Router chính với health check endpoint
 │   ├── customer/         # Routes cho khách hàng
+│   │   ├── index.ts
 │   │   ├── auth.route.ts
-│   │   └── booking.route.ts
+│   │   ├── profile.route.ts
+│   │   ├── booking.route.ts
+│   │   ├── room.route.ts
+│   │   ├── promotion.route.ts
+│   │   ├── rank.route.ts
+│   │   ├── usage-service.route.ts
+│   │   └── image.route.ts
 │   └── employee/         # Routes cho nhân viên
+│       ├── index.ts
 │       ├── auth.route.ts
+│       ├── profile.route.ts
 │       ├── booking.route.ts
+│       ├── customerManagement.route.ts
+│       ├── employeeManagement.route.ts
 │       ├── room.route.ts
-│       └── ...
+│       ├── roomType.route.ts
+│       ├── roomTag.route.ts
+│       ├── service.route.ts
+│       ├── usage-service.route.ts
+│       ├── transaction.route.ts
+│       ├── transaction-details.route.ts
+│       ├── promotion.route.ts
+│       ├── pricing-rule.route.ts
+│       ├── calendar-event.route.ts
+│       ├── customer-rank.route.ts
+│       ├── app-setting.route.ts
+│       ├── activity.route.ts
+│       ├── role.route.ts
+│       ├── permission.route.ts
+│       └── reports.route.ts
 │
 ├── middlewares/          # Express middlewares
 │   ├── auth.ts           # authCustomer, authEmployee
 │   ├── validate.ts       # Joi validation middleware
 │   ├── error.ts          # Error converter & handler
 │   ├── rateLimiter.ts    # Giới hạn request rate
-│   └── xss.ts            # Bảo vệ XSS
+│   ├── xss.ts            # Bảo vệ XSS
+│   ├── casl.middleware.ts # CASL authorization middleware
+│   ├── emailVerification.ts # Email verification middleware
+│   └── upload.middleware.ts # Multer file upload middleware
 │
 ├── controllers/          # Request handlers
 │   ├── customer/         # Controllers cho customer
-│   │   ├── auth.controller.ts
-│   │   └── booking.controller.ts
+│   │   ├── customer.controller.ts
+│   │   ├── customer.booking.controller.ts
+│   │   ├── customer.room.controller.ts
+│   │   ├── customer.promotion.controller.ts
+│   │   ├── customer.rank.controller.ts
+│   │   ├── customer.usage-service.controller.ts
+│   │   └── customer.image.controller.ts
 │   └── employee/         # Controllers cho employee
-│       ├── auth.controller.ts
-│       ├── booking.controller.ts
-│       └── ...
+│       ├── employee.controller.ts
+│       ├── employee.booking.controller.ts
+│       ├── employee.customerManagement.controller.ts
+│       ├── employee.employeeManagement.controller.ts
+│       ├── employee.room.controller.ts
+│       ├── employee.roomType.controller.ts
+│       ├── employee.roomTag.controller.ts
+│       ├── employee.service.controller.ts
+│       ├── employee.usage-service.controller.ts
+│       ├── employee.transaction.controller.ts
+│       ├── employee.transaction-details.controller.ts
+│       ├── employee.promotion.controller.ts
+│       ├── employee.pricing-rule.controller.ts
+│       ├── employee.customer-rank.controller.ts
+│       ├── employee.calendar-event.controller.ts
+│       ├── employee.app-setting.controller.ts
+│       ├── employee.activity.controller.ts
+│       ├── employee.image.controller.ts
+│       ├── role.controller.ts
+│       ├── permission.controller.ts
+│       └── reports/
+│           └── index.ts (ReportController)
 │
 ├── services/             # Business logic
 │   ├── auth.service.ts       # Xác thực người dùng
 │   ├── token.service.ts      # Quản lý JWT tokens
 │   ├── customer.service.ts   # Quản lý khách hàng
+│   ├── customer-rank.service.ts # Quản lý hạng VIP khách hàng
 │   ├── employee.service.ts   # Quản lý nhân viên
 │   ├── booking.service.ts    # Logic đặt phòng
 │   ├── room.service.ts       # Quản lý phòng
 │   ├── roomType.service.ts   # Quản lý loại phòng
+│   ├── roomTag.service.ts    # Quản lý tags phòng
 │   ├── service.service.ts    # Quản lý dịch vụ
+│   ├── usage-service.service.ts # Quản lý sử dụng dịch vụ
 │   ├── transaction.service.ts # Quản lý giao dịch
-│   └── activity.service.ts   # Log hoạt động
+│   ├── transaction-details.service.ts # Chi tiết giao dịch
+│   ├── activity.service.ts   # Log hoạt động
+│   ├── promotion.service.ts  # Quản lý khuyến mãi
+│   ├── pricing-rule.service.ts # Quy tắc định giá động
+│   ├── pricing-calculator.service.ts # Tính toán giá phòng
+│   ├── casl.service.ts       # CASL ability builder
+│   ├── role.service.ts       # Quản lý roles
+│   ├── permission.service.ts # Quản lý permissions
+│   ├── app-setting.service.ts # Cấu hình hệ thống
+│   ├── email.service.ts      # Gửi email
+│   ├── template.service.ts   # Email templates
+│   ├── image.service.ts      # Upload/quản lý ảnh
+│   └── reports/              # Các service báo cáo
+│       ├── room-availability.report.service.ts
+│       ├── customer.report.service.ts
+│       ├── employee.report.service.ts
+│       ├── service.report.service.ts
+│       └── revenue.report.service.ts
 │
 ├── validations/          # Joi schemas cho validation
 │   ├── auth.validation.ts
