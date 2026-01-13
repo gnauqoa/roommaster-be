@@ -2,7 +2,7 @@ import { PrismaClient } from '@prisma/client';
 import { Injectable } from '@/core/decorators';
 import httpStatus from 'http-status';
 import ApiError from '@/utils/ApiError';
-import NodeCache from 'node-cache';
+import { CacheService } from './cache.service';
 import {
   ConfigKey,
   TimeConfig,
@@ -15,19 +15,14 @@ import {
 
 @Injectable()
 export class AppSettingService {
-  private cache: NodeCache;
-
-  constructor(private readonly prisma: PrismaClient) {
-    // Cache for 5 minutes (300 seconds), check period every 60 seconds
-    this.cache = new NodeCache({ stdTTL: 300, checkperiod: 60 });
-  }
+  constructor(private readonly prisma: PrismaClient, private readonly cacheService: CacheService) {}
 
   /**
    * Get configuration value by key (with caching)
    */
   async getConfig(key: string): Promise<any> {
     // Check cache first
-    const cached = this.cache.get(key);
+    const cached = this.cacheService.get(key);
     if (cached !== undefined) {
       return cached;
     }
@@ -42,7 +37,7 @@ export class AppSettingService {
     }
 
     // Cache the value
-    this.cache.set(key, config.value);
+    this.cacheService.set(key, config.value, 0);
     return config.value;
   }
 
@@ -64,7 +59,7 @@ export class AppSettingService {
     });
 
     // Invalidate cache
-    this.cache.del(key);
+    this.cacheService.del(key);
 
     return config;
   }
@@ -169,48 +164,6 @@ export class AppSettingService {
       { serviceId },
       'Surcharge service ID for custom surcharge fees'
     );
-  }
-
-  /**
-   * Clear all cache
-   */
-  clearCache(): void {
-    this.cache.flushAll();
-  }
-
-  /**
-   * Initialize default configurations if they don't exist
-   */
-  async initializeDefaults(): Promise<void> {
-    const defaults = [
-      {
-        key: ConfigKey.CHECKIN_TIME,
-        value: { hour: 14, minute: 0, gracePeriodMinutes: 60 },
-        description: 'Standard check-in time'
-      },
-      {
-        key: ConfigKey.CHECKOUT_TIME,
-        value: { hour: 12, minute: 0, gracePeriodMinutes: 60 },
-        description: 'Standard check-out time'
-      },
-      {
-        key: ConfigKey.DEPOSIT_PERCENTAGE,
-        value: { percentage: 50 },
-        description: 'Deposit percentage of total booking amount'
-      }
-    ];
-
-    for (const config of defaults) {
-      const existing = await this.prisma.appSetting.findUnique({
-        where: { key: config.key }
-      });
-
-      if (!existing) {
-        await this.prisma.appSetting.create({
-          data: config
-        });
-      }
-    }
   }
 }
 

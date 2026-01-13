@@ -5,6 +5,7 @@ import EmployeeTransactionController from '@/controllers/employee/employee.trans
 import { container, TOKENS } from '@/core/container';
 import { TransactionService } from '@/services/transaction';
 import { authEmployee } from '@/middlewares/auth';
+import { attachAbilities, authorize, canAccessScreen } from '@/middlewares/casl.middleware';
 
 export default function createTransactionRoutes(): express.Router {
   const router = express.Router();
@@ -12,6 +13,9 @@ export default function createTransactionRoutes(): express.Router {
   // Resolve dependencies from container
   const transactionService = container.resolve<TransactionService>(TOKENS.TransactionService);
   const employeeTransactionController = new EmployeeTransactionController(transactionService);
+
+  // Apply auth and CASL abilities to all routes
+  router.use(authEmployee, attachAbilities, canAccessScreen('Transaction'));
 
   /**
    * @swagger
@@ -127,7 +131,7 @@ export default function createTransactionRoutes(): express.Router {
    */
   router.get(
     '/',
-    authEmployee,
+    authorize('read', 'Transaction'),
     validate(transactionValidation.getTransactions),
     employeeTransactionController.getTransactions
   );
@@ -189,7 +193,7 @@ export default function createTransactionRoutes(): express.Router {
    */
   router.get(
     '/:transactionId',
-    authEmployee,
+    authorize('read', 'Transaction'),
     validate(transactionValidation.getTransactionById),
     employeeTransactionController.getTransactionById
   );
@@ -283,7 +287,7 @@ export default function createTransactionRoutes(): express.Router {
    */
   router.post(
     '/',
-    authEmployee,
+    authorize('create', 'Transaction'),
     validate(transactionValidation.createTransaction),
     employeeTransactionController.createTransaction
   );

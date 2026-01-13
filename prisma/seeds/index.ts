@@ -14,7 +14,7 @@ import { seedRBAC } from './permissions.seed';
 import { seedCalendarEvents } from './calendar-event.seed';
 import { seedPricingRules } from './pricing-rule.seed';
 import { seedCustomerRanks } from './customer-rank.seed';
-import { APP_SETTING_KEYS } from '../../src/constants/app-settings.constant';
+import { seedAppSettings } from './app-settings.seed';
 
 const prisma = new PrismaClient();
 
@@ -24,35 +24,6 @@ const main = async () => {
 
   try {
     // Seed in order of dependencies
-    console.log('📋 Phase 0: App Settings');
-    // Seed app settings
-    const appSettings = [
-      {
-        key: APP_SETTING_KEYS.CHECKIN_TIME,
-        value: { hour: 14, minute: 0, gracePeriodMinutes: 60 },
-        description: 'Standard check-in time'
-      },
-      {
-        key: APP_SETTING_KEYS.CHECKOUT_TIME,
-        value: { hour: 12, minute: 0, gracePeriodMinutes: 60 },
-        description: 'Standard check-out time'
-      },
-      {
-        key: APP_SETTING_KEYS.DEPOSIT_PERCENTAGE,
-        value: { percentage: 50 },
-        description: 'Deposit percentage of total booking amount'
-      }
-    ];
-    for (const setting of appSettings) {
-      await prisma.appSetting.upsert({
-        where: { key: setting.key },
-        create: setting,
-        update: { value: setting.value }
-      });
-    }
-    console.log('  ✓ App settings seeded');
-
-    console.log('');
     console.log('📋 Phase 1: Base entities');
     await seedRBAC(prisma);
     await seedEmployees(prisma);
@@ -60,50 +31,15 @@ const main = async () => {
     await seedRoomTypes(prisma); // Also seeds room tags
     await seedRooms(prisma);
     await seedServices(prisma);
+
+    // Seed app settings (depends on services for some settings)
+    await seedAppSettings(prisma);
+
     await seedPromotions(prisma);
     await seedCustomerPromotions(prisma);
     await seedCustomerRanks(prisma);
     await seedCalendarEvents(prisma);
     await seedPricingRules(prisma);
-
-    // Update app settings with service IDs after services are seeded
-    console.log('Updating app settings with service IDs...');
-    const penaltyService = await prisma.service.findFirst({
-      where: { name: 'Phạt' }
-    });
-    const surchargeService = await prisma.service.findFirst({
-      where: { name: 'Phụ thu' }
-    });
-
-    if (penaltyService) {
-      await prisma.appSetting.upsert({
-        where: { key: APP_SETTING_KEYS.PENALTY_SERVICE_ID },
-        create: {
-          key: APP_SETTING_KEYS.PENALTY_SERVICE_ID,
-          value: { serviceId: penaltyService.id },
-          description: 'Penalty service ID for custom penalty charges'
-        },
-        update: {
-          value: { serviceId: penaltyService.id }
-        }
-      });
-      console.log('  ✓ Penalty service ID updated');
-    }
-
-    if (surchargeService) {
-      await prisma.appSetting.upsert({
-        where: { key: APP_SETTING_KEYS.SURCHARGE_SERVICE_ID },
-        create: {
-          key: APP_SETTING_KEYS.SURCHARGE_SERVICE_ID,
-          value: { serviceId: surchargeService.id },
-          description: 'Surcharge service ID for custom surcharge fees'
-        },
-        update: {
-          value: { serviceId: surchargeService.id }
-        }
-      });
-      console.log('  ✓ Surcharge service ID updated');
-    }
 
     console.log('');
     console.log('📋 Phase 2: Bookings and activities');

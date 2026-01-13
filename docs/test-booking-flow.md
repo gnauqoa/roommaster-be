@@ -1,154 +1,209 @@
-# Full Booking Flow Test Script
+# Hướng Dẫn Tích Hợp Flow Booking (Frontend Integration Guide)
 
-## Overview
+Tài liệu này hướng dẫn chi tiết cho Frontend Developer cách tích hợp luồng đặt phòng, check-in, sử dụng dịch vụ và thanh toán.
 
-This script (`scripts/test-booking-flow.ts`) tests the complete booking workflow in the Roommaster application.
+---
 
-## Test Flow
+## 1. Màn Hình Đặt Phòng (Create Booking)
 
-The script executes the following steps:
+**Chức năng**: Cho phép nhân viên lễ tân hoặc khách hàng tạo đơn đặt phòng mới.
 
-1. **Employee Login** - Authenticate as admin employee
-2. **Get/Create Customer** - Ensure test customer exists
-3. **Get Available Rooms** - Find available room types
-4. **Create Booking** - Book 3 rooms for 2 nights
-5. **Make Deposit** - Pay deposit to confirm booking
-6. **Check-in Rooms** - Check in all 3 rooms
-7. **Create Service Usage** - Add room service to first room
-8. **Partial Payment** - Pay for first 2 rooms only
-9. **Pay Service** - Pay for the room service
-10. **Full Payment** - Pay remaining balance for all rooms
-11. **Check-out** - Check out all rooms
+### API Endpoint
 
-## Prerequisites
+`POST /v1/bookings`
 
-1. **Database Setup**
+### Payload Mẫu
 
-   ```bash
-   # Run migrations
-   yarn prisma migrate dev
-
-   # Seed database with initial data
-   yarn prisma db seed
-   ```
-
-2. **Server Running**
-
-   ```bash
-   # Start the development server
-   yarn dev
-   ```
-
-3. **Environment Variables**
-   - Ensure `.env` file is configured
-   - Default API URL: `http://localhost:8080/v1`
-
-## Running the Test
-
-### Option 1: Using ts-node (Recommended)
-
-```bash
-npx ts-node -r tsconfig-paths/register scripts/test-booking-flow.ts
+```json
+{
+  "customerId": "cm5...", // ID của khách hàng (Lấy từ màn hình tìm kiếm hoặc tạo mới khách)
+  "checkInDate": "2023-12-25T14:00:00.000Z",
+  "checkOutDate": "2023-12-28T12:00:00.000Z",
+  "totalGuests": 2, // Tổng số khách dự kiến
+  "rooms": [
+    {
+      "roomTypeId": "clo...", // ID loại phòng khách chọn
+      "count": 1 // Số lượng phòng loại này
+    }
+  ]
+}
 ```
 
-### Option 2: Compile and Run
+### Logic Frontend
 
-```bash
-# Build the project
-yarn build
+1. **Bước 1**: Chọn ngày check-in, check-out và số người.
+2. **Bước 2**: Gọi API tìm phòng trống (Search Rooms) để hiển thị các `RoomType` khả dụng.
+3. **Bước 3**: Người dùng chọn loại phòng và số lượng.
+4. **Bước 4**: Nhập thông tin khách hàng (hoặc chọn khách hàng cũ).
+5. **Bước 5**: Gọi API `POST /v1/bookings`.
+   - **Thành công**: Chuyển sang màn hình "Chi tiết Booking" (Booking Detail). Lúc này trạng thái booking là `PENDING`.
 
-# Run the compiled script
-node build/scripts/test-booking-flow.js
+---
+
+## 2. Màn Hình Đặt Cọc (Booking Detail - Deposit)
+
+**Chức năng**: Xác nhận đặt phòng bằng cách thu tiền cọc.
+
+### API Endpoint
+
+`POST /v1/employee/transactions`
+
+### Payload Mẫu
+
+```json
+{
+  "bookingId": "bk123...", // ID booking vừa tạo
+  "amount": 500000, // Số tiền khách đóng cọc
+  "paymentMethod": "BANK_TRANSFER", // CASH, CREDIT_CARD, BANK_TRANSFER, E_WALLET
+  "transactionType": "DEPOSIT", // BẮT BUỘC là DEPOSIT
+  "allocations": [
+    // Phân bổ tiền cọc vào các phòng (thường chia đều hoặc dồn vào phòng chính)
+    // Tổng splitAmount phải bằng amount tổng bên trên
+    {
+      "bookingRoomId": "br456...",
+      "splitAmount": 500000
+    }
+  ]
+}
 ```
 
-## Configuration
+### Logic Frontend
 
-You can customize the test by modifying these variables in the script:
+1. Hiển thị nút "Đặt cọc / Xác nhận" trên màn hình Booking Detail khi status là `PENDING`.
+2. Modal nhập số tiền cọc và hình thức thanh toán.
+3. **Lưu ý**: Cần lấy danh sách `bookingRooms` từ chi tiết booking để tạo mảng `allocations`. Nếu booking có 1 phòng, allocation 100% vào phòng đó.
+4. Gọi API Transaction.
+   - **Thành công**: Load lại Booking Detail. Trạng thái sẽ tự động đổi sang `CONFIRMED`.
 
-```typescript
-const BASE_URL = process.env.API_URL || 'http://localhost:8080/v1';
-const EMPLOYEE_USERNAME = 'admin';
-const EMPLOYEE_PASSWORD = 'password123';
+---
+
+## 3. Màn Hình Check-in (Booking Detail - Check-in)
+
+**Chức năng**: Giao phòng cho khách khi khách đến nơi.
+
+### API Endpoint
+
+`POST /v1/employee/bookings/check-in`
+
+### Payload Mẫu
+
+```json
+{
+  "bookingId": "bk123...",
+  "bookingRoomId": "br456...", // Check-in từng phòng một
+  "guests": [
+    {
+      "customerId": "cm5...", // Khách hàng đứng tên phòng này
+      "isPrimary": true // Người đại diện (bắt buộc phải có 1 người là true)
+    },
+    {
+      "customerId": "cm6...", // Khách ở cùng (nếu có)
+      "isPrimary": false
+    }
+  ],
+  "employeeId": "emp789..." // ID nhân viên đang thực hiện (thường lấy từ token/session)
+}
 ```
 
-## Expected Output
+### Logic Frontend
 
-The script provides detailed logging for each step:
+1. Trên Booking Detail (Status `CONFIRMED`), hiển thị danh sách các phòng (`bookingRooms`).
+2. Nút "Check-in" bên cạnh từng phòng.
+3. Form Check-in:
+   - Cho phép add thêm khách hàng vào phòng (Search khách hàng hoặc tạo nhanh).
+   - Đánh dấu ai là khách chính (Primary Guest).
+4. Gọi API Check-in.
+   - **Thành công**: Trạng thái phòng đổi sang `CHECKED_IN`. Booking đổi sang `CHECKED_IN`.
 
-```
-============================================================
-STARTING FULL BOOKING FLOW TEST
-============================================================
+---
 
-[STEP 1] Employee login...
-✅ [STEP 1] Logged in as Admin User
+## 4. Màn Hình Gọi Dịch Vụ (Service Ordering)
 
-[STEP 2] Getting/creating customer...
-✅ [STEP 2] Customer ready: Nguyễn Văn Test (0987654321)
+**Chức năng**: Thêm dịch vụ (Minibar, Spa, Ăn uống) vào phòng.
 
-[STEP 3] Getting available room types...
-✅ [STEP 3] Found 2 room types with available rooms
+### API Endpoint
 
-[STEP 4] Creating booking for 3 rooms (2 nights)...
-✅ [STEP 4] Booking created: BK123456
+`POST /v1/employee/service/service-usage`
 
-... (more steps)
+### Payload Mẫu
 
-============================================================
-✅ BOOKING FLOW TEST COMPLETED SUCCESSFULLY!
-============================================================
-
-Final Booking Summary:
-  Booking Code: BK123456
-  Status: CHECKED_OUT
-  Total Amount: 1200000 VND
-  Total Paid: 1200000 VND
-  Balance: 0 VND
-  Rooms: 3
-  Services: 1
-  Transactions: 4
-============================================================
+```json
+{
+  "bookingId": "bk123...",
+  "bookingRoomId": "br456...", // Dịch vụ này dùng cho phòng nào
+  "serviceId": "svc999...", // ID dịch vụ (Coca, Massage...)
+  "quantity": 2,
+  "employeeId": "emp789..."
+}
 ```
 
-## Troubleshooting
+### Logic Frontend
 
-### Error: "No available rooms found"
+1. Tại màn hình chi tiết phòng (Room Detail) hoặc Booking Detail.
+2. Nút "Thêm dịch vụ" -> Hiện danh sách Services.
+3. Chọn Service -> Nhập số lượng.
+4. Gọi API.
+   - **Thành công**: Cập nhật lại danh sách dịch vụ đã dùng. Tổng tiền (`totalAmount`) của booking sẽ tăng lên, `balance` (công nợ) tăng lên.
 
-- Run `yarn prisma db seed` to populate the database with test data
+---
 
-### Error: "API Error: Unauthorized"
+## 5. Màn Hình Thanh Toán & Trả Phòng (Checkout & Payment)
 
-- Check that the employee credentials are correct
-- Ensure the server is running
+**Chức năng**: Thanh toán số tiền còn lại và trả phòng.
 
-### Error: "Connection refused"
+### Bước 5.1: Thanh Toán (Settle Balance)
 
-- Verify the server is running on the correct port
-- Check the `BASE_URL` configuration
+Trước khi checkout, khách cần thanh toán hết công nợ (`balance` phải về 0 hoặc có xác nhận nợ).
 
-## What This Tests
+**API Endpoint**: `POST /v1/employee/transactions`
 
-- ✅ Employee authentication
-- ✅ Booking creation with multiple rooms
-- ✅ Deposit payment and booking confirmation
-- ✅ Room check-in process
-- ✅ Service usage creation
-- ✅ Partial payment (split room payments)
-- ✅ Service payment
-- ✅ Full payment settlement
-- ✅ Room checkout process
-- ✅ Transaction tracking
-- ✅ Balance calculations
+**Payload Mẫu**:
 
-## Adding to CI/CD
-
-To add this test to your CI/CD pipeline:
-
-```yaml
-# In .github/workflows/test.yml
-- name: Run booking flow test
-  run: npx ts-node -r tsconfig-paths/register scripts/test-booking-flow.ts
-  env:
-    DATABASE_URL: ${{ secrets.DATABASE_URL }}
-    API_URL: http://localhost:8080/v1
+```json
+{
+  "bookingId": "bk123...",
+  "amount": 1500000, // Số tiền khách trả nốt
+  "paymentMethod": "CASH",
+  "transactionType": "ROOM_CHARGE", // Hoặc PAYMENT, ADJUSTMENT
+  "allocations": [
+    {
+      "bookingRoomId": "br456...",
+      "splitAmount": 1500000 // Phân bổ vào phòng cần thanh toán
+    }
+  ]
+}
 ```
+
+### Bước 5.2: Check-out
+
+**API Endpoint**: `POST /v1/employee/bookings/check-out`
+
+**Payload Mẫu**:
+
+```json
+{
+  "bookingId": "bk123...",
+  "bookingRoomId": "br456...", // Phòng cần trả
+  "employeeId": "emp789..."
+}
+```
+
+### Logic Frontend
+
+1. Hiển thị "Tổng tiền cần thanh toán" (`balance`) trên Booking Detail.
+2. Nếu `balance > 0`: Hiển thị nút "Thanh toán".
+   - Gọi API Transaction để clear công nợ.
+3. Khi `balance == 0` (hoặc khách đã thanh toán đủ): Hiển thị nút "Check-out".
+4. Gọi API Check-out.
+   - **Thành công**: Trạng thái phòng đổi về `CHECKED_OUT`. Phòng trống (`AVAILABLE`) để đón khách mới.
+
+---
+
+## Tóm Tắt Trạng Thái (Status Flow)
+
+| Bước             | Booking Status | BookingRoom Status | Room Status                 |
+| :--------------- | :------------- | :----------------- | :-------------------------- |
+| **1. Tạo mới**   | `PENDING`      | `PENDING`          | `AVAILABLE` (Giữ chỗ logic) |
+| **2. Đặt cọc**   | `CONFIRMED`    | `CONFIRMED`        | `AVAILABLE`                 |
+| **3. Check-in**  | `CHECKED_IN`   | `CHECKED_IN`       | `OCCUPIED` (Khách đang ở)   |
+| **4. Check-out** | `CHECKED_OUT`  | `CHECKED_OUT`      | `AVAILABLE` (Sẵn sàng)      |
