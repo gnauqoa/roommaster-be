@@ -3,6 +3,8 @@ import { container, TOKENS } from '@/core/container';
 import { ReportController } from '@/controllers/employee/reports';
 import { authEmployee } from '@/middlewares/auth';
 import { attachAbilities, canAccessScreen } from '@/middlewares/casl.middleware';
+import validate from '@/middlewares/validate';
+import { reportValidation } from '@/validations';
 
 export default function createReportRoutes(): express.Router {
   const router = express.Router();
@@ -55,7 +57,11 @@ export default function createReportRoutes(): express.Router {
    *       403:
    *         description: Forbidden - Requires Reports access
    */
-  router.get('/rooms/availability', reportController.checkRoomAvailability);
+  router.get(
+    '/rooms/availability',
+    validate(reportValidation.checkRoomAvailability),
+    reportController.checkRoomAvailability
+  );
 
   /**
    * @swagger
@@ -96,7 +102,11 @@ export default function createReportRoutes(): express.Router {
    *       403:
    *         description: Forbidden - Requires Reports access
    */
-  router.get('/rooms/occupancy-forecast', reportController.getOccupancyForecast);
+  router.get(
+    '/rooms/occupancy-forecast',
+    validate(reportValidation.getOccupancyForecast),
+    reportController.getOccupancyForecast
+  );
 
   // ==================== CUSTOMER REPORTS ====================
 
@@ -127,6 +137,139 @@ export default function createReportRoutes(): express.Router {
    *         schema:
    *           type: integer
    *           default: 1
+   *         description: Page number
+   *       - in: query
+   *         name: limit
+   *         schema:
+   *           type: integer
+   *           default: 20
+   *         description: Records per page
+   *       - in: query
+   *         name: sortBy
+   *         schema:
+   *           type: string
+   *           enum: [totalSpent, totalNights, lastStayDate]
+   *           default: totalSpent
+   *         description: Sort field
+   *       - in: query
+   *         name: sortOrder
+   *         schema:
+   *           type: string
+   *           enum: [asc, desc]
+   *           default: desc
+   *         description: Sort direction
+   *     responses:
+   *       200:
+   *         description: Paginated customer stay history
+   *       401:
+   *         description: Unauthorized
+   *       403:
+   *         description: Forbidden - Requires Reports access
+   */
+  router.get(
+    '/customers/stay-history',
+    validate(reportValidation.getCustomerStayHistory),
+    reportController.getCustomerStayHistory
+  );
+
+  /**
+   * @swagger
+   * /employee/reports/customers/first-time-guests:
+   *   get:
+   *     summary: Get first-time guests
+   *     description: List customers who made their first booking in the specified period
+   *     tags: [Employee Reports]
+   *     security:
+   *       - bearerAuth: []
+   *     parameters:
+   *       - in: query
+   *         name: startDate
+   *         required: true
+   *         schema:
+   *           type: string
+   *           format: date
+   *         description: Period start date
+   *       - in: query
+   *         name: endDate
+   *         required: true
+   *         schema:
+   *           type: string
+   *           format: date
+   *         description: Period end date
+   *     responses:
+   *       200:
+   *         description: List of first-time guests with booking details
+   *       401:
+   *         description: Unauthorized
+   *       403:
+   *         description: Forbidden - Requires Reports access
+   */
+  router.get(
+    '/customers/first-time-guests',
+    validate(reportValidation.getFirstTimeGuests),
+    reportController.getFirstTimeGuests
+  );
+
+  /**
+   * @swagger
+   * /employee/reports/customers/lifetime-value:
+   *   get:
+   *     summary: Get customer lifetime value (CLV)
+   *     description: Calculate CLV for customers with scoring based on spending, frequency, and recency
+   *     tags: [Employee Reports]
+   *     security:
+   *       - bearerAuth: []
+   *     parameters:
+   *       - in: query
+   *         name: minSpent
+   *         schema:
+   *           type: number
+   *         description: Minimum total spending filter
+   *       - in: query
+   *         name: minBookings
+   *         schema:
+   *           type: integer
+   *         description: Minimum number of bookings filter
+   *     responses:
+   *       200:
+   *         description: Customer lifetime value analytics with CLV scores
+   *       401:
+   *         description: Unauthorized
+   *       403:
+   *         description: Forbidden - Requires Reports access
+   */
+  router.get(
+    '/customers/lifetime-value',
+    validate(reportValidation.getCustomerLifetimeValue),
+    reportController.getCustomerLifetimeValue
+  );
+
+  /**
+   * @swagger
+   * /employee/reports/customers/rank-distribution:
+   *   get:
+   *     summary: Get customer rank distribution
+   *     description: Show customer count and revenue breakdown by loyalty rank
+   *     tags: [Employee Reports]
+   *     security:
+   *       - bearerAuth: []
+   *     responses:
+   *       200:
+   *         description: Customer rank distribution with counts and revenue
+   *       401:
+   *         description: Unauthorized
+   *       403:
+   *         description: Forbidden - Requires Reports access
+   */
+  router.get(
+    '/customers/rank-distribution',
+    validate(reportValidation.getCustomerRankDistribution),
+    reportController.getCustomerRankDistribution
+  );
+
+  // ==================== EMPLOYEE REPORTS ====================
+
+  /**
    * @swagger
    * /employee/reports/employees/booking-performance:
    *   get:
@@ -147,6 +290,116 @@ export default function createReportRoutes(): express.Router {
    *         schema:
    *           type: string
    *           format: date
+   *         description: Period end date
+   *       - in: query
+   *         name: employeeId
+   *         schema:
+   *           type: string
+   *         description: Filter by specific employee
+   *     responses:
+   *       200:
+   *         description: Employee booking performance metrics
+   *       401:
+   *         description: Unauthorized
+   *       403:
+   *         description: Forbidden - Requires Reports access
+   */
+  router.get(
+    '/employees/booking-performance',
+    validate(reportValidation.getEmployeeBookingPerformance),
+    reportController.getEmployeeBookingPerformance
+  );
+
+  /**
+   * @swagger
+   * /employee/reports/employees/service-performance:
+   *   get:
+   *     summary: Get employee service performance
+   *     description: Track employee performance in service delivery and service revenue
+   *     tags: [Employee Reports]
+   *     security:
+   *       - bearerAuth: []
+   *     parameters:
+   *       - in: query
+   *         name: startDate
+   *         schema:
+   *           type: string
+   *           format: date
+   *         description: Period start date
+   *       - in: query
+   *         name: endDate
+   *         schema:
+   *           type: string
+   *           format: date
+   *         description: Period end date
+   *       - in: query
+   *         name: employeeId
+   *         schema:
+   *           type: string
+   *         description: Filter by specific employee
+   *     responses:
+   *       200:
+   *         description: Employee service performance metrics
+   *       401:
+   *         description: Unauthorized
+   *       403:
+   *         description: Forbidden - Requires Reports access
+   */
+  router.get(
+    '/employees/service-performance',
+    validate(reportValidation.getEmployeeServicePerformance),
+    reportController.getEmployeeServicePerformance
+  );
+
+  /**
+   * @swagger
+   * /employee/reports/employees/activity-summary:
+   *   get:
+   *     summary: Get employee activity summary
+   *     description: Aggregate employee activities by type (check-in, checkout, service, etc.)
+   *     tags: [Employee Reports]
+   *     security:
+   *       - bearerAuth: []
+   *     parameters:
+   *       - in: query
+   *         name: startDate
+   *         schema:
+   *           type: string
+   *           format: date
+   *         description: Period start date
+   *       - in: query
+   *         name: endDate
+   *         schema:
+   *           type: string
+   *           format: date
+   *         description: Period end date
+   *       - in: query
+   *         name: employeeId
+   *         schema:
+   *           type: string
+   *         description: Filter by specific employee
+   *       - in: query
+   *         name: activityTypes
+   *         schema:
+   *           type: string
+   *         description: Comma-separated activity types (CHECK_IN, CHECK_OUT, SERVICE, etc.)
+   *     responses:
+   *       200:
+   *         description: Employee activity summary by type
+   *       401:
+   *         description: Unauthorized
+   *       403:
+   *         description: Forbidden - Requires Reports access
+   */
+  router.get(
+    '/employees/activity-summary',
+    validate(reportValidation.getEmployeeActivitySummary),
+    reportController.getEmployeeActivitySummary
+  );
+
+  // ==================== SERVICE REPORTS ====================
+
+  /**
    * @swagger
    * /employee/reports/services/usage-statistics:
    *   get:
@@ -181,7 +434,11 @@ export default function createReportRoutes(): express.Router {
    *       403:
    *         description: Forbidden - Requires Reports access
    */
-  router.get('/services/usage-statistics', reportController.getServiceUsageStatistics);
+  router.get(
+    '/services/usage-statistics',
+    validate(reportValidation.getServiceUsageStatistics),
+    reportController.getServiceUsageStatistics
+  );
 
   /**
    * @swagger
@@ -219,7 +476,11 @@ export default function createReportRoutes(): express.Router {
    *       403:
    *         description: Forbidden - Requires Reports access
    */
-  router.get('/services/top-by-revenue', reportController.getTopServicesByRevenue);
+  router.get(
+    '/services/top-by-revenue',
+    validate(reportValidation.getTopServicesByRevenue),
+    reportController.getTopServicesByRevenue
+  );
 
   /**
    * @swagger
@@ -264,223 +525,12 @@ export default function createReportRoutes(): express.Router {
    *         description: Unauthorized
    *       403:
    *         description: Forbidden - Requires Reports access
-  router.get('/employees/booking-performance', reportController.getEmployeeBookingPerformance);
-
-  /**
-   * @swagger
-   * /employee/reports/employees/service-performance:
-   *   get:
-   *     summary: Get employee service performance
-   *     description: Track employee performance in service delivery and service revenue
-   *     tags: [Employee Reports]
-   *     security:
-   *       - bearerAuth: []
-   *     parameters:
-   *       - in: query
-   *         name: startDate
-   *         schema:
-   *           type: string
-   *           format: date
-   *         description: Period start date
-   *       - in: query
-   *         name: endDate
-   *         schema:
-   *           type: string
-   *           format: date
-   *         description: Period end date
-   *       - in: query
-   *         name: employeeId
-   *         schema:
-   *           type: string
-   *         description: Filter by specific employee
-   *     responses:
-   *       200:
-   *         description: Employee service performance metrics
-   *       401:
-   *         description: Unauthorized
-   *       403:
-   *         description: Forbidden - Requires Reports access
    */
-  router.get('/employees/service-performance', reportController.getEmployeeServicePerformance);
-
-  /**
-   * @swagger
-   * /employee/reports/employees/activity-summary:
-   *   get:
-   *     summary: Get employee activity summary
-   *     description: Aggregate employee activities by type (check-in, checkout, service, etc.)
-   *     tags: [Employee Reports]
-   *     security:
-   *       - bearerAuth: []
-   *     parameters:
-   *       - in: query
-   *         name: startDate
-   *         schema:
-   *           type: string
-   *           format: date
-   *         description: Period start date
-   *       - in: query
-   *         name: endDate
-   *         schema:
-   *           type: string
-   *           format: date
-   *         description: Period end date
-   *       - in: query
-   *         name: employeeId
-   *         schema:
-   *           type: string
-   *         description: Filter by specific employee
-   *       - in: query
-   *         name: activityTypes
-   *         schema:
-   *           type: string
-   *         description: Comma-separated activity types (CHECK_IN, CHECK_OUT, SERVICE, etc.)
-   *     responses:
-   *       200:
-   *         description: Employee activity summary by type
-   *       401:
-   *         description: Unauthorized
-   *       403:
-   *         description: Forbidden - Requires Reports accessld
-   *       - in: query
-   *         name: sortOrder
-   *         schema:
-   *           type: string
-   *           enum: [asc, desc]
-   *           default: desc
-   *         description: Sort direction
-   *     responses:
-   *       200:
-   *         description: Paginated customer stay history
-   *       401:
-   *         description: Unauthorized
-   *       403:
-   *         description: Forbidden - Requires Reports access
-   */
-  router.get('/customers/stay-history', reportController.getCustomerStayHistory);
-
-  /**
-   * @swagger
-   * /employee/reports/customers/first-time-guests:
-   *   get:
-   *     summary: Get first-time guests
-   *     description: List customers who made their first booking in the specified period
-   *     tags: [Employee Reports]
-   *     security:
-   *       - bearerAuth: []
-   *     parameters:
-   *       - in: query
-   *         name: startDate
-   *         required: true
-   *         schema:
-   *           type: string
-   *           format: date
-   *         description: Period start date
-   *       - in: query
-   *         name: endDate
-   *         required: true
-   *         schema:
-   *           type: string
-   *           format: date
-   *         description: Period end date
-   *     responses:
-   *       200:
-   *         description: List of first-time guests with booking details
-   *       401:
-   *         description: Unauthorized
-   *       403:
-   *         description: Forbidden - Requires Reports access
-   */
-  router.get('/customers/first-time-guests', reportController.getFirstTimeGuests);
-
-  /**
-   * @swagger
-   * /employee/reports/customers/lifetime-value:
-   *   get:
-   *     summary: Get customer lifetime value (CLV)
-   *     description: Calculate CLV for customers with scoring based on spending, frequency, and recency
-   *     tags: [Employee Reports]
-   *     security:
-   *       - bearerAuth: []
-   *     parameters:
-   *       - in: query
-   *         name: minSpent
-   *         schema:
-   *           type: number
-   *         description: Minimum total spending filter
-   *       - in: query
-   *         name: minBookings
-   *         schema:
-   *           type: integer
-   *         description: Minimum number of bookings filter
-   *     responses:
-   *       200:
-   *         description: Customer lifetime value analytics with CLV scores
-   *       401:
-   *         description: Unauthorized
-   *       403:
-   *         description: Forbidden - Requires Reports access
-   */
-  router.get('/customers/lifetime-value', reportController.getCustomerLifetimeValue);
-
-  /**
-   * @swagger
-   * /employee/reports/customers/rank-distribution:
-   *   get:
-   *     summary: Get customer rank distribution
-   *     description: Show customer count and revenue breakdown by loyalty rank
-   *     tags: [Employee Reports]
-   *     security:
-   *       - bearerAuth: []
-   *     responses:
-   *       200:
-   *         description: Customer rank distribution with counts and revenue
-   *       401:
-   *         description: Unauthorized
-   *       403:
-   *         description: Forbidden - Requires Reports access
-   */
-  router.get('/customers/rank-distribution', reportController.getCustomerRankDistribution);
-
-  // ==================== EMPLOYEE REPORTS ====================
-
-  /**
-   * GET /api/v1/employee/reports/employees/booking-performance
-   * Get employee booking performance
-   */
-  router.get('/employees/booking-performance', reportController.getEmployeeBookingPerformance);
-
-  /**
-   * GET /api/v1/employee/reports/employees/service-performance
-   * Get employee service performance
-   */
-  router.get('/employees/service-performance', reportController.getEmployeeServicePerformance);
-
-  /**
-   * GET /api/v1/employee/reports/employees/activity-summary
-   * Get employee activity summary
-   */
-  router.get('/employees/activity-summary', reportController.getEmployeeActivitySummary);
-
-  // ==================== SERVICE REPORTS ====================
-
-  /**
-   * GET /api/v1/employee/reports/services/usage-statistics
-   * Get service usage statistics
-   */
-  router.get('/services/usage-statistics', reportController.getServiceUsageStatistics);
-
-  /**
-   * GET /api/v1/employee/reports/services/top-by-revenue
-   * Get top services by revenue
-   */
-  router.get('/services/top-by-revenue', reportController.getTopServicesByRevenue);
-
-  /**
-   * GET /api/v1/employee/reports/services/trend
-   * Get service performance trend
-   */
-  router.get('/services/trend', reportController.getServicePerformanceTrend);
+  router.get(
+    '/services/trend',
+    validate(reportValidation.getServicePerformanceTrend),
+    reportController.getServicePerformanceTrend
+  );
 
   // ==================== REVENUE REPORTS ====================
 
@@ -521,7 +571,11 @@ export default function createReportRoutes(): express.Router {
    *       403:
    *         description: Forbidden - Requires Reports access
    */
-  router.get('/revenue/summary', reportController.getRevenueSummary);
+  router.get(
+    '/revenue/summary',
+    validate(reportValidation.getRevenueSummary),
+    reportController.getRevenueSummary
+  );
 
   /**
    * @swagger
@@ -553,7 +607,11 @@ export default function createReportRoutes(): express.Router {
    *       403:
    *         description: Forbidden - Requires Reports access
    */
-  router.get('/revenue/by-room-type', reportController.getRevenueByRoomType);
+  router.get(
+    '/revenue/by-room-type',
+    validate(reportValidation.getRevenueByRoomType),
+    reportController.getRevenueByRoomType
+  );
 
   /**
    * @swagger
@@ -585,7 +643,11 @@ export default function createReportRoutes(): express.Router {
    *       403:
    *         description: Forbidden - Requires Reports access
    */
-  router.get('/revenue/payment-methods', reportController.getPaymentMethodDistribution);
+  router.get(
+    '/revenue/payment-methods',
+    validate(reportValidation.getPaymentMethodDistribution),
+    reportController.getPaymentMethodDistribution
+  );
 
   /**
    * @swagger
@@ -622,7 +684,11 @@ export default function createReportRoutes(): express.Router {
    *       403:
    *         description: Forbidden - Requires Reports access
    */
-  router.get('/revenue/promotions', reportController.getPromotionEffectiveness);
+  router.get(
+    '/revenue/promotions',
+    validate(reportValidation.getPromotionEffectiveness),
+    reportController.getPromotionEffectiveness
+  );
 
   return router;
 }
