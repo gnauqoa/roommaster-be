@@ -1,124 +1,90 @@
-# Customer Room & Image API Documentation
+# Customer Room Image API - Test Requests
 
-## Overview
+## Prerequisites
 
-This document describes how images are included in customer room endpoints and the dedicated image endpoints available.
+- Server running on http://localhost:3000
+- Valid customer JWT token
+- At least one room with images in the database
 
-## Image Inclusion in Room Endpoints
+## Variables
 
-All customer room endpoints now automatically include images in their responses. This eliminates the need for separate API calls to fetch images.
+```
+@baseUrl = http://localhost:3000/customer-api/v1
+@token = YOUR_CUSTOMER_JWT_TOKEN_HERE
+```
 
-### Endpoints with Image Support
+---
 
-#### 1. GET `/customer/rooms/available`
+## 1. Get Available Rooms with Images
 
-**Purpose:** Search rooms available for booking dates (Primary booking search endpoint)
+### Test the primary booking search endpoint with images
 
-**Image Data Included:**
+GET {{baseUrl}}/rooms/available?checkInDate=2026-01-15&checkOutDate=2026-01-20
+Authorization: Bearer {{token}}
 
-- Room images (ordered by `sortOrder`)
-- Room type images (ordered by `sortOrder`)
-
-**Response Structure:**
+### Expected Response:
 
 ```json
 {
   "data": [
     {
       "roomType": {
-        "id": "room-type-id",
+        "id": "...",
         "name": "Deluxe Suite",
         "capacity": 2,
         "basePrice": 1500000,
         "images": [
           {
-            "id": "image-id",
-            "roomTypeId": "room-type-id",
-            "cloudinaryId": "roommaster/room-types/abc123",
-            "url": "https://res.cloudinary.com/.../image.jpg",
-            "secureUrl": "https://res.cloudinary.com/.../image.jpg",
-            "thumbnailUrl": "https://res.cloudinary.com/.../c_thumb,w_300/image.jpg",
-            "width": 1920,
-            "height": 1080,
-            "format": "jpg",
+            "id": "...",
+            "url": "https://res.cloudinary.com/...",
+            "thumbnailUrl": "https://res.cloudinary.com/...",
             "sortOrder": 0,
-            "isDefault": true,
-            "createdAt": "2026-01-12T10:00:00Z"
+            "isDefault": true
           }
         ]
       },
       "availableCount": 3,
       "rooms": [
         {
-          "id": "room-id",
+          "id": "...",
           "roomNumber": "101",
-          "floor": 1,
-          "code": "DLX-101",
-          "status": "AVAILABLE",
-          "images": [
-            {
-              "id": "room-image-id",
-              "roomId": "room-id",
-              "cloudinaryId": "roommaster/rooms/xyz789",
-              "url": "https://res.cloudinary.com/.../room-image.jpg",
-              "secureUrl": "https://res.cloudinary.com/.../room-image.jpg",
-              "thumbnailUrl": "https://res.cloudinary.com/.../c_thumb,w_300/room-image.jpg",
-              "width": 1920,
-              "height": 1080,
-              "format": "jpg",
-              "sortOrder": 0,
-              "isDefault": true,
-              "createdAt": "2026-01-12T11:00:00Z"
-            }
-          ]
+          "images": [...]
         }
       ]
     }
-  ],
-  "total": 10,
-  "checkInDate": "2026-01-15",
-  "checkOutDate": "2026-01-20"
+  ]
 }
 ```
 
-#### 2. GET `/customer/rooms/:roomId`
+---
 
-**Purpose:** Get detailed information about a specific room
+## 2. Get Room Details with Images
 
-**Image Data Included:**
+### Test single room retrieval with images
 
-- Room images (ordered by `sortOrder`)
-- Room type images (ordered by `sortOrder`)
+GET {{baseUrl}}/rooms/{roomId}
+Authorization: Bearer {{token}}
 
-**Response Structure:**
+### Replace {roomId} with actual room ID
+
+### Expected Response:
 
 ```json
 {
   "id": "room-id",
   "roomNumber": "101",
   "floor": 1,
-  "code": "DLX-101",
   "status": "AVAILABLE",
   "roomType": {
-    "id": "room-type-id",
+    "id": "...",
     "name": "Deluxe Suite",
-    "capacity": 2,
-    "basePrice": 1500000,
-    "images": [
-      {
-        "id": "image-id",
-        "url": "https://...",
-        "thumbnailUrl": "https://...",
-        "sortOrder": 0,
-        "isDefault": true
-      }
-    ]
+    "images": [...]
   },
   "images": [
     {
-      "id": "room-image-id",
-      "url": "https://...",
-      "thumbnailUrl": "https://...",
+      "id": "...",
+      "url": "https://res.cloudinary.com/...",
+      "thumbnailUrl": "https://res.cloudinary.com/...",
       "sortOrder": 0,
       "isDefault": true
     }
@@ -126,37 +92,18 @@ All customer room endpoints now automatically include images in their responses.
 }
 ```
 
-#### 3. GET `/customer/rooms`
+---
 
-**Purpose:** Search rooms by current status (deprecated - use `/available` for booking)
+## 3. Get Room Images Only
 
-**Image Data Included:**
+### Test dedicated room images endpoint
 
-- Room images (ordered by `sortOrder`)
-- Room type images (ordered by `sortOrder`)
+GET {{baseUrl}}/rooms/{roomId}/images
+Authorization: Bearer {{token}}
 
-#### 4. GET `/customer/rooms/:roomId/availability`
+### Replace {roomId} with actual room ID
 
-**Purpose:** Check if a specific room is available for a date range
-
-**Image Data Included:**
-
-- Room images (ordered by `sortOrder`)
-- Room type images (ordered by `sortOrder`)
-
-## Dedicated Image Endpoints
-
-For cases where you need to fetch images separately (e.g., lazy loading, image gallery view), dedicated endpoints are available:
-
-### 1. GET `/customer/rooms/:roomId/images`
-
-**Purpose:** Get all images for a specific room
-
-**Parameters:**
-
-- `roomId` (path) - Room ID
-
-**Response:**
+### Expected Response:
 
 ```json
 [
@@ -172,21 +119,23 @@ For cases where you need to fetch images separately (e.g., lazy loading, image g
     "format": "jpg",
     "sortOrder": 0,
     "isDefault": true,
-    "createdAt": "2026-01-12T10:00:00Z",
-    "updatedAt": "2026-01-12T10:00:00Z"
+    "createdAt": "2026-01-12T10:00:00Z"
   }
 ]
 ```
 
-### 2. GET `/customer/room-types/:roomTypeId/images`
+---
 
-**Purpose:** Get all images for a specific room type
+## 4. Get Room Type Images Only
 
-**Parameters:**
+### Test dedicated room type images endpoint
 
-- `roomTypeId` (path) - Room Type ID
+GET {{baseUrl}}/room-types/{roomTypeId}/images
+Authorization: Bearer {{token}}
 
-**Response:**
+### Replace {roomTypeId} with actual room type ID
+
+### Expected Response:
 
 ```json
 [
@@ -202,131 +151,241 @@ For cases where you need to fetch images separately (e.g., lazy loading, image g
     "format": "jpg",
     "sortOrder": 0,
     "isDefault": true,
-    "createdAt": "2026-01-12T10:00:00Z",
-    "updatedAt": "2026-01-12T10:00:00Z"
+    "createdAt": "2026-01-12T10:00:00Z"
   }
 ]
 ```
 
-## Image Properties Explained
+---
 
-| Property                | Type     | Description                                                  |
-| ----------------------- | -------- | ------------------------------------------------------------ |
-| `id`                    | string   | Unique image ID                                              |
-| `roomId` / `roomTypeId` | string   | Parent entity ID                                             |
-| `cloudinaryId`          | string   | Cloudinary public ID (used for deletion and transformations) |
-| `url`                   | string   | Full Cloudinary URL (HTTP)                                   |
-| `secureUrl`             | string   | HTTPS Cloudinary URL (recommended)                           |
-| `thumbnailUrl`          | string   | Pre-generated thumbnail URL (300px width)                    |
-| `width`                 | number   | Image width in pixels                                        |
-| `height`                | number   | Image height in pixels                                       |
-| `format`                | string   | Image format (jpg, png, webp, etc.)                          |
-| `sortOrder`             | number   | Display order (ascending)                                    |
-| `isDefault`             | boolean  | Whether this is the default/featured image                   |
-| `createdAt`             | datetime | Creation timestamp                                           |
-| `updatedAt`             | datetime | Last update timestamp                                        |
+## 5. Check Room Availability with Images
 
-## Usage Recommendations
+### Test availability check with images included
 
-### For Mobile Apps
+GET {{baseUrl}}/rooms/{roomId}/availability?checkInDate=2026-01-15&checkOutDate=2026-01-20
+Authorization: Bearer {{token}}
 
-**Primary Search Flow:**
+### Replace {roomId} with actual room ID
 
-1. Use `GET /customer/rooms/available` with check-in/check-out dates
-2. Display room type images in the list view
-3. When user taps on a room, you already have all the images
+---
 
-**Detail View:**
+## 6. Search Rooms (Current Status) with Images
 
-1. Use `GET /customer/rooms/:roomId` to get full room details
-2. Create an image gallery using both room images and room type images
-3. Use `thumbnailUrl` for grid views and `secureUrl` for full-size views
+### Test deprecated search endpoint (still includes images)
 
-**Lazy Loading (Optional):**
+GET {{baseUrl}}/rooms?floor=1&page=1&limit=10
+Authorization: Bearer {{token}}
 
-- If initial load is slow, you can fetch room list without images first
-- Then use dedicated endpoints to load images on-demand
-- However, the recommended approach is to include images by default
+---
 
-### Image Display Best Practices
+## 7. Get Customer Bookings with Images
 
-1. **Always use `secureUrl`** (HTTPS) for production
-2. **Use `thumbnailUrl`** for:
-   - List views
-   - Grid views
-   - Small previews
-3. **Use `secureUrl`** for:
-   - Full-screen image galleries
-   - Detail views
-   - Hero images
-4. **Sort by `sortOrder`** (images are pre-sorted in API response)
-5. **Display default image first** (where `isDefault: true`)
-6. **Fallback**: If no images exist, use a placeholder image
+### Test bookings list with image data
 
-### CDN & Performance
+GET {{baseUrl}}/bookings
+Authorization: Bearer {{token}}
 
-All images are served via Cloudinary CDN with:
+### Expected Response:
 
-- Global edge caching
-- Automatic format optimization (WebP for supported browsers)
-- Responsive image transformations
-- Fast delivery worldwide
-
-## Error Handling
-
-All image endpoints return:
-
-- `200 OK` - Success with image array (may be empty if no images)
-- `401 Unauthorized` - Missing or invalid authentication
-- `404 Not Found` - Room or room type doesn't exist
-
-## Authentication
-
-All customer endpoints require authentication:
-
-```
-Authorization: Bearer <customer_jwt_token>
-```
-
-## Example Integration (React Native)
-
-```typescript
-// Fetch available rooms with images
-const response = await fetch(
-  `${API_BASE}/customer/rooms/available?checkInDate=2026-01-15&checkOutDate=2026-01-20`,
-  {
-    headers: {
-      Authorization: `Bearer ${token}`
+```json
+{
+  "data": [
+    {
+      "id": "booking-id",
+      "bookingCode": "BK123...",
+      "bookingRooms": [
+        {
+          "room": {
+            "images": [
+               {
+                 "url": "https://res.cloudinary.com/...",
+                 "thumbnailUrl": "https://res.cloudinary.com/...",
+                 "isDefault": true
+               }
+            ]
+          },
+          "roomType": {
+            "images": [...]
+          }
+        }
+      ]
     }
+  ],
+  "pagination": {
+     "page": 1,
+     "limit": 10,
+     "total": 1
   }
-);
-
-const { data } = await response.json();
-
-// Display room type images
-data.forEach((roomTypeGroup) => {
-  const defaultImage =
-    roomTypeGroup.roomType.images.find((img) => img.isDefault) || roomTypeGroup.roomType.images[0];
-
-  // Use thumbnailUrl for list view
-  console.log('Thumbnail:', defaultImage.thumbnailUrl);
-
-  // Use secureUrl for full view
-  console.log('Full image:', defaultImage.secureUrl);
-});
+}
 ```
 
-## Changes from Previous Version
+---
 
-**Before:**
+## 8. Get Single Booking with Images
 
-- Room endpoints did NOT include images
-- Required separate API calls to fetch images
-- Multiple round trips needed for complete data
+### Test single booking details
 
-**After:**
+GET {{baseUrl}}/bookings/{bookingId}
+Authorization: Bearer {{token}}
 
-- All room endpoints include images by default
-- Single API call gets complete data
-- Optional dedicated endpoints for specific use cases
-- Better performance and user experience
+### Replace {bookingId} with actual booking ID
+
+### Expected Response:
+
+```json
+{
+  "id": "booking-id",
+  "bookingCode": "BK123...",
+  "bookingRooms": [
+    {
+      "room": {
+        "images": [...]
+      },
+      "roomType": {
+        "images": [...]
+      }
+    }
+  ]
+}
+```
+
+---
+
+## Testing Checklist
+
+### Basic Functionality
+
+- [ ] GET /rooms/available returns images
+- [ ] GET /rooms/:roomId returns images
+- [ ] GET /bookings returns images in room and roomType
+- [ ] GET /bookings/:id returns images in room and roomType
+- [ ] GET /rooms/:roomId/images works
+- [ ] GET /room-types/:roomTypeId/images works
+- [ ] Images are ordered by sortOrder
+- [ ] Default image has isDefault: true
+
+### Authentication
+
+- [ ] Endpoints require authentication
+- [ ] Returns 401 without token
+- [ ] Returns 401 with invalid token
+
+### Edge Cases
+
+- [ ] Handles rooms with no images (empty array)
+- [ ] Handles rooms with multiple images
+- [ ] Handles non-existent room ID (404)
+- [ ] Handles non-existent room type ID (404)
+
+### Performance
+
+- [ ] Response time is acceptable
+- [ ] Images load via CDN
+- [ ] Thumbnail URLs work
+- [ ] Secure URLs work
+
+### Data Quality
+
+- [ ] Image URLs are valid
+- [ ] Cloudinary URLs are accessible
+- [ ] Image metadata is complete
+- [ ] Image order matches sortOrder
+
+---
+
+## cURL Examples
+
+### Get Available Rooms
+
+```bash
+curl -X GET "http://localhost:3000/customer-api/v1/rooms/available?checkInDate=2026-01-15&checkOutDate=2026-01-20" \
+  -H "Authorization: Bearer YOUR_TOKEN"
+```
+
+### Get Room Details
+
+```bash
+curl -X GET "http://localhost:3000/customer-api/v1/rooms/ROOM_ID" \
+  -H "Authorization: Bearer YOUR_TOKEN"
+```
+
+### Get Room Images
+
+```bash
+curl -X GET "http://localhost:3000/customer-api/v1/rooms/ROOM_ID/images" \
+  -H "Authorization: Bearer YOUR_TOKEN"
+```
+
+### Get Room Type Images
+
+```bash
+curl -X GET "http://localhost:3000/customer-api/v1/room-types/ROOM_TYPE_ID/images" \
+  -H "Authorization: Bearer YOUR_TOKEN"
+```
+
+### Get Bookings
+
+```bash
+curl -X GET "http://localhost:3000/customer-api/v1/bookings" \
+  -H "Authorization: Bearer YOUR_TOKEN"
+```
+
+---
+
+## Postman Collection
+
+Import these requests into Postman:
+
+1. Create a new collection: "Customer Room Images API"
+2. Add environment variable: `baseUrl` = `http://localhost:3000/customer-api/v1`
+3. Add environment variable: `token` = Your customer JWT token
+4. Import the requests above
+
+---
+
+## Expected Image Fields
+
+Every image object should contain:
+
+| Field             | Type     | Required | Description          |
+| ----------------- | -------- | -------- | -------------------- |
+| id                | string   | ✓        | Unique image ID      |
+| roomId/roomTypeId | string   | ✓        | Parent entity ID     |
+| cloudinaryId      | string   | ✓        | Cloudinary public ID |
+| url               | string   | ✓        | HTTP URL             |
+| secureUrl         | string   | ✓        | HTTPS URL            |
+| thumbnailUrl      | string   | ✓        | Thumbnail URL        |
+| width             | number   | ✓        | Image width (px)     |
+| height            | number   | ✓        | Image height (px)    |
+| format            | string   | ✓        | Image format         |
+| sortOrder         | number   | ✓        | Display order        |
+| isDefault         | boolean  | ✓        | Default flag         |
+| createdAt         | datetime | ✓        | Creation time        |
+| updatedAt         | datetime | ✓        | Update time          |
+
+---
+
+## Troubleshooting
+
+### No images returned
+
+- Check if room/room type has uploaded images
+- Verify Cloudinary integration is working
+- Check database for RoomImage/RoomTypeImage records
+
+### 401 Unauthorized
+
+- Verify token is valid and not expired
+- Check Authorization header format: `Bearer <token>`
+- Ensure customer authentication is configured
+
+### 404 Not Found
+
+- Verify room ID or room type ID exists
+- Check database for the entity
+
+### Images not loading
+
+- Verify Cloudinary credentials are correct
+- Check network connectivity to Cloudinary CDN
+- Verify image URLs are properly formatted

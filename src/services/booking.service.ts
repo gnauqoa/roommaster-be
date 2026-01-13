@@ -600,8 +600,20 @@ export class BookingService {
       include: {
         bookingRooms: {
           include: {
-            room: true,
-            roomType: true,
+            room: {
+              include: {
+                images: {
+                  orderBy: { sortOrder: 'asc' }
+                }
+              }
+            },
+            roomType: {
+              include: {
+                images: {
+                  orderBy: { sortOrder: 'asc' }
+                }
+              }
+            },
             bookingCustomers: {
               include: {
                 customer: {
@@ -680,8 +692,20 @@ export class BookingService {
           },
           bookingRooms: {
             include: {
-              roomType: true,
-              room: true
+              roomType: {
+                include: {
+                  images: {
+                    orderBy: { sortOrder: 'asc' }
+                  }
+                }
+              },
+              room: {
+                include: {
+                  images: {
+                    orderBy: { sortOrder: 'asc' }
+                  }
+                }
+              }
             }
           }
         },
