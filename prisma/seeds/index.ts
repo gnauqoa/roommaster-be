@@ -6,6 +6,9 @@ import { seedRooms } from './room.seed';
 import { seedServices } from './service.seed';
 import { seedPromotions } from './promotion.seed';
 import { seedBookings } from './booking.seed';
+import { seedHistoricalBookings } from './historical-booking.seed';
+import { seedTransactions } from './transaction.seed';
+import { seedServiceUsage } from './service-usage.seed';
 import { seedActivities } from './activity.seed';
 import { seedRBAC } from './permissions.seed';
 import { seedCalendarEvents } from './calendar-event.seed';
@@ -104,8 +107,14 @@ const main = async () => {
 
     console.log('');
     console.log('📋 Phase 2: Bookings and activities');
-    await seedBookings(prisma); // Creates bookings, booking rooms, and booking customers
+    await seedBookings(prisma); // Creates basic bookings
+    await seedHistoricalBookings(prisma); // Creates historical bookings for reports
     await seedActivities(prisma);
+
+    console.log('');
+    console.log('📋 Phase 3: Transactions and service usage (for reports)');
+    await seedTransactions(prisma); // Creates transaction records
+    await seedServiceUsage(prisma); // Creates service usage records
 
     console.log('');
     console.log('✅ Seed completed successfully!');
@@ -128,7 +137,9 @@ const main = async () => {
       prisma.pricingRule.count(),
       prisma.booking.count(),
       prisma.bookingRoom.count(),
-      prisma.activity.count()
+      prisma.activity.count(),
+      prisma.transaction.count(),
+      prisma.serviceUsage.count()
     ]);
 
     console.log(`  - App Settings: ${counts[0]}`);
@@ -148,6 +159,8 @@ const main = async () => {
     console.log(`  - Bookings: ${counts[14]}`);
     console.log(`  - Booking Rooms: ${counts[15]}`);
     console.log(`  - Activities: ${counts[16]}`);
+    console.log(`  - Transactions: ${counts[17]}`);
+    console.log(`  - Service Usage: ${counts[18]}`);
   } catch (error) {
     console.error('❌ Error during seeding:', error);
     throw error;
