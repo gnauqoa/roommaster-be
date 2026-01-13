@@ -40,6 +40,8 @@ export interface BookingConfirmationData {
   }>;
   totalAmount: number | string;
   depositRequired: number | string;
+  totalPaid: number | string;
+  balance: number | string;
   isPaid: boolean;
 }
 
