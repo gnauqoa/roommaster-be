@@ -19,6 +19,7 @@ import createCalendarEventRoutes from './calendar-event.route';
 import createEmployeeCustomerRankRoutes from './customer-rank.route';
 import createRoleRoutes from './role.route';
 import createPermissionRoutes from './permission.route';
+import createReportRoutes from './reports.route';
 
 export default function createEmployeeRoutes(): express.Router {
   const router = express.Router();
@@ -43,6 +44,7 @@ export default function createEmployeeRoutes(): express.Router {
   router.use('/ranks', createEmployeeCustomerRankRoutes());
   router.use('/roles', createRoleRoutes());
   router.use('/permissions', createPermissionRoutes());
+  router.use('/reports', createReportRoutes());
 
   return router;
 }

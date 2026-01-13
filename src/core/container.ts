@@ -139,7 +139,17 @@ export const TOKENS = {
   CustomerRankService: Symbol('CustomerRankService'),
   ImageService: Symbol('ImageService'),
   RoleService: Symbol('RoleService'),
-  PermissionService: Symbol('PermissionService')
+  PermissionService: Symbol('PermissionService'),
+
+  // Report Services
+  RoomAvailabilityReportService: Symbol('RoomAvailabilityReportService'),
+  CustomerReportService: Symbol('CustomerReportService'),
+  EmployeeReportService: Symbol('EmployeeReportService'),
+  ServiceReportService: Symbol('ServiceReportService'),
+  RevenueReportService: Symbol('RevenueReportService'),
+
+  // Controllers
+  ReportController: Symbol('ReportController')
 } as const;
 
 export type TokenKey = keyof typeof TOKENS;

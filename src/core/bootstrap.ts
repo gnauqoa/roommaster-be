@@ -26,6 +26,14 @@ import {
   RoleService,
   PermissionService
 } from '@/services';
+import {
+  RoomAvailabilityReportService,
+  CustomerReportService,
+  EmployeeReportService,
+  ServiceReportService,
+  RevenueReportService
+} from '@/services/reports';
+import { ReportController } from '@/controllers/employee/reports';
 import PricingRuleService from '@/services/pricing-rule.service';
 import PricingCalculatorService from '@/services/pricing-calculator.service';
 import CaslService from '@/services/casl.service';
@@ -228,6 +236,65 @@ export function bootstrap(): void {
     TOKENS.PermissionService,
     (...args: unknown[]) => new PermissionService(args[0] as PrismaClient),
     [TOKENS.PrismaClient]
+  );
+
+  // ==================== REPORT SERVICES ====================
+
+  // Register RoomAvailabilityReportService
+  container.registerFactory(
+    TOKENS.RoomAvailabilityReportService,
+    (...args: unknown[]) => new RoomAvailabilityReportService(args[0] as PrismaClient),
+    [TOKENS.PrismaClient]
+  );
+
+  // Register CustomerReportService
+  container.registerFactory(
+    TOKENS.CustomerReportService,
+    (...args: unknown[]) => new CustomerReportService(args[0] as PrismaClient),
+    [TOKENS.PrismaClient]
+  );
+
+  // Register EmployeeReportService
+  container.registerFactory(
+    TOKENS.EmployeeReportService,
+    (...args: unknown[]) => new EmployeeReportService(args[0] as PrismaClient),
+    [TOKENS.PrismaClient]
+  );
+
+  // Register ServiceReportService
+  container.registerFactory(
+    TOKENS.ServiceReportService,
+    (...args: unknown[]) => new ServiceReportService(args[0] as PrismaClient),
+    [TOKENS.PrismaClient]
+  );
+
+  // Register RevenueReportService
+  container.registerFactory(
+    TOKENS.RevenueReportService,
+    (...args: unknown[]) => new RevenueReportService(args[0] as PrismaClient),
+    [TOKENS.PrismaClient]
+  );
+
+  // ==================== CONTROLLERS ====================
+
+  // Register ReportController
+  container.registerFactory(
+    TOKENS.ReportController,
+    (...args: unknown[]) =>
+      new ReportController(
+        args[0] as RoomAvailabilityReportService,
+        args[1] as CustomerReportService,
+        args[2] as EmployeeReportService,
+        args[3] as ServiceReportService,
+        args[4] as RevenueReportService
+      ),
+    [
+      TOKENS.RoomAvailabilityReportService,
+      TOKENS.CustomerReportService,
+      TOKENS.EmployeeReportService,
+      TOKENS.ServiceReportService,
+      TOKENS.RevenueReportService
+    ]
   );
 
   // Initialize default configurations

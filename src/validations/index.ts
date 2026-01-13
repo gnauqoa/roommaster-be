@@ -14,3 +14,4 @@ export { default as activityValidation } from './activity.validation';
 export { default as roomTagValidation } from './roomTag.validation';
 export { default as roleValidation } from './role.validation';
 export { default as permissionValidation } from './permission.validation';
+export { default as reportValidation } from './report.validation';
