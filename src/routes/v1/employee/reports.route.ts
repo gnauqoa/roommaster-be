@@ -33,22 +33,44 @@ export default function createReportRoutes(): express.Router {
    *       - bearerAuth: []
    *     parameters:
    *       - in: query
-   *         name: startDate
+   *         name: checkInDate
+   *         required: true
    *         schema:
    *           type: string
    *           format: date
-   *         description: Start date for availability check (ISO format)
+   *         description: Check-in date for availability check (ISO format)
    *       - in: query
-   *         name: endDate
+   *         name: checkOutDate
+   *         required: true
    *         schema:
    *           type: string
    *           format: date
-   *         description: End date for availability check (ISO format)
+   *         description: Check-out date for availability check (ISO format)
    *       - in: query
    *         name: roomTypeId
    *         schema:
    *           type: string
    *         description: Filter by specific room type
+   *       - in: query
+   *         name: capacity
+   *         schema:
+   *           type: integer
+   *         description: Minimum room capacity required
+   *       - in: query
+   *         name: floor
+   *         schema:
+   *           type: integer
+   *         description: Filter by floor number
+   *       - in: query
+   *         name: minPrice
+   *         schema:
+   *           type: number
+   *         description: Minimum price per night
+   *       - in: query
+   *         name: maxPrice
+   *         schema:
+   *           type: number
+   *         description: Maximum price per night
    *     responses:
    *       200:
    *         description: Room availability breakdown
@@ -121,17 +143,32 @@ export default function createReportRoutes(): express.Router {
    *       - bearerAuth: []
    *     parameters:
    *       - in: query
-   *         name: startDate
+   *         name: fromDate
    *         schema:
    *           type: string
    *           format: date
    *         description: Filter bookings from this date
    *       - in: query
-   *         name: endDate
+   *         name: toDate
    *         schema:
    *           type: string
    *           format: date
    *         description: Filter bookings until this date
+   *       - in: query
+   *         name: rankId
+   *         schema:
+   *           type: string
+   *         description: Filter by customer rank
+   *       - in: query
+   *         name: minStays
+   *         schema:
+   *           type: integer
+   *         description: Minimum number of stays
+   *       - in: query
+   *         name: minTotalSpent
+   *         schema:
+   *           type: number
+   *         description: Minimum total amount spent
    *       - in: query
    *         name: page
    *         schema:
@@ -148,7 +185,7 @@ export default function createReportRoutes(): express.Router {
    *         name: sortBy
    *         schema:
    *           type: string
-   *           enum: [totalSpent, totalNights, lastStayDate]
+   *           enum: [totalSpent, totalStays, lastVisit]
    *           default: totalSpent
    *         description: Sort field
    *       - in: query
@@ -183,19 +220,31 @@ export default function createReportRoutes(): express.Router {
    *       - bearerAuth: []
    *     parameters:
    *       - in: query
-   *         name: startDate
+   *         name: fromDate
    *         required: true
    *         schema:
    *           type: string
    *           format: date
    *         description: Period start date
    *       - in: query
-   *         name: endDate
+   *         name: toDate
    *         required: true
    *         schema:
    *           type: string
    *           format: date
    *         description: Period end date
+   *       - in: query
+   *         name: page
+   *         schema:
+   *           type: integer
+   *           default: 1
+   *         description: Page number
+   *       - in: query
+   *         name: limit
+   *         schema:
+   *           type: integer
+   *           default: 20
+   *         description: Records per page
    *     responses:
    *       200:
    *         description: List of first-time guests with booking details
@@ -221,15 +270,11 @@ export default function createReportRoutes(): express.Router {
    *       - bearerAuth: []
    *     parameters:
    *       - in: query
-   *         name: minSpent
-   *         schema:
-   *           type: number
-   *         description: Minimum total spending filter
-   *       - in: query
-   *         name: minBookings
+   *         name: limit
    *         schema:
    *           type: integer
-   *         description: Minimum number of bookings filter
+   *           default: 50
+   *         description: Number of top customers to return
    *     responses:
    *       200:
    *         description: Customer lifetime value analytics with CLV scores
@@ -280,13 +325,15 @@ export default function createReportRoutes(): express.Router {
    *       - bearerAuth: []
    *     parameters:
    *       - in: query
-   *         name: startDate
+   *         name: fromDate
+   *         required: true
    *         schema:
    *           type: string
    *           format: date
    *         description: Period start date
    *       - in: query
-   *         name: endDate
+   *         name: toDate
+   *         required: true
    *         schema:
    *           type: string
    *           format: date
@@ -296,6 +343,20 @@ export default function createReportRoutes(): express.Router {
    *         schema:
    *           type: string
    *         description: Filter by specific employee
+   *       - in: query
+   *         name: sortBy
+   *         schema:
+   *           type: string
+   *           enum: [totalBookings, totalRevenue, totalTransactions]
+   *           default: totalRevenue
+   *         description: Sort field
+   *       - in: query
+   *         name: sortOrder
+   *         schema:
+   *           type: string
+   *           enum: [asc, desc]
+   *           default: desc
+   *         description: Sort direction
    *     responses:
    *       200:
    *         description: Employee booking performance metrics
@@ -321,13 +382,15 @@ export default function createReportRoutes(): express.Router {
    *       - bearerAuth: []
    *     parameters:
    *       - in: query
-   *         name: startDate
+   *         name: fromDate
+   *         required: true
    *         schema:
    *           type: string
    *           format: date
    *         description: Period start date
    *       - in: query
-   *         name: endDate
+   *         name: toDate
+   *         required: true
    *         schema:
    *           type: string
    *           format: date
@@ -362,13 +425,13 @@ export default function createReportRoutes(): express.Router {
    *       - bearerAuth: []
    *     parameters:
    *       - in: query
-   *         name: startDate
+   *         name: fromDate
    *         schema:
    *           type: string
    *           format: date
    *         description: Period start date
    *       - in: query
-   *         name: endDate
+   *         name: toDate
    *         schema:
    *           type: string
    *           format: date
@@ -410,13 +473,15 @@ export default function createReportRoutes(): express.Router {
    *       - bearerAuth: []
    *     parameters:
    *       - in: query
-   *         name: startDate
+   *         name: fromDate
+   *         required: true
    *         schema:
    *           type: string
    *           format: date
    *         description: Period start date
    *       - in: query
-   *         name: endDate
+   *         name: toDate
+   *         required: true
    *         schema:
    *           type: string
    *           format: date
@@ -426,6 +491,12 @@ export default function createReportRoutes(): express.Router {
    *         schema:
    *           type: string
    *         description: Filter by specific service
+   *       - in: query
+   *         name: status
+   *         schema:
+   *           type: string
+   *           enum: [PENDING, TRANSFERRED, COMPLETED, CANCELLED]
+   *         description: Filter by service usage status
    *     responses:
    *       200:
    *         description: Service usage statistics with status breakdown
@@ -451,13 +522,15 @@ export default function createReportRoutes(): express.Router {
    *       - bearerAuth: []
    *     parameters:
    *       - in: query
-   *         name: startDate
+   *         name: fromDate
+   *         required: true
    *         schema:
    *           type: string
    *           format: date
    *         description: Period start date
    *       - in: query
-   *         name: endDate
+   *         name: toDate
+   *         required: true
    *         schema:
    *           type: string
    *           format: date
@@ -493,14 +566,14 @@ export default function createReportRoutes(): express.Router {
    *       - bearerAuth: []
    *     parameters:
    *       - in: query
-   *         name: startDate
+   *         name: fromDate
    *         required: true
    *         schema:
    *           type: string
    *           format: date
    *         description: Trend period start date
    *       - in: query
-   *         name: endDate
+   *         name: toDate
    *         required: true
    *         schema:
    *           type: string
@@ -511,7 +584,7 @@ export default function createReportRoutes(): express.Router {
    *         schema:
    *           type: string
    *           enum: [day, week, month]
-   *           default: month
+   *           default: day
    *         description: Grouping interval for trend analysis
    *       - in: query
    *         name: serviceId
@@ -545,13 +618,15 @@ export default function createReportRoutes(): express.Router {
    *       - bearerAuth: []
    *     parameters:
    *       - in: query
-   *         name: startDate
+   *         name: fromDate
+   *         required: true
    *         schema:
    *           type: string
    *           format: date
    *         description: Period start date
    *       - in: query
-   *         name: endDate
+   *         name: toDate
+   *         required: true
    *         schema:
    *           type: string
    *           format: date
@@ -561,7 +636,7 @@ export default function createReportRoutes(): express.Router {
    *         schema:
    *           type: string
    *           enum: [day, week, month, quarter, year]
-   *           default: month
+   *           default: day
    *         description: Grouping interval for summary
    *     responses:
    *       200:
@@ -588,13 +663,15 @@ export default function createReportRoutes(): express.Router {
    *       - bearerAuth: []
    *     parameters:
    *       - in: query
-   *         name: startDate
+   *         name: fromDate
+   *         required: true
    *         schema:
    *           type: string
    *           format: date
    *         description: Period start date
    *       - in: query
-   *         name: endDate
+   *         name: toDate
+   *         required: true
    *         schema:
    *           type: string
    *           format: date
@@ -624,13 +701,15 @@ export default function createReportRoutes(): express.Router {
    *       - bearerAuth: []
    *     parameters:
    *       - in: query
-   *         name: startDate
+   *         name: fromDate
+   *         required: true
    *         schema:
    *           type: string
    *           format: date
    *         description: Period start date
    *       - in: query
-   *         name: endDate
+   *         name: toDate
+   *         required: true
    *         schema:
    *           type: string
    *           format: date
@@ -660,22 +739,19 @@ export default function createReportRoutes(): express.Router {
    *       - bearerAuth: []
    *     parameters:
    *       - in: query
-   *         name: startDate
+   *         name: fromDate
+   *         required: true
    *         schema:
    *           type: string
    *           format: date
    *         description: Period start date
    *       - in: query
-   *         name: endDate
+   *         name: toDate
+   *         required: true
    *         schema:
    *           type: string
    *           format: date
    *         description: Period end date
-   *       - in: query
-   *         name: promotionId
-   *         schema:
-   *           type: string
-   *         description: Filter by specific promotion
    *     responses:
    *       200:
    *         description: Promotion effectiveness metrics with ROI calculations
