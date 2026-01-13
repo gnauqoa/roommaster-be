@@ -58,9 +58,9 @@ Authorization: Bearer {{token}}
 
 ---
 
-## 2. Get Room Details with Images
+## 2. Get Room Details with Images (Updated)
 
-### Test single room retrieval with images
+### Test single room retrieval with images and tags
 
 GET {{baseUrl}}/rooms/{roomId}
 Authorization: Bearer {{token}}
@@ -72,23 +72,52 @@ Authorization: Bearer {{token}}
 ```json
 {
   "id": "room-id",
-  "roomNumber": "101",
+  "roomNumber": "104",
   "floor": 1,
+  "code": "DLX-104",
   "status": "AVAILABLE",
+  "roomTypeId": "seed_phòng_deluxe",
+  "createdAt": "2026-01-12T06:10:08.272Z",
+  "updatedAt": "2026-01-12T06:10:08.272Z",
   "roomType": {
-    "id": "...",
-    "name": "Deluxe Suite",
-    "images": [...]
+    "id": "seed_phòng_deluxe",
+    "name": "Phòng Deluxe",
+    "capacity": 2,
+    "totalBed": 1,
+    "basePrice": "800000",
+    "imageUrl": null,
+    "createdAt": "2026-01-12T06:10:08.134Z",
+    "updatedAt": "2026-01-12T13:12:17.517Z",
+    "roomTypeTags": [
+      {
+        "id": "tag-relation-id",
+        "name": "Wifi Feature",
+        "roomTypeId": "seed_phòng_deluxe",
+        "roomTagId": "wifi-tag-id",
+        "roomTag": {
+          "id": "wifi-tag-id",
+          "name": "Free Wifi",
+          "description": "High speed internet"
+        }
+      }
+    ]
+    // Note: 'images' field is removed from roomType to avoid duplication
   },
   "images": [
     {
-      "id": "...",
-      "url": "https://res.cloudinary.com/...",
-      "thumbnailUrl": "https://res.cloudinary.com/...",
+      "id": "image-id",
+      "roomTypeId": "seed_phòng_deluxe",
+      "cloudinaryId": "hotel/room-types/example",
+      "url": "https://res.cloudinary.com/.../image.jpg",
+      "secureUrl": "https://res.cloudinary.com/.../image.jpg",
+      "thumbnailUrl": "https://res.cloudinary.com/.../c_fill,h_300,w_400/image.jpg",
       "sortOrder": 0,
       "isDefault": true
     }
-  ]
+  ],
+  "_count": {
+    "bookingRooms": 1
+  }
 }
 ```
 
