@@ -82,27 +82,26 @@ export async function processFullBookingPayment(
     };
 
     if (transactionType === TransactionType.DEPOSIT) {
-      // Calculate total room amount (this is now the deposit required for single payment flow)
-      // const totalRoomAmount = booking.bookingRooms.reduce(
-      //   (sum, room) => sum.add(getSubtotalRoom(room)),
-      //   new Prisma.Decimal(0)
-      // );
+      // Calculate total room amount
+      const totalRoomAmount = booking.bookingRooms.reduce(
+        (sum, room) => sum.add(getSubtotalRoom(room)),
+        new Prisma.Decimal(0)
+      );
 
-      // In single payment flow, deposit is 100% of total amount
-      // const depositRequired = totalRoomAmount;
+      // Use the depositRequired from booking (calculated based on deposit percentage)
+      const depositRequired = booking.depositRequired;
 
       for (const room of booking.bookingRooms) {
-        // Calculate proportional deposit for this room (which is just the room price now)
+        // Calculate proportional deposit for this room
         const subtotal = getSubtotalRoom(room);
-        // const roomProportion = subtotal.div(totalRoomAmount);
-        // const roomDeposit = depositRequired.mul(roomProportion);
-        // Since depositRequired == totalRoomAmount, roomDeposit == subtotal
+        const roomProportion = subtotal.div(totalRoomAmount);
+        const roomDeposit = depositRequired.mul(roomProportion);
 
         transactionDetails.push({
           bookingRoomId: room.id,
-          baseAmount: subtotal.toNumber(),
+          baseAmount: roomDeposit.toNumber(),
           discountAmount: 0,
-          amount: subtotal.toNumber()
+          amount: roomDeposit.toNumber()
         });
       }
     } else {
