@@ -4,6 +4,8 @@
 
 ### 3.1.1 **Danh sách các lớp thực thể liên quan**
 
+**Core Entities:**
+
 - Employee (Nhân viên)
 - Customer (Khách hàng)
 - RoomType (Loại phòng)
@@ -16,6 +18,10 @@
 - Transaction (Giao dịch)
 - TransactionDetail (Chi tiết giao dịch)
 - Activity (Hoạt động/Nhật ký)
+- Promotion (Mã khuyến mãi)
+- PricingRule (Quy tắc điều chỉnh giá động)
+- Role (Vai trò nhân viên)
+- Permission (Quyền hạn)
 
 ### 3.1.2. **Conceptual model**
 
@@ -413,27 +419,48 @@ TransactionDetail "0..*" -- "0..1" ServiceUsage
 
 ### 3.1.4 **Danh sách các lớp và các mối quan hệ**
 
-| STT | Class              | Type (Entity/Control) | Ghi chú                                                     |
-| --- | ------------------ | --------------------- | ----------------------------------------------------------- |
-| 1   | Employee           | Entity                | Quản lý thông tin nhân viên hệ thống                        |
-| 2   | Customer           | Entity                | Quản lý thông tin khách hàng                                |
-| 3   | RoomType           | Entity                | Quản lý loại phòng và giá cơ bản                            |
-| 4   | Room               | Entity                | Quản lý phòng và trạng thái phòng                           |
-| 5   | Booking            | Control               | Quản lý đặt phòng, tổng hợp tài chính                       |
-| 6   | BookingRoom        | Control               | Chi tiết đặt phòng theo từng phòng cụ thể                   |
-| 7   | BookingCustomer    | Control               | Liên kết khách hàng với booking/phòng                       |
-| 8   | Service            | Entity                | Quản lý danh mục dịch vụ                                    |
-| 9   | ServiceUsage       | Control               | Quản lý sử dụng dịch vụ (theo booking/phòng/khách vãng lai) |
-| 10  | Transaction        | Control               | Quản lý giao dịch thanh toán                                |
-| 11  | TransactionDetail  | Control               | Chi tiết phân bổ thanh toán cho phòng/dịch vụ               |
-| 12  | Activity           | Entity                | Nhật ký hoạt động hệ thống                                  |
-| 13  | RoomStatus         | Entity (Enum)         | Trạng thái phòng                                            |
-| 14  | BookingStatus      | Entity (Enum)         | Trạng thái đặt phòng                                        |
-| 15  | ServiceUsageStatus | Entity (Enum)         | Trạng thái sử dụng dịch vụ                                  |
-| 16  | TransactionStatus  | Entity (Enum)         | Trạng thái giao dịch                                        |
-| 17  | PaymentMethod      | Entity (Enum)         | Phương thức thanh toán                                      |
-| 18  | TransactionType    | Entity (Enum)         | Loại giao dịch                                              |
-| 19  | ActivityType       | Entity (Enum)         | Loại hoạt động                                              |
+| STT | Class                   | Type (Entity/Control) | Ghi chú                                                     |
+| --- | ----------------------- | --------------------- | ----------------------------------------------------------- |
+| 1   | Employee                | Entity                | Quản lý thông tin nhân viên hệ thống                        |
+| 2   | Customer                | Entity                | Quản lý thông tin khách hàng                                |
+| 3   | RoomType                | Entity                | Quản lý loại phòng và giá cơ bản                            |
+| 4   | Room                    | Entity                | Quản lý phòng và trạng thái phòng                           |
+| 5   | Booking                 | Control               | Quản lý đặt phòng, tổng hợp tài chính                       |
+| 6   | BookingRoom             | Control               | Chi tiết đặt phòng theo từng phòng cụ thể                   |
+| 7   | BookingCustomer         | Control               | Liên kết khách hàng với booking/phòng                       |
+| 8   | Service                 | Entity                | Quản lý danh mục dịch vụ                                    |
+| 9   | ServiceUsage            | Control               | Quản lý sử dụng dịch vụ (theo booking/phòng/khách vãng lai) |
+| 10  | Transaction             | Control               | Quản lý giao dịch thanh toán                                |
+| 11  | TransactionDetail       | Control               | Chi tiết phân bổ thanh toán cho phòng/dịch vụ               |
+| 12  | Activity                | Entity                | Nhật ký hoạt động hệ thống                                  |
+| 13  | RoomStatus              | Entity (Enum)         | Trạng thái phòng                                            |
+| 14  | BookingStatus           | Entity (Enum)         | Trạng thái đặt phòng                                        |
+| 15  | ServiceUsageStatus      | Entity (Enum)         | Trạng thái sử dụng dịch vụ                                  |
+| 16  | TransactionStatus       | Entity (Enum)         | Trạng thái giao dịch                                        |
+| 17  | PaymentMethod           | Entity (Enum)         | Phương thức thanh toán                                      |
+| 18  | TransactionType         | Entity (Enum)         | Loại giao dịch                                              |
+| 19  | ActivityType            | Entity (Enum)         | Loại hoạt động (đã mở rộng)                                 |
+| 20  | RoomTypeImage           | Entity                | Hình ảnh loại phòng (Cloudinary)                            |
+| 21  | RoomImage               | Entity                | Hình ảnh phòng (Cloudinary)                                 |
+| 22  | ServiceImage            | Entity                | Hình ảnh dịch vụ (Cloudinary)                               |
+| 23  | RoomTag                 | Entity                | Tag phòng (wifi, TV, bếp...)                                |
+| 24  | RoomTypeTag             | Entity                | Liên kết RoomType và RoomTag                                |
+| 25  | Promotion               | Control               | Quản lý mã khuyến mãi                                       |
+| 26  | CustomerPromotion       | Control               | Mã khuyến mãi thuộc về khách hàng                           |
+| 27  | UsedPromotion           | Control               | Lịch sử sử dụng mã khuyến mãi                               |
+| 28  | CustomerRank            | Entity                | Hạng VIP khách hàng                                         |
+| 29  | CalendarEvent           | Entity                | Sự kiện lịch (Tết, mùa hè, blackpink...)                    |
+| 30  | PricingRule             | Control               | Quy tắc điều chỉnh giá động                                 |
+| 31  | Role                    | Entity                | Vai trò nhân viên (RBAC)                                    |
+| 32  | Permission              | Entity                | Quyền hạn (RBAC)                                            |
+| 33  | RolePermission          | Entity                | Liên kết Role và Permission                                 |
+| 34  | AppSetting              | Entity                | Cấu hình hệ thống                                           |
+| 35  | PromotionScope          | Entity (Enum)         | Phạm vi khuyến mãi (ROOM/SERVICE/ALL)                       |
+| 36  | PromotionType           | Entity (Enum)         | Loại khuyến mãi (PERCENTAGE/FIXED_AMOUNT)                   |
+| 37  | CustomerPromotionStatus | Entity (Enum)         | Trạng thái mã KM của khách (AVAILABLE/USED/EXPIRED)         |
+| 38  | PermissionType          | Entity (Enum)         | Loại quyền (SCREEN/ACTION)                                  |
+| 39  | EventType               | Entity (Enum)         | Loại sự kiện (HOLIDAY/SEASONAL/SPECIAL_EVENT)               |
+| 40  | AdjustmentType          | Entity (Enum)         | Loại điều chỉnh giá (PERCENTAGE/FIXED_AMOUNT)               |
 
 ### 3.1.5 **Chi tiết các lớp**
 
@@ -443,14 +470,17 @@ TransactionDetail "0..*" -- "0..1" ServiceUsage
 
 **Thuộc tính:**
 
-| STT | Tên thuộc tính | Loại     | Ràng buộc          | Ý nghĩa/ghi chú                                   |
-| --- | -------------- | -------- | ------------------ | ------------------------------------------------- |
-| 1   | id             | String   | private,\<\<PK\>\> | Mã định danh nhân viên (CUID)                     |
-| 2   | name           | String   | private            | Họ tên nhân viên                                  |
-| 3   | username       | String   | private, unique    | Tên đăng nhập (duy nhất)                          |
-| 4   | password       | String   | private            | Mật khẩu đã mã hóa (bcrypt)                       |
-| 5   | role           | String   | private            | Vai trò: ADMIN, RECEPTIONIST, HOUSEKEEPING, STAFF |
-| 6   | updatedAt      | DateTime | private            | Thời điểm cập nhật cuối                           |
+| STT | Tên thuộc tính | Loại     | Ràng buộc          | Ý nghĩa/ghi chú               |
+| --- | -------------- | -------- | ------------------ | ----------------------------- |
+| 1   | id             | String   | private,\<\<PK\>\> | Mã định danh nhân viên (CUID) |
+| 2   | name           | String   | private            | Họ tên nhân viên              |
+| 3   | username       | String   | private, unique    | Tên đăng nhập (duy nhất)      |
+| 4   | password       | String   | private            | Mật khẩu đã mã hóa (bcrypt)   |
+| 5   | roleId         | String   | private, optional  | Khóa ngoại tới Role (RBAC)    |
+| 6   | createdAt      | DateTime | private            | Thời điểm tạo                 |
+| 7   | updatedAt      | DateTime | private            | Thời điểm cập nhật cuối       |
+
+**Ghi chú:** Hệ thống sử dụng Role-Based Access Control (RBAC) thay vì role cố định.
 
 **Trách nhiệm (Methods):**
 
@@ -470,17 +500,24 @@ TransactionDetail "0..*" -- "0..1" ServiceUsage
 
 **Thuộc tính:**
 
-| STT | Tên thuộc tính | Loại     | Ràng buộc          | Ý nghĩa/ghi chú                             |
-| --- | -------------- | -------- | ------------------ | ------------------------------------------- |
-| 1   | id             | String   | private,\<\<PK\>\> | Mã định danh khách hàng (CUID)              |
-| 2   | fullName       | String   | private            | Họ tên đầy đủ                               |
-| 3   | email          | String   | private, optional  | Email liên hệ                               |
-| 4   | phone          | String   | private, unique    | Số điện thoại (duy nhất, dùng để đăng nhập) |
-| 5   | idNumber       | String   | private, optional  | Số CMND/CCCD                                |
-| 6   | address        | String   | private, optional  | Địa chỉ                                     |
-| 7   | password       | String   | private            | Mật khẩu đã mã hóa                          |
-| 8   | createdAt      | DateTime | private            | Thời điểm tạo                               |
-| 9   | updatedAt      | DateTime | private            | Thời điểm cập nhật cuối                     |
+| STT | Tên thuộc tính         | Loại     | Ràng buộc          | Ý nghĩa/ghi chú                             |
+| --- | ---------------------- | -------- | ------------------ | ------------------------------------------- |
+| 1   | id                     | String   | private,\<\<PK\>\> | Mã định danh khách hàng (CUID)              |
+| 2   | fullName               | String   | private            | Họ tên đầy đủ                               |
+| 3   | email                  | String   | private, optional  | Email liên hệ                               |
+| 4   | phone                  | String   | private, unique    | Số điện thoại (duy nhất, dùng để đăng nhập) |
+| 5   | idNumber               | String   | private, optional  | Số CMND/CCCD                                |
+| 6   | address                | String   | private, optional  | Địa chỉ                                     |
+| 7   | password               | String   | private            | Mật khẩu đã mã hóa                          |
+| 8   | imageUrl               | String   | private, optional  | URL ảnh đại diện khách hàng                 |
+| 9   | isEmailVerified        | Boolean  | private            | Trạng thái xác thực email                   |
+| 10  | emailVerificationToken | String   | private, optional  | Token xác thực email                        |
+| 11  | rankId                 | String   | private, optional  | Hạng VIP của khách hàng                     |
+| 12  | totalSpent             | Decimal  | private            | Tổng chi tiêu (cached)                      |
+| 13  | createdAt              | DateTime | private            | Thời điểm tạo                               |
+| 14  | updatedAt              | DateTime | private            | Thời điểm cập nhật cuối                     |
+
+**Ghi chú:** Hệ thống đã bổ sung VIP Rank System và email verification.
 
 **Trách nhiệm (Methods):**
 
@@ -500,15 +537,27 @@ TransactionDetail "0..*" -- "0..1" ServiceUsage
 
 **Thuộc tính:**
 
-| STT | Tên thuộc tính | Loại     | Ràng buộc          | Ý nghĩa/ghi chú                            |
-| --- | -------------- | -------- | ------------------ | ------------------------------------------ |
-| 1   | id             | String   | private,\<\<PK\>\> | Mã định danh loại phòng (CUID)             |
-| 2   | name           | String   | private            | Tên loại phòng (VD: Standard, Deluxe, VIP) |
-| 3   | capacity       | Int      | private            | Sức chứa tối đa (số người)                 |
-| 4   | pricePerNight  | Decimal  | private            | Giá phòng mỗi đêm                          |
-| 5   | amenities      | Json     | private, optional  | Danh sách tiện nghi (JSON)                 |
-| 6   | createdAt      | DateTime | private            | Thời điểm tạo                              |
-| 7   | updatedAt      | DateTime | private            | Thời điểm cập nhật cuối                    |
+| STT | Tên thuộc tính | Loại     | Ràng buộc          | Ý nghĩa/ghi chú                                  |
+| --- | -------------- | -------- | ------------------ | ------------------------------------------------ |
+| 1   | id             | String   | private,\<\<PK\>\> | Mã định danh loại phòng (CUID)                   |
+| 2   | name           | String   | private            | Tên loại phòng (VD: Standard, Deluxe, VIP)       |
+| 3   | capacity       | Int      | private            | Sức chứa tối đa (số người)                       |
+| 4   | totalBed       | Int      | private            | Số giường                                        |
+| 5   | basePrice      | Decimal  | private            | Giá cơ bản (trước khi áp dụng dynamic pricing)   |
+| 6   | imageUrl       | String   | private, optional  | URL ảnh chính (deprecated, dùng images relation) |
+| 7   | createdAt      | DateTime | private            | Thời điểm tạo                                    |
+| 8   | updatedAt      | DateTime | private            | Thời điểm cập nhật cuối                          |
+
+**Quan hệ:**
+
+- `images`: RoomTypeImage[] - Danh sách hình ảnh loại phòng (Cloudinary)
+- `roomTypeTags`: RoomTypeTag[] - Các tag như wifi, TV, bếp
+
+**Ghi chú:**
+
+- `pricePerNight` đã đổi thành `basePrice` để hỗ trợ dynamic pricing
+- Không còn lưu `amenities` dạng JSON, thay bằng RoomTypeTag relation
+- Hỗ trợ multiple images thông qua RoomTypeImage model
 
 **Trách nhiệm (Methods):**
 
@@ -532,10 +581,17 @@ TransactionDetail "0..*" -- "0..1" ServiceUsage
 | 1   | id             | String     | private,\<\<PK\>\> | Mã định danh phòng (CUID) |
 | 2   | roomNumber     | String     | private, unique    | Số phòng (duy nhất)       |
 | 3   | floor          | Int        | private            | Tầng                      |
-| 4   | status         | RoomStatus | private            | Trạng thái phòng (Enum)   |
-| 5   | roomTypeId     | String     | private,\<\<FK\>\> | Khóa ngoại tới RoomType   |
-| 6   | createdAt      | DateTime   | private            | Thời điểm tạo             |
-| 7   | updatedAt      | DateTime   | private            | Thời điểm cập nhật cuối   |
+| 4   | code           | String     | private            | Mã phòng (VD: DLX-101)    |
+| 5   | status         | RoomStatus | private            | Trạng thái phòng (Enum)   |
+| 6   | roomTypeId     | String     | private,\<\<FK\>\> | Khóa ngoại tới RoomType   |
+| 7   | createdAt      | DateTime   | private            | Thời điểm tạo             |
+| 8   | updatedAt      | DateTime   | private            | Thời điểm cập nhật cuối   |
+
+**Quan hệ:**
+
+- `images`: RoomImage[] - Danh sách hình ảnh phòng cụ thể (Cloudinary)
+
+**Ghi chú:** Mỗi phòng có thể có nhiều hình ảnh riêng thông qua RoomImage model
 
 **Trách nhiệm (Methods):**
 
@@ -566,11 +622,14 @@ TransactionDetail "0..*" -- "0..1" ServiceUsage
 | 7   | totalGuests       | Int           | private            | Tổng số khách                        |
 | 8   | totalAmount       | Decimal       | private            | Tổng tiền (tổng hợp từ BookingRooms) |
 | 9   | depositRequired   | Decimal       | private            | Số tiền cọc yêu cầu                  |
-| 10  | totalDeposit      | Decimal       | private            | Tổng tiền cọc đã nhận                |
-| 11  | totalPaid         | Decimal       | private            | Tổng tiền đã thanh toán              |
-| 12  | balance           | Decimal       | private            | Số tiền còn lại cần thanh toán       |
-| 13  | createdAt         | DateTime      | private            | Thời điểm tạo                        |
-| 14  | updatedAt         | DateTime      | private            | Thời điểm cập nhật cuối              |
+| 10  | createdAt         | DateTime      | private            | Thời điểm tạo                        |
+| 11  | updatedAt         | DateTime      | private            | Thời điểm cập nhật cuối              |
+
+**Ghi chú quan trọng:**
+
+- Hệ thống đã đơn giản hóa tài chính, KHÔNG còn theo dõi `totalDeposit`, `totalPaid`, `balance` ở cấp Booking
+- Thay vào đó, các Transaction và TransactionDetail sẽ tracking thanh toán chi tiết
+- BookingRoom vẫn có các trường tài chính riêng để theo dõi từng phòng
 
 **Trách nhiệm (Methods):**
 
@@ -590,26 +649,31 @@ TransactionDetail "0..*" -- "0..1" ServiceUsage
 
 **Thuộc tính:**
 
-| STT | Tên thuộc tính  | Loại          | Ràng buộc          | Ý nghĩa/ghi chú                |
-| --- | --------------- | ------------- | ------------------ | ------------------------------ |
-| 1   | id              | String        | private,\<\<PK\>\> | Mã định danh (CUID)            |
-| 2   | bookingId       | String        | private,\<\<FK\>\> | Khóa ngoại tới Booking         |
-| 3   | roomId          | String        | private,\<\<FK\>\> | Khóa ngoại tới Room            |
-| 4   | roomTypeId      | String        | private,\<\<FK\>\> | Khóa ngoại tới RoomType        |
-| 5   | checkInDate     | DateTime      | private            | Ngày nhận phòng dự kiến        |
-| 6   | checkOutDate    | DateTime      | private            | Ngày trả phòng dự kiến         |
-| 7   | actualCheckIn   | DateTime      | private, optional  | Thời điểm check-in thực tế     |
-| 8   | actualCheckOut  | DateTime      | private, optional  | Thời điểm check-out thực tế    |
-| 9   | pricePerNight   | Decimal       | private            | Giá phòng mỗi đêm (snapshot)   |
-| 10  | depositAmount   | Decimal       | private            | Số tiền cọc cho phòng này      |
-| 11  | subtotalRoom    | Decimal       | private            | Tổng tiền phòng                |
-| 12  | subtotalService | Decimal       | private            | Tổng tiền dịch vụ              |
-| 13  | totalAmount     | Decimal       | private            | Tổng cộng (phòng + dịch vụ)    |
-| 14  | totalPaid       | Decimal       | private            | Tổng đã thanh toán             |
-| 15  | balance         | Decimal       | private            | Số tiền còn lại                |
-| 16  | status          | BookingStatus | private            | Trạng thái phòng trong booking |
-| 17  | createdAt       | DateTime      | private            | Thời điểm tạo                  |
-| 18  | updatedAt       | DateTime      | private            | Thời điểm cập nhật cuối        |
+| STT | Tên thuộc tính      | Loại          | Ràng buộc          | Ý nghĩa/ghi chú                            |
+| --- | ------------------- | ------------- | ------------------ | ------------------------------------------ |
+| 1   | id                  | String        | private,\<\<PK\>\> | Mã định danh (CUID)                        |
+| 2   | bookingId           | String        | private,\<\<FK\>\> | Khóa ngoại tới Booking                     |
+| 3   | roomId              | String        | private,\<\<FK\>\> | Khóa ngoại tới Room                        |
+| 4   | roomTypeId          | String        | private,\<\<FK\>\> | Khóa ngoại tới RoomType                    |
+| 5   | checkInDate         | DateTime      | private            | Ngày nhận phòng dự kiến                    |
+| 6   | checkOutDate        | DateTime      | private            | Ngày trả phòng dự kiến                     |
+| 7   | actualCheckIn       | DateTime      | private, optional  | Thời điểm check-in thực tế                 |
+| 8   | actualCheckOut      | DateTime      | private, optional  | Thời điểm check-out thực tế                |
+| 9   | pricePerNight       | Decimal       | private            | Giá phòng mỗi đêm (snapshot)               |
+| 10  | subtotalRoom        | Decimal       | private            | Tổng tiền phòng                            |
+| 11  | subtotalService     | Decimal       | private            | Tổng tiền dịch vụ                          |
+| 12  | totalAmount         | Decimal       | private            | Tổng cộng (phòng + dịch vụ)                |
+| 13  | pricingRuleId       | String        | private, optional  | Quy tắc giá được áp dụng (Dynamic Pricing) |
+| 14  | pricingRuleSnapshot | Json          | private, optional  | Snapshot của pricing rule (audit trail)    |
+| 15  | status              | BookingStatus | private            | Trạng thái phòng trong booking             |
+| 16  | createdAt           | DateTime      | private            | Thời điểm tạo                              |
+| 17  | updatedAt           | DateTime      | private            | Thời điểm cập nhật cuối                    |
+
+**Ghi chú quan trọng:**
+
+- KHÔNG còn theo dõi `depositAmount`, `totalPaid`, `balance` ở cấp BookingRoom
+- Tài chính tracking thông qua Transaction và TransactionDetail
+- Đã bổ sung `pricingRuleId` và `pricingRuleSnapshot` để theo dõi dynamic pricing
 
 **Trách nhiệm (Methods):**
 
@@ -662,8 +726,15 @@ TransactionDetail "0..*" -- "0..1" ServiceUsage
 | 3   | price          | Decimal  | private            | Đơn giá dịch vụ               |
 | 4   | unit           | String   | private            | Đơn vị tính (mặc định: "lần") |
 | 5   | isActive       | Boolean  | private            | Trạng thái hoạt động          |
-| 6   | createdAt      | DateTime | private            | Thời điểm tạo                 |
-| 7   | updatedAt      | DateTime | private            | Thời điểm cập nhật cuối       |
+| 6   | imageUrl       | String   | private, optional  | URL ảnh chính (deprecated)    |
+| 7   | createdAt      | DateTime | private            | Thời điểm tạo                 |
+| 8   | updatedAt      | DateTime | private            | Thời điểm cập nhật cuối       |
+
+**Quan hệ:**
+
+- `images`: ServiceImage[] - Danh sách hình ảnh dịch vụ (Cloudinary)
+
+**Ghi chú:** Hỗ trợ multiple images thông qua ServiceImage model
 
 **Trách nhiệm (Methods):**
 
@@ -682,20 +753,28 @@ TransactionDetail "0..*" -- "0..1" ServiceUsage
 
 **Thuộc tính:**
 
-| STT | Tên thuộc tính | Loại               | Ràng buộc                    | Ý nghĩa/ghi chú                             |
-| --- | -------------- | ------------------ | ---------------------------- | ------------------------------------------- |
-| 1   | id             | String             | private,\<\<PK\>\>           | Mã định danh (CUID)                         |
-| 2   | bookingId      | String             | private,\<\<FK\>\>, optional | Khóa ngoại tới Booking (optional cho guest) |
-| 3   | bookingRoomId  | String             | private,\<\<FK\>\>, optional | Khóa ngoại tới BookingRoom                  |
-| 4   | employeeId     | String             | private,\<\<FK\>\>           | Nhân viên phục vụ                           |
-| 5   | serviceId      | String             | private,\<\<FK\>\>           | Khóa ngoại tới Service                      |
-| 6   | quantity       | Int                | private                      | Số lượng sử dụng                            |
-| 7   | unitPrice      | Decimal            | private                      | Đơn giá (snapshot từ Service)               |
-| 8   | totalPrice     | Decimal            | private                      | Thành tiền (unitPrice × quantity)           |
-| 9   | totalPaid      | Decimal            | private                      | Số tiền đã thanh toán                       |
-| 10  | status         | ServiceUsageStatus | private                      | Trạng thái sử dụng dịch vụ (Enum)           |
-| 11  | createdAt      | DateTime           | private                      | Thời điểm tạo                               |
-| 12  | updatedAt      | DateTime           | private                      | Thời điểm cập nhật cuối                     |
+| STT | Tên thuộc tính | Loại               | Ràng buộc                    | Ý nghĩa/ghi chú                                    |
+| --- | -------------- | ------------------ | ---------------------------- | -------------------------------------------------- |
+| 1   | id             | String             | private,\<\<PK\>\>           | Mã định danh (CUID)                                |
+| 2   | bookingId      | String             | private,\<\<FK\>\>, optional | Khóa ngoại tới Booking (optional cho guest)        |
+| 3   | bookingRoomId  | String             | private,\<\<FK\>\>, optional | Khóa ngoại tới BookingRoom                         |
+| 4   | employeeId     | String             | private,\<\<FK\>\>           | Nhân viên phục vụ                                  |
+| 5   | serviceId      | String             | private,\<\<FK\>\>           | Khóa ngoại tới Service                             |
+| 6   | quantity       | Int                | private                      | Số lượng sử dụng                                   |
+| 7   | unitPrice      | Decimal            | private                      | Đơn giá (snapshot từ Service)                      |
+| 8   | customPrice    | Decimal            | private, optional            | Giá tùy chỉnh (penalty/surcharge)                  |
+| 9   | totalPrice     | Decimal            | private                      | Thành tiền (customPrice hoặc unitPrice × quantity) |
+| 10  | totalPaid      | Decimal            | private                      | Số tiền đã thanh toán                              |
+| 11  | note           | String             | private, optional            | Ghi chú lý do penalty/surcharge                    |
+| 12  | status         | ServiceUsageStatus | private                      | Trạng thái sử dụng dịch vụ (Enum)                  |
+| 13  | createdAt      | DateTime           | private                      | Thời điểm tạo                                      |
+| 14  | updatedAt      | DateTime           | private                      | Thời điểm cập nhật cuối                            |
+
+**Ghi chú:**
+
+- Đã bổ sung `customPrice` và `note` để hỗ trợ penalty/surcharge
+- `totalPrice` = `customPrice` (nếu có) hoặc `unitPrice × quantity`
+- `balance` = `totalPrice - totalPaid` (calculated field, không lưu DB)
 
 **Ghi chú:** Hệ thống hỗ trợ 3 kịch bản sử dụng dịch vụ:
 
@@ -720,20 +799,27 @@ TransactionDetail "0..*" -- "0..1" ServiceUsage
 
 **Thuộc tính:**
 
-| STT | Tên thuộc tính | Loại              | Ràng buộc                    | Ý nghĩa/ghi chú               |
-| --- | -------------- | :---------------- | ---------------------------- | ----------------------------- |
-| 1   | id             | String            | private,\<\<PK\>\>           | Mã định danh giao dịch (CUID) |
-| 2   | bookingId      | String            | private,\<\<FK\>\>, optional | Khóa ngoại tới Booking        |
-| 3   | type           | TransactionType   | private                      | Loại giao dịch (Enum)         |
-| 4   | amount         | Decimal           | private                      | Số tiền giao dịch             |
-| 5   | method         | PaymentMethod     | private, optional            | Phương thức thanh toán (Enum) |
-| 6   | status         | TransactionStatus | private                      | Trạng thái giao dịch (Enum)   |
-| 7   | processedById  | String            | private,\<\<FK\>\>, optional | Nhân viên xử lý               |
-| 8   | transactionRef | String            | private, optional            | Mã tham chiếu bên ngoài       |
-| 9   | occurredAt     | DateTime          | private                      | Thời điểm giao dịch           |
-| 10  | description    | String            | private, optional            | Mô tả giao dịch               |
-| 11  | createdAt      | DateTime          | private                      | Thời điểm tạo                 |
-| 12  | updatedAt      | DateTime          | private                      | Thời điểm cập nhật cuối       |
+| STT | Tên thuộc tính | Loại              | Ràng buộc                    | Ý nghĩa/ghi chú                |
+| --- | -------------- | :---------------- | ---------------------------- | ------------------------------ |
+| 1   | id             | String            | private,\<\<PK\>\>           | Mã định danh giao dịch (CUID)  |
+| 2   | bookingId      | String            | private,\<\<FK\>\>, optional | Khóa ngoại tới Booking         |
+| 3   | type           | TransactionType   | private                      | Loại giao dịch (Enum)          |
+| 4   | baseAmount     | Decimal           | private                      | Số tiền gốc trước giảm giá     |
+| 5   | discountAmount | Decimal           | private                      | Số tiền được giảm (promotions) |
+| 6   | amount         | Decimal           | private                      | Số tiền thực tế (sau giảm giá) |
+| 7   | method         | PaymentMethod     | private, optional            | Phương thức thanh toán (Enum)  |
+| 8   | status         | TransactionStatus | private                      | Trạng thái giao dịch (Enum)    |
+| 9   | processedById  | String            | private,\<\<FK\>\>, optional | Nhân viên xử lý                |
+| 10  | occurredAt     | DateTime          | private                      | Thời điểm giao dịch            |
+| 11  | description    | String            | private, optional            | Mô tả giao dịch                |
+| 12  | createdAt      | DateTime          | private                      | Thời điểm tạo                  |
+| 13  | updatedAt      | DateTime          | private                      | Thời điểm cập nhật cuối        |
+
+**Ghi chú quan trọng:**
+
+- Đã bổ sung `baseAmount`, `discountAmount` để hỗ trợ promotion system
+- `amount` = `baseAmount` - `discountAmount`
+- KHÔNG còn `transactionRef` field
 
 **Ghi chú:** Hệ thống hỗ trợ 4 kịch bản thanh toán:
 
@@ -764,10 +850,17 @@ TransactionDetail "0..*" -- "0..1" ServiceUsage
 | --- | -------------- | -------- | ---------------------------- | ------------------------------------------- |
 | 1   | id             | String   | private,\<\<PK\>\>           | Mã định danh (CUID)                         |
 | 2   | transactionId  | String   | private,\<\<FK\>\>, optional | Khóa ngoại tới Transaction (null cho guest) |
-| 3   | amount         | Decimal  | private                      | Số tiền phân bổ cho khoản mục này           |
-| 4   | bookingRoomId  | String   | private,\<\<FK\>\>, optional | Nếu thanh toán tiền phòng                   |
-| 5   | serviceUsageId | String   | private,\<\<FK\>\>, optional | Nếu thanh toán dịch vụ                      |
-| 6   | createdAt      | DateTime | private                      | Thời điểm tạo                               |
+| 3   | baseAmount     | Decimal  | private                      | Số tiền gốc trước giảm giá                  |
+| 4   | discountAmount | Decimal  | private                      | Số tiền được giảm (promotions)              |
+| 5   | amount         | Decimal  | private                      | Số tiền thực tế (sau giảm giá)              |
+| 6   | bookingRoomId  | String   | private,\<\<FK\>\>, optional | Nếu thanh toán tiền phòng                   |
+| 7   | serviceUsageId | String   | private,\<\<FK\>\>, optional | Nếu thanh toán dịch vụ                      |
+| 8   | createdAt      | DateTime | private                      | Thời điểm tạo                               |
+
+**Ghi chú:**
+
+- Đã bổ sung `baseAmount`, `discountAmount` để hỗ trợ promotion system
+- `amount` = `baseAmount` - `discountAmount`
 
 **Ghi chú:** Mỗi TransactionDetail chỉ liên kết với MỘT trong hai: bookingRoomId HOẶC serviceUsageId
 
@@ -910,6 +1003,162 @@ TransactionDetail "0..*" -- "0..1" ServiceUsage
 | CREATE_CUSTOMER      | Tạo khách hàng mới       |
 | CHECKED_IN           | Check-in                 |
 | CHECKED_OUT          | Check-out                |
+| CREATE_PROMOTION     | Tạo mã khuyến mãi mới    |
+| UPDATE_PROMOTION     | Cập nhật mã khuyến mãi   |
+| CLAIM_PROMOTION      | Khách hàng nhận mã KM    |
+| UPDATE_CUSTOMER_RANK | Cập nhật hạng VIP        |
+
+---
+
+#### **Lớp RoomTypeImage / RoomImage / ServiceImage (Entity)**
+
+**Mục đích:** Quản lý hình ảnh sử dụng Cloudinary CDN
+
+**Thuộc tính chung:**
+
+| STT | Tên thuộc tính | Loại    | Ý nghĩa/ghi chú                                 |
+| --- | -------------- | ------- | ----------------------------------------------- |
+| 1   | id             | String  | Mã định danh (CUID)                             |
+| 2   | cloudinaryId   | String  | Cloudinary public_id (dùng để xóa và transform) |
+| 3   | url            | String  | Full Cloudinary URL                             |
+| 4   | secureUrl      | String  | HTTPS Cloudinary URL (khuyến nghị sử dụng)      |
+| 5   | thumbnailUrl   | String  | Pre-generated thumbnail URL (300px width)       |
+| 6   | width          | Int     | Chiều rộng ảnh                                  |
+| 7   | height         | Int     | Chiều cao ảnh                                   |
+| 8   | format         | String  | Định dạng ảnh (jpg, png, webp)                  |
+| 9   | sortOrder      | Int     | Thứ tự hiển thị                                 |
+| 10  | isDefault      | Boolean | Ảnh mặc định                                    |
+
+**Ghi chú:**
+
+- Upload thông qua multer-storage-cloudinary
+- Tự động generate thumbnail transformation
+- Cascade delete khi xóa entity cha
+
+---
+
+#### **Lớp Promotion (Control)**
+
+**Mục đích:** Quản lý mã khuyến mãi và chiến dịch giảm giá
+
+**Thuộc tính:**
+
+| STT | Tên thuộc tính   | Loại           | Ý nghĩa/ghi chú                          |
+| --- | ---------------- | -------------- | ---------------------------------------- |
+| 1   | id               | String         | Mã định danh (CUID)                      |
+| 2   | code             | String         | Mã khuyến mãi (unique)                   |
+| 3   | description      | String         | Mô tả chi tiết                           |
+| 4   | type             | PromotionType  | PERCENTAGE hoặc FIXED_AMOUNT             |
+| 5   | scope            | PromotionScope | ROOM/SERVICE/ALL                         |
+| 6   | value            | Decimal        | Giá trị giảm (% hoặc số tiền)            |
+| 7   | maxDiscount      | Decimal        | Giảm tối đa (cho loại PERCENTAGE)        |
+| 8   | minBookingAmount | Decimal        | Giá trị đơn hàng tối thiểu               |
+| 9   | startDate        | DateTime       | Ngày bắt đầu hiệu lực                    |
+| 10  | endDate          | DateTime       | Ngày hết hạn                             |
+| 11  | totalQty         | Int            | Tổng số lượng mã (null = không giới hạn) |
+| 12  | remainingQty     | Int            | Số lượng còn lại                         |
+| 13  | perCustomerLimit | Int            | Giới hạn sử dụng/khách (mặc định: 1)     |
+| 14  | disabledAt       | DateTime       | Thời điểm vô hiệu hóa                    |
+
+---
+
+#### **Lớp CustomerRank (Entity)**
+
+**Mục đích:** Hệ thống phân hạng VIP khách hàng
+
+**Thuộc tính:**
+
+| STT | Tên thuộc tính | Loại    | Ý nghĩa/ghi chú                          |
+| --- | -------------- | ------- | ---------------------------------------- |
+| 1   | id             | String  | Mã định danh (CUID)                      |
+| 2   | name           | String  | Tên kỹ thuật (VIP1, VIP2...)             |
+| 3   | displayName    | String  | Tên hiển thị (Thành viên Đồng, Bạc...)   |
+| 4   | description    | String  | Mô tả chi tiết                           |
+| 5   | minSpending    | Decimal | Chi tiêu tối thiểu để đạt hạng           |
+| 6   | maxSpending    | Decimal | Chi tiêu tối đa (null cho hạng cao nhất) |
+| 7   | benefits       | String  | Quyền lợi (JSON string)                  |
+| 8   | color          | String  | Màu sắc hiển thị (hex color)             |
+
+**Ghi chú:** Customer có trường `totalSpent` để cache tổng chi tiêu
+
+---
+
+#### **Lớp CalendarEvent (Entity)**
+
+**Mục đích:** Định nghĩa các sự kiện đặc biệt cho dynamic pricing
+
+**Thuộc tính:**
+
+| STT | Tên thuộc tính | Loại      | Ý nghĩa/ghi chú                             |
+| --- | -------------- | --------- | ------------------------------------------- |
+| 1   | id             | String    | Mã định danh (CUID)                         |
+| 2   | name           | String    | Tên sự kiện (VD: "Tết Nguyên Đán 2026")     |
+| 3   | description    | String    | Mô tả chi tiết                              |
+| 4   | type           | EventType | HOLIDAY/SEASONAL/SPECIAL_EVENT              |
+| 5   | startDate      | DateTime  | Ngày bắt đầu                                |
+| 6   | endDate        | DateTime  | Ngày kết thúc                               |
+| 7   | rrule          | String    | RRule cho sự kiện lặp lại (RFC 5545 format) |
+
+**Ghi chú:** Hỗ trợ recurring events qua RRule (VD: Tết hàng năm)
+
+---
+
+#### **Lớp PricingRule (Control)**
+
+**Mục đích:** Định nghĩa quy tắc điều chỉnh giá động
+
+**Thuộc tính:**
+
+| STT | Tên thuộc tính  | Loại           | Ý nghĩa/ghi chú                               |
+| --- | --------------- | -------------- | --------------------------------------------- |
+| 1   | id              | String         | Mã định danh (CUID)                           |
+| 2   | name            | String         | Tên quy tắc                                   |
+| 3   | rank            | String         | LexoRank (thứ tự ưu tiên, top wins)           |
+| 4   | roomTypeIds     | String[]       | Loại phòng áp dụng (empty = toàn bộ)          |
+| 5   | calendarEventId | String         | Kế thừa thời gian từ CalendarEvent (optional) |
+| 6   | startDate       | DateTime       | Hoặc set cứng ngày (optional)                 |
+| 7   | endDate         | DateTime       | Hoặc set cứng ngày (optional)                 |
+| 8   | recurrenceRule  | String         | RRule cho lặp lại phức tạp (VD: cuối tuần)    |
+| 9   | adjustmentType  | AdjustmentType | PERCENTAGE hoặc FIXED_AMOUNT                  |
+| 10  | adjustmentValue | Decimal        | Giá trị điều chỉnh (hỗ trợ số âm để giảm giá) |
+| 11  | isActive        | Boolean        | Trạng thái kích hoạt                          |
+
+**Ghi chú:**
+
+- Sử dụng LexoRank để sắp xếp priority
+- "Top of List Wins" strategy - quy tắc đầu tiên match sẽ được áp dụng
+- BookingRoom có `pricingRuleId` và `pricingRuleSnapshot` để audit trail
+
+---
+
+#### **Lớp Role & Permission (Entity - RBAC)**
+
+**Mục đích:** Quản lý phân quyền chi tiết cho nhân viên
+
+**Role:**
+
+| STT | Tên thuộc tính | Loại    | Ý nghĩa/ghi chú      |
+| --- | -------------- | ------- | -------------------- |
+| 1   | id             | String  | Mã định danh (CUID)  |
+| 2   | name           | String  | Tên vai trò (unique) |
+| 3   | description    | String  | Mô tả chi tiết       |
+| 4   | isActive       | Boolean | Trạng thái kích hoạt |
+
+**Permission:**
+
+| STT | Tên thuộc tính | Loại           | Ý nghĩa/ghi chú                              |
+| --- | -------------- | -------------- | -------------------------------------------- |
+| 1   | id             | String         | Mã định danh (CUID)                          |
+| 2   | name           | String         | Tên quyền (VD: "booking:create")             |
+| 3   | type           | PermissionType | SCREEN hoặc ACTION                           |
+| 4   | subject        | String         | Đối tượng (Booking, Room, Employee...)       |
+| 5   | action         | String         | Hành động (access/create/read/update/delete) |
+| 6   | description    | String         | Mô tả chi tiết                               |
+| 7   | parentId       | String         | Hỗ trợ cây phân cấp quyền                    |
+
+**Ghi chú:** Hệ thống sử dụng CASL (Attribute-Based Access Control)
+
+---
 
 ## 3.2 **Sơ đồ trạng thái**
 
@@ -937,15 +1186,15 @@ state "CLEANING\n(Đang dọn)" as CLEANING <<cleaning>>
 state "MAINTENANCE\n(Bảo trì)" as MAINTENANCE <<maintenance>>
 state "OUT_OF_SERVICE\n(Ngừng hoạt động)" as OUT_OF_SERVICE <<outofservice>>
 
-AVAILABLE --> RESERVED : Khách đặt phòng\n[createBooking()]
-AVAILABLE --> OCCUPIED : Khách vãng lai check-in\n[checkIn()]
+AVAILABLE --> OCCUPIED : Khách check-in\n[checkIn()]
 AVAILABLE --> MAINTENANCE : Báo hỏng/cần sửa
 AVAILABLE --> OUT_OF_SERVICE : Ngừng hoạt động
 
 RESERVED --> OCCUPIED : Khách check-in\n[checkIn()]
 RESERVED --> AVAILABLE : Khách hủy đặt phòng\n[cancelBooking()]
 
-OCCUPIED --> AVAILABLE : Khách check-out\n[checkOut()]
+OCCUPIED --> AVAILABLE : Khách check-out\n(không có booking khác)
+OCCUPIED --> RESERVED : Khách check-out\n(có booking khác cho hôm nay)
 OCCUPIED --> CLEANING : Khách check-out\n(cần dọn dẹp)
 
 CLEANING --> AVAILABLE : Dọn dẹp hoàn tất
@@ -972,21 +1221,21 @@ OUT_OF_SERVICE --> MAINTENANCE : Cần sửa chữa
 
 **Bảng mô tả các biến cố và hành động:**
 
-| Trạng thái bắt đầu | Biến cố (Event)                   | Hành động (Action)                                    | Trạng thái kết thúc |
-| ------------------ | --------------------------------- | ----------------------------------------------------- | ------------------- |
-| (Mới)              | Thêm phòng mới vào hệ thống       | `createRoom()` - Tạo phòng với status mặc định        | AVAILABLE           |
-| AVAILABLE          | Khách đặt phòng thành công        | `createBooking()` - Cập nhật room status              | RESERVED            |
-| AVAILABLE          | Khách vãng lai check-in trực tiếp | `checkIn()` - Cập nhật room status sang OCCUPIED      | OCCUPIED            |
-| AVAILABLE          | Phát hiện hư hỏng cần sửa chữa    | Cập nhật thủ công qua `updateRoomStatus()`            | MAINTENANCE         |
-| AVAILABLE          | Ngừng hoạt động phòng             | Cập nhật thủ công qua `updateRoomStatus()`            | OUT_OF_SERVICE      |
-| RESERVED           | Khách đến check-in                | `checkIn()` - Ghi nhận actualCheckIn, cập nhật room   | OCCUPIED            |
-| RESERVED           | Khách/Nhân viên hủy đặt phòng     | `cancelBooking()` - Giải phóng phòng                  | AVAILABLE           |
-| OCCUPIED           | Khách check-out                   | `checkOut()` - Ghi nhận actualCheckOut, cập nhật room | AVAILABLE           |
-| OCCUPIED           | Khách check-out (cần dọn)         | `checkOut()` - Chuyển sang CLEANING nếu cần           | CLEANING            |
-| CLEANING           | Nhân viên dọn xong                | Cập nhật thủ công qua `updateRoomStatus()`            | AVAILABLE           |
-| MAINTENANCE        | Sửa chữa hoàn tất                 | Cập nhật thủ công qua `updateRoomStatus()`            | AVAILABLE           |
-| MAINTENANCE        | Hư hỏng nặng, không thể sửa       | Cập nhật thủ công qua `updateRoomStatus()`            | OUT_OF_SERVICE      |
-| OUT_OF_SERVICE     | Khôi phục hoạt động               | Cập nhật thủ công qua `updateRoomStatus()`            | AVAILABLE           |
+| Trạng thái bắt đầu | Biến cố (Event)                      | Hành động (Action)                                       | Trạng thái kết thúc |
+| ------------------ | ------------------------------------ | -------------------------------------------------------- | ------------------- |
+| (Mới)              | Thêm phòng mới vào hệ thống          | `createRoom()` - Tạo phòng với status mặc định           | AVAILABLE           |
+| AVAILABLE          | Khách check-in                       | `checkIn()` - Ghi nhận actualCheckIn, cập nhật room      | OCCUPIED            |
+| AVAILABLE          | Phát hiện hư hỏng cần sửa chữa       | Cập nhật thủ công qua `updateRoomStatus()`               | MAINTENANCE         |
+| AVAILABLE          | Ngừng hoạt động phòng                | Cập nhật thủ công qua `updateRoomStatus()`               | OUT_OF_SERVICE      |
+| RESERVED           | Khách check-in                       | `checkIn()` - Ghi nhận actualCheckIn, cập nhật room      | OCCUPIED            |
+| RESERVED           | Khách/Nhân viên hủy đặt phòng        | `cancelBooking()` - Kiểm tra booking khác                | AVAILABLE/RESERVED  |
+| OCCUPIED           | Khách check-out (không booking khác) | `checkOut()` - Ghi actualCheckOut, kiểm tra booking khác | AVAILABLE           |
+| OCCUPIED           | Khách check-out (có booking khác)    | `checkOut()` - Ghi actualCheckOut, kiểm tra booking khác | RESERVED            |
+| OCCUPIED           | Khách check-out (cần dọn)            | `checkOut()` - Chuyển sang CLEANING nếu cần              | CLEANING            |
+| CLEANING           | Nhân viên dọn xong                   | Cập nhật thủ công qua `updateRoomStatus()`               | AVAILABLE           |
+| MAINTENANCE        | Sửa chữa hoàn tất                    | Cập nhật thủ công qua `updateRoomStatus()`               | AVAILABLE           |
+| MAINTENANCE        | Hư hỏng nặng, không thể sửa          | Cập nhật thủ công qua `updateRoomStatus()`               | OUT_OF_SERVICE      |
+| OUT_OF_SERVICE     | Khôi phục hoạt động                  | Cập nhật thủ công qua `updateRoomStatus()`               | AVAILABLE           |
 
 ---
 
@@ -1112,14 +1361,14 @@ CANCELLED --> [*]
 
 **Bảng mô tả các biến cố và hành động:**
 
-| Trạng thái bắt đầu | Biến cố (Event)           | Hành động (Action)                                                | Trạng thái kết thúc |
-| ------------------ | ------------------------- | ----------------------------------------------------------------- | ------------------- |
-| (Mới)              | Tạo booking với phòng     | `createBooking()` - Tạo BookingRoom với status PENDING            | PENDING             |
-| PENDING            | Thanh toán cọc thành công | `createTransaction(DEPOSIT)` - Cập nhật tất cả BookingRoom        | CONFIRMED           |
-| PENDING            | Hủy booking               | `cancelBooking()` - Cập nhật status sang CANCELLED                | CANCELLED           |
-| CONFIRMED          | Check-in phòng cụ thể     | `checkIn()` - Ghi actualCheckIn, cập nhật Room sang OCCUPIED      | CHECKED_IN          |
-| CONFIRMED          | Hủy booking               | `cancelBooking()` - Cập nhật status, cập nhật Room sang AVAILABLE | CANCELLED           |
-| CHECKED_IN         | Check-out phòng cụ thể    | `checkOut()` - Ghi actualCheckOut, cập nhật Room sang AVAILABLE   | CHECKED_OUT         |
+| Trạng thái bắt đầu | Biến cố (Event)           | Hành động (Action)                                            | Trạng thái kết thúc |
+| ------------------ | ------------------------- | ------------------------------------------------------------- | ------------------- |
+| (Mới)              | Tạo booking với phòng     | `createBooking()` - Tạo BookingRoom với status PENDING        | PENDING             |
+| PENDING            | Thanh toán cọc thành công | `createTransaction(DEPOSIT)` - Cập nhật tất cả BookingRoom    | CONFIRMED           |
+| PENDING            | Hủy booking               | `cancelBooking()` - Cập nhật status sang CANCELLED            | CANCELLED           |
+| CONFIRMED          | Check-in phòng cụ thể     | `checkIn()` - Ghi actualCheckIn, cập nhật Room sang OCCUPIED  | CHECKED_IN          |
+| CONFIRMED          | Hủy booking               | `cancelBooking()` - Cập nhật status, gọi updateRoomStatuses() | CANCELLED           |
+| CHECKED_IN         | Check-out phòng cụ thể    | `checkOut()` - Ghi actualCheckOut, gọi updateRoomStatuses()   | CHECKED_OUT         |
 
 **Mối quan hệ với Booking:**
 
@@ -1243,10 +1492,9 @@ REFUNDED --> [*]
 COMPLETED --> [*]
 
 note right of COMPLETED
-  Tự động cập nhật:
-  - totalPaid của Booking
-  - totalPaid của BookingRoom
-  - totalPaid của ServiceUsage
+  Tạo TransactionDetail để
+  phân bổ thanh toán cho
+  BookingRoom hoặc ServiceUsage
 end note
 
 @enduml
@@ -1274,7 +1522,7 @@ end note
 
 - Trong hệ thống hiện tại, hầu hết giao dịch được tạo với status COMPLETED ngay lập tức (thanh toán trực tiếp)
 - TransactionDetail được tạo để phân bổ số tiền cho BookingRoom hoặc ServiceUsage cụ thể
-- Khi Transaction COMPLETED, hệ thống tự động cập nhật `totalPaid` và `balance` của các entity liên quan
+- Transaction và TransactionDetail là single source of truth cho payment tracking (Booking và BookingRoom không còn lưu totalPaid/balance)
 
 ## 3.3 Mô hình động ( dynamic model )
 
@@ -1295,35 +1543,32 @@ database "Database" as DB
 
 == Use Case 1: Check-In Guests ==
 
-Employee -> API: PATCH /employee-api/v1/bookings/check-in\n{bookingId, bookingRoomId, guests[]}
+Employee -> API: POST /employee-api/v1/bookings/check-in-rooms\n{checkInInfo: [{bookingRoomId, customerIds[]}]}
 activate API
 API -> API: Validate Request\n(bookingValidation.checkIn)
-API -> Controller: checkIn(req, res)
+API -> Controller: checkInRooms(req, res)
 activate Controller
 Controller -> Service: checkIn(input)
 activate Service
 
-Service -> Prisma: findUnique(bookingId)\n+ include bookingRooms
+Service -> Prisma: findMany(bookingRooms)\nwhere: {id in bookingRoomIds}
 activate Prisma
-Prisma -> DB: SELECT booking, booking_rooms
-DB --> Prisma: Booking data
-Prisma --> Service: booking
+Prisma -> DB: SELECT booking_rooms with room
+DB --> Prisma: Booking rooms data
+Prisma --> Service: bookingRooms[]
 deactivate Prisma
 
-alt Booking not found
-    Service --> Controller: throw ApiError(404, "Booking not found")
+alt Booking rooms not found
+    Service --> Controller: throw ApiError(404, "Booking rooms not found")
     Controller --> API: Error response
     API --> Employee: 404 Not Found
 end
 
-alt Booking status is not CONFIRMED
-    Service --> Controller: throw ApiError(400, "Status must be CONFIRMED")
+alt Any room not AVAILABLE
+    Service --> Controller: throw ApiError(400, "Rooms not ready")
     Controller --> API: Error response
     API --> Employee: 400 Bad Request
 end
-
-Service -> Service: Validate booking room exists
-Service -> Service: Verify at least one primary guest
 
 Service -> Prisma: findMany(customers)\nwhere: {id in customerIds}
 activate Prisma
@@ -1342,19 +1587,23 @@ Service -> Prisma: BEGIN TRANSACTION
 activate Prisma
 
 Prisma -> DB: UPDATE booking_room\nSET actualCheckIn = now,\n    status = 'CHECKED_IN'
-DB --> Prisma: Updated booking_room
+DB --> Prisma: Updated booking_rooms
 
 Prisma -> DB: UPDATE room\nSET status = 'OCCUPIED'
-DB --> Prisma: Updated room
+DB --> Prisma: Updated rooms
 
-Prisma -> DB: UPDATE booking\nSET status = 'CHECKED_IN'
-DB --> Prisma: Updated booking
-
-Prisma -> DB: INSERT INTO booking_customer\n(bookingId, customerId, isPrimary...)
+Prisma -> DB: INSERT INTO booking_customer\n(bookingId, customerId, bookingRoomId...)
 DB --> Prisma: Booking customers linked
 
-Prisma -> DB: INSERT INTO booking_history\n(action='CHECK_IN', changes...)
-DB --> Prisma: Audit trail created
+Service -> Service: Check if all booking rooms\nfor each booking are checked in
+
+alt All rooms checked in
+    Prisma -> DB: UPDATE booking\nSET status = 'CHECKED_IN'
+    DB --> Prisma: Updated booking
+end
+
+Prisma -> DB: INSERT INTO activity\n(type='CHECK_IN', bookingRoomId...)
+DB --> Prisma: Activity created
 
 Prisma -> DB: COMMIT
 DB --> Prisma: Transaction committed
@@ -1368,61 +1617,7 @@ deactivate Controller
 API --> Employee: 200 OK\n{data: {booking, bookingRoom}}
 deactivate API
 
-== Use Case 2: Create Transaction ==
-
-Employee -> API: POST /employee-api/v1/bookings/transaction\n{bookingId, transactionType, amount, method...}
-activate API
-API -> API: Validate Request\n(bookingValidation.createTransaction)
-API -> Controller: createTransaction(req, res)
-activate Controller
-Controller -> Service: createTransaction(input)
-activate Service
-
-Service -> Prisma: findUnique(bookingId)\n+ include bookingRooms, transactions
-activate Prisma
-Prisma -> DB: SELECT booking with related data
-DB --> Prisma: Booking data
-Prisma --> Service: booking
-deactivate Prisma
-
-alt Booking not found
-    Service --> Controller: throw ApiError(404, "Booking not found")
-    Controller --> API: Error response
-    API --> Employee: 404 Not Found
-end
-
-Service -> Service: validateTransaction()\n- Check transaction type rules\n- Validate amounts\n- Verify booking status
-
-alt Validation fails
-    Service --> Controller: throw ApiError(400, "Validation error")
-    Controller --> API: Error response
-    API --> Employee: 400 Bad Request
-end
-
-Service -> Prisma: BEGIN TRANSACTION
-activate Prisma
-
-Prisma -> DB: INSERT INTO transaction\n(bookingId, type, amount, method...)
-DB --> Prisma: Created transaction
-
-Service -> Service: applyTransactionLogic()\n- Update totalDeposit/totalPaid\n- Recalculate balance\n- Update booking status\n  (PENDING → CONFIRMED if deposit met)
-
-Prisma -> DB: UPDATE booking\nSET totalDeposit, totalPaid,\n    balance, status
-DB --> Prisma: Updated booking
-
-Prisma -> DB: COMMIT
-DB --> Prisma: Transaction committed
-Prisma --> Service: {transaction, booking}
-deactivate Prisma
-
-Service --> Controller: Transaction result
-deactivate Service
-Controller --> API: sendData(res, result, 201)
-deactivate Controller
-API --> Employee: 201 Created\n{data: {transaction, booking}}
-deactivate API
-
-== Use Case 3: Get Booking Details ==
+== Use Case 2: Get Booking Details ==
 
 Employee -> API: GET /employee-api/v1/bookings/{id}
 activate API
@@ -1511,9 +1706,9 @@ end
 Service -> Service: Create roomTypeMap\nfor quick lookup
 
 loop For each room request
-    Service -> Prisma: findMany(rooms)\nwhere: roomTypeId, status=AVAILABLE\nexclude overlapping bookings
+    Service -> Prisma: findMany(rooms)\nwhere: roomId, status=AVAILABLE\nexclude overlapping bookings
     activate Prisma
-    Prisma -> DB: SELECT * FROM room\nWHERE room_type_id = ?\nAND status = 'AVAILABLE'\nAND NOT EXISTS (\n  SELECT 1 FROM booking_room\n  WHERE room_id = room.id\n  AND status IN ('PENDING', 'CONFIRMED', 'CHECKED_IN')\n  AND check_in_date <= ?\n  AND check_out_date >= ?\n)\nLIMIT ?
+    Prisma -> DB: SELECT * FROM room\nWHERE room_id = ?\nAND status = 'AVAILABLE'\nAND NOT EXISTS (\n  SELECT 1 FROM booking_room\n  WHERE room_id = room.id\n  AND status IN ('PENDING', 'CONFIRMED', 'CHECKED_IN')\n  AND check_in_date <= ?\n  AND check_out_date >= ?\n)\nLIMIT ?
     DB --> Prisma: Available rooms
     Prisma --> Service: availableRooms[]
     deactivate Prisma
@@ -1628,84 +1823,24 @@ end note
   end
   deactivate bookingSvc
 
-  == Calculate Final Bill ==
-
-  ctrl -> bookingSvc: calculateFinalBill(bookingRoomId)
-  activate bookingSvc
-
-  note over bookingSvc,db
-    Calculate total charges:
-    - Room charges (pricePerNight × nights)
-    - Service usage charges
-    - Existing balance
-  end note
-
-  bookingSvc -> db: serviceUsage.findMany({\n  where: {bookingRoomId},\n  include: {service}\n})
-  activate db
-  db --> bookingSvc: serviceUsages[]
-  deactivate db
-
-  bookingSvc -> db: transaction.aggregate({\n  where: {bookingRoomId},\n  _sum: {amount}\n})
-  activate db
-  db --> bookingSvc: total payments
-  deactivate db
-
-  bookingSvc -> bookingSvc: Calculate:\ntotalCharges = roomCharges + serviceCharges\ntotalPaid = sum of payments\nbalanceDue = totalCharges - totalPaid
-
-  bookingSvc --> ctrl: billSummary {\n  totalCharges,\n  totalPaid,\n  balanceDue,\n  serviceCharges[],\n  roomCharges\n}
-  deactivate bookingSvc
-
-  alt Balance Due > 0
-      ctrl --> emp: 200 OK\n{billSummary, requiresPayment: true}
-
-      note over emp
-        Employee processes final payment
-        from customer
-      end note
-
-      emp -> ctrl: POST /transactions\n{bookingId, bookingRoomId,\ntype: ROOM_CHARGE,\namount: balanceDue,\nmethod, details[]}
-      activate ctrl
-
-      ctrl -> txnSvc: createTransaction(data)
-      activate txnSvc
-
-      txnSvc -> db: transaction.create({\n  bookingId,\n  bookingRoomId,\n  type: ROOM_CHARGE,\n  amount,\n  method,\n  status: COMPLETED,\n  processedById: employeeId,\n  details: {\n    create: [...]\n  }\n})
-      activate db
-      db --> txnSvc: transaction
-      deactivate db
-
-      txnSvc -> db: bookingRoom.update({\n  totalPaid += amount,\n  balance = 0\n})
-      activate db
-      db --> txnSvc: updated bookingRoom
-      deactivate db
-
-      txnSvc -> db: booking.update({\n  totalPaid += amount,\n  balance = totalAmount - totalPaid\n})
-      activate db
-      db --> txnSvc: updated booking
-      deactivate db
-
-      txnSvc --> ctrl: transaction
-      deactivate txnSvc
-
-      ctrl --> emp: 201 Created\n{transaction}
-      deactivate ctrl
-
-      emp -> ctrl: POST /bookings/check-out\n{bookingId, bookingRoomId}
-      activate ctrl
-  end
-
   == Process Check-Out ==
 
-  ctrl -> bookingSvc: checkOutRoom(bookingId, bookingRoomId, employeeId)
+  note over emp,db
+    Assumption: All payments handled
+    via Transaction system before checkout.
+    Checkout only updates room/booking status.
+  end note
+
+  ctrl -> bookingSvc: checkOut({bookingRoomIds, employeeId})
   activate bookingSvc
 
-  bookingSvc -> db: bookingRoom.findUnique(bookingRoomId)
+  bookingSvc -> db: bookingRoom.findMany({\n  where: {id in bookingRoomIds}\n})
   activate db
-  db --> bookingSvc: bookingRoom
+  db --> bookingSvc: bookingRooms[]
   deactivate db
 
-  alt Balance Due > 0
-      bookingSvc --> ctrl: throw BadRequestError\n"Outstanding balance must be paid"
+  alt Any room status not CHECKED_IN
+      bookingSvc --> ctrl: throw BadRequestError\n"All rooms must be CHECKED_IN"
       ctrl --> emp: 400 Bad Request
   end
 
@@ -1717,25 +1852,24 @@ end note
   bookingSvc -> db: BEGIN TRANSACTION
   activate db
 
-  bookingSvc -> db: bookingRoom.update({\n  id: bookingRoomId,\n  actualCheckOut: now(),\n  status: CHECKED_OUT\n})
-  db --> bookingSvc: updated bookingRoom
+  bookingSvc -> db: bookingRoom.updateMany({\n  where: {id in bookingRoomIds},\n  actualCheckOut: now(),\n  status: CHECKED_OUT\n})
+  db --> bookingSvc: updated bookingRooms
 
-  bookingSvc -> db: room.update({\n  id: roomId,\n  status: CLEANING\n})
-  db --> bookingSvc: updated room
+  bookingSvc -> bookingSvc: updateRoomStatuses(roomIds)\n- Check for other bookings\n- Set AVAILABLE or RESERVED
 
-  bookingSvc -> db: bookingRoom.findMany({\n  where: {\n    bookingId,\n    status: {not: CHECKED_OUT}\n  }\n})
-  db --> bookingSvc: remainingRooms[]
+  bookingSvc -> db: room.updateMany({...})
+  db --> bookingSvc: updated rooms
+
+  bookingSvc -> db: bookingRoom.findMany({\n  where: {bookingId}\n})
+  db --> bookingSvc: allBookingRooms[]
 
   alt All rooms checked out
       bookingSvc -> db: booking.update({\n  id: bookingId,\n  status: CHECKED_OUT\n})
       db --> bookingSvc: updated booking (CHECKED_OUT)
-  else Some rooms still occupied
-      bookingSvc -> db: booking.update({\n  id: bookingId,\n  status: PARTIALLY_CHECKED_OUT\n})
-      db --> bookingSvc: updated booking (PARTIALLY_CHECKED_OUT)
   end
 
-  bookingSvc -> db: bookingHistory.create({\n  bookingId,\n  employeeId,\n  action: "CHECK_OUT",\n  changes: {\n    bookingRoomId,\n    actualCheckOut: now(),\n    roomStatus: CLEANING,\n    finalBalance: 0\n  }\n})
-  db --> bookingSvc: history record
+  bookingSvc -> db: activity.create({\n  type: 'CHECK_OUT',\n  bookingRoomId,\n  employeeId\n})
+  db --> bookingSvc: activity created
 
   bookingSvc -> db: COMMIT TRANSACTION
   db --> bookingSvc: transaction committed
