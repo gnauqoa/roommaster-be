@@ -11,6 +11,7 @@ export interface CreateCustomerData {
   email?: string;
   idNumber?: string;
   address?: string;
+  isEmailVerified?: boolean;
 }
 
 export interface UpdateCustomerData {
@@ -18,6 +19,8 @@ export interface UpdateCustomerData {
   email?: string;
   idNumber?: string;
   address?: string;
+  isEmailVerified?: boolean;
+  emailVerificationToken?: string;
 }
 
 export interface CustomerFilters {
@@ -57,7 +60,8 @@ export class CustomerService {
     const customer = await this.prisma.customer.create({
       data: {
         ...customerData,
-        password: hashedPassword
+        password: hashedPassword,
+        isEmailVerified: customerData.isEmailVerified ?? false
       }
     });
 

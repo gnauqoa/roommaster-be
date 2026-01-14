@@ -25,10 +25,14 @@ describe('processSplitRoomPayment', () => {
   let mockActivityService: any;
   let mockUsageServiceService: any;
   let mockPromotionService: any;
+  let mockEmailService: any;
   let mockTx: any;
 
   beforeEach(() => {
     mockPrisma = createMockPrismaClient();
+    mockEmailService = {
+      sendBookingConfirmation: jest.fn(async () => undefined)
+    };
 
     mockTx = {
       booking: {
@@ -101,7 +105,8 @@ describe('processSplitRoomPayment', () => {
         mockPrisma,
         mockActivityService,
         mockUsageServiceService,
-        mockPromotionService
+        mockPromotionService,
+        mockEmailService
       )
     ).rejects.toThrow('Booking ID is required');
   });
@@ -120,7 +125,8 @@ describe('processSplitRoomPayment', () => {
         mockPrisma,
         mockActivityService,
         mockUsageServiceService,
-        mockPromotionService
+        mockPromotionService,
+        mockEmailService
       )
     ).rejects.toThrow('Booking room IDs are required');
   });
@@ -140,7 +146,8 @@ describe('processSplitRoomPayment', () => {
         mockPrisma,
         mockActivityService,
         mockUsageServiceService,
-        mockPromotionService
+        mockPromotionService,
+        mockEmailService
       )
     ).rejects.toThrow('Booking room IDs are required');
   });
@@ -162,7 +169,8 @@ describe('processSplitRoomPayment', () => {
         mockPrisma,
         mockActivityService,
         mockUsageServiceService,
-        mockPromotionService
+        mockPromotionService,
+        mockEmailService
       )
     ).rejects.toThrow('Booking not found');
   });
@@ -202,7 +210,8 @@ describe('processSplitRoomPayment', () => {
         mockPrisma,
         mockActivityService,
         mockUsageServiceService,
-        mockPromotionService
+        mockPromotionService,
+        mockEmailService
       )
     ).rejects.toThrow('Some booking rooms not found');
   });
@@ -264,7 +273,8 @@ describe('processSplitRoomPayment', () => {
       mockPrisma,
       mockActivityService,
       mockUsageServiceService,
-      mockPromotionService
+      mockPromotionService,
+      mockEmailService
     );
 
     expect(result.transaction).toBeDefined();
@@ -292,6 +302,7 @@ describe('processSplitRoomPayment', () => {
       {
         id: 'room-1',
         subtotalRoom: new Prisma.Decimal(100),
+        subtotalService: new Prisma.Decimal(50),
         totalPaid: new Prisma.Decimal(0),
         totalAmount: new Prisma.Decimal(150),
         room: { id: 'room-1' },
@@ -300,7 +311,7 @@ describe('processSplitRoomPayment', () => {
             id: 'service-1',
             totalPrice: new Prisma.Decimal(50),
             totalPaid: new Prisma.Decimal(0),
-            status: 'ACTIVE'
+            status: 'PENDING'
           }
         ]
       }
@@ -321,16 +332,12 @@ describe('processSplitRoomPayment', () => {
       mockPrisma,
       mockActivityService,
       mockUsageServiceService,
-      mockPromotionService
+      mockPromotionService,
+      mockEmailService
     );
 
-    expect(mockTx.transactionDetail.create).toHaveBeenCalledTimes(2); // Room + Service
-    expect(mockUsageServiceService.updateServiceUsagePayment).toHaveBeenCalledWith(
-      'service-1',
-      50,
-      'employee-123',
-      mockTx
-    );
+    expect(mockTx.transactionDetail.create).toHaveBeenCalledTimes(1); // Room only (services handled separately)
+    // Note: Services are not updated in split-room handler, they require separate SERVICE_CHARGE transaction
   });
 
   it('should update booking status to CONFIRMED for DEPOSIT transaction', async () => {
@@ -373,7 +380,8 @@ describe('processSplitRoomPayment', () => {
       mockPrisma,
       mockActivityService,
       mockUsageServiceService,
-      mockPromotionService
+      mockPromotionService,
+      mockEmailService
     );
 
     expect(mockTx.booking.update).toHaveBeenCalledWith({
@@ -456,7 +464,8 @@ describe('processSplitRoomPayment', () => {
       mockPrisma,
       mockActivityService,
       mockUsageServiceService,
-      mockPromotionService
+      mockPromotionService,
+      mockEmailService
     );
 
     expect(mockTx.usedPromotion.create).toHaveBeenCalled();
@@ -516,7 +525,8 @@ describe('processSplitRoomPayment', () => {
       mockPrisma,
       mockActivityService,
       mockUsageServiceService,
-      mockPromotionService
+      mockPromotionService,
+      mockEmailService
     );
 
     expect(mockTx.transactionDetail.create).not.toHaveBeenCalled();
@@ -563,7 +573,8 @@ describe('processSplitRoomPayment', () => {
       mockPrisma,
       mockActivityService,
       mockUsageServiceService,
-      mockPromotionService
+      mockPromotionService,
+      mockEmailService
     );
 
     expect(mockTx.transaction.create).toHaveBeenCalledWith(
@@ -615,7 +626,8 @@ describe('processSplitRoomPayment', () => {
       mockPrisma,
       mockActivityService,
       mockUsageServiceService,
-      mockPromotionService
+      mockPromotionService,
+      mockEmailService
     );
 
     expect(mockTx.bookingRoom.update).toHaveBeenCalledWith({

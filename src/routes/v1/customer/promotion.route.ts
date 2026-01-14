@@ -5,66 +5,70 @@ import CustomerPromotionController from '@/controllers/customer/customer.promoti
 import { container, TOKENS } from '@/core/container';
 import { PromotionService } from '@/services/promotion.service';
 import { authCustomer } from '@/middlewares/auth';
+import { requireEmailVerified } from '@/middlewares/emailVerification';
 
-const router = express.Router();
+export default function createPromotionRoutes(): express.Router {
+  const router = express.Router();
 
-// Resolve dependencies from container
-const promotionService = container.resolve<PromotionService>(TOKENS.PromotionService);
-const customerPromotionController = new CustomerPromotionController(promotionService);
+  // Resolve dependencies from container
+  const promotionService = container.resolve<PromotionService>(TOKENS.PromotionService);
+  const customerPromotionController = new CustomerPromotionController(promotionService);
 
-/**
- * @swagger
- * tags:
- *   name: Customer Promotions
- *   description: Customer promotion endpoints
- */
+  /**
+   * @swagger
+   * tags:
+   *   name: Customer Promotions
+   *   description: Customer promotion endpoints
+   */
 
-/**
- * @swagger
- * /customer/promotions/available:
- *   get:
- *     summary: Get all available promotions (public listing)
- *     tags: [Customer Promotions]
- *     security:
- *       - bearerAuth: []
- */
-router.get(
-  '/available',
-  authCustomer,
-  validate(commonValidation.getPromotions),
-  customerPromotionController.getAvailablePromotions
-);
+  /**
+   * @swagger
+   * /customer/promotions/available:
+   *   get:
+   *     summary: Get all available promotions (public listing)
+   *     tags: [Customer Promotions]
+   *     security:
+   *       - bearerAuth: []
+   */
+  router.get(
+    '/available',
+    authCustomer,
+    validate(commonValidation.getPromotions),
+    customerPromotionController.getAvailablePromotions
+  );
 
-/**
- * @swagger
- * /customer/promotions/my-promotions:
- *   get:
- *     summary: Get customer's claimed promotions
- *     tags: [Customer Promotions]
- *     security:
- *       - bearerAuth: []
- */
-router.get(
-  '/my-promotions',
-  authCustomer,
-  validate(commonValidation.getPromotions),
-  customerPromotionController.getMyPromotions
-);
+  /**
+   * @swagger
+   * /customer/promotions/my-promotions:
+   *   get:
+   *     summary: Get customer's claimed promotions
+   *     tags: [Customer Promotions]
+   *     security:
+   *       - bearerAuth: []
+   */
+  router.get(
+    '/my-promotions',
+    authCustomer,
+    validate(commonValidation.getPromotions),
+    customerPromotionController.getMyPromotions
+  );
 
-/**
- * @swagger
- * /customer/promotions/claim:
- *   post:
- *     summary: Claim a promotion by code
- *     tags: [Customer Promotions]
- *     security:
- *       - bearerAuth: []
- */
-router.post(
-  '/claim',
-  authCustomer,
-  validate(promotionValidation.claimPromotion),
-  customerPromotionController.claimPromotion
-);
+  /**
+   * @swagger
+   * /customer/promotions/claim:
+   *   post:
+   *     summary: Claim a promotion by code
+   *     tags: [Customer Promotions]
+   *     security:
+   *       - bearerAuth: []
+   */
+  router.post(
+    '/claim',
+    authCustomer,
+    requireEmailVerified,
+    validate(promotionValidation.claimPromotion),
+    customerPromotionController.claimPromotion
+  );
 
-export default router;
+  return router;
+}

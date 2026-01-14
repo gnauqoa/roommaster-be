@@ -58,7 +58,7 @@ export class RoomTypeService {
         name: roomTypeData.name,
         capacity: roomTypeData.capacity,
         totalBed: roomTypeData.totalBed,
-        pricePerNight: roomTypeData.pricePerNight,
+        basePrice: roomTypeData.pricePerNight,
         roomTypeTags: roomTypeData.tagIds
           ? {
               create: roomTypeData.tagIds.map((tagId) => ({
@@ -116,12 +116,12 @@ export class RoomTypeService {
 
     // Apply price filters
     if (minPrice !== undefined || maxPrice !== undefined) {
-      where.pricePerNight = {};
+      where.basePrice = {};
       if (minPrice !== undefined) {
-        where.pricePerNight.gte = minPrice;
+        where.basePrice.gte = minPrice;
       }
       if (maxPrice !== undefined) {
-        where.pricePerNight.lte = maxPrice;
+        where.basePrice.lte = maxPrice;
       }
     }
 
@@ -137,6 +137,11 @@ export class RoomTypeService {
           roomTypeTags: {
             include: {
               roomTag: true
+            }
+          },
+          images: {
+            orderBy: {
+              sortOrder: 'asc'
             }
           },
           _count: {
@@ -170,6 +175,11 @@ export class RoomTypeService {
         roomTypeTags: {
           include: {
             roomTag: true
+          }
+        },
+        images: {
+          orderBy: {
+            sortOrder: 'asc'
           }
         },
         _count: {
@@ -212,12 +222,13 @@ export class RoomTypeService {
     }
 
     // Handle tag updates if provided
-    const { tagIds, ...basicUpdateData } = updateData;
+    const { tagIds, pricePerNight, ...basicUpdateData } = updateData;
 
     const updatedRoomType = await this.prisma.roomType.update({
       where: { id: roomTypeId },
       data: {
         ...basicUpdateData,
+        ...(pricePerNight !== undefined && { basePrice: pricePerNight }),
         ...(tagIds !== undefined && {
           roomTypeTags: {
             deleteMany: {},
@@ -232,6 +243,11 @@ export class RoomTypeService {
         roomTypeTags: {
           include: {
             roomTag: true
+          }
+        },
+        images: {
+          orderBy: {
+            sortOrder: 'asc'
           }
         }
       }
@@ -259,6 +275,23 @@ export class RoomTypeService {
         'Cannot delete room type with associated rooms. Please delete or reassign the rooms first.'
       );
     }
+
+    // Check if room type has associated bookings
+    const bookingCount = await this.prisma.bookingRoom.count({
+      where: { roomTypeId }
+    });
+
+    if (bookingCount > 0) {
+      throw new ApiError(
+        httpStatus.BAD_REQUEST,
+        'Cannot delete room type with associated bookings. This room type is part of historical data.'
+      );
+    }
+
+    // Delete related tags first (since no cascade delete in schema)
+    await this.prisma.roomTypeTag.deleteMany({
+      where: { roomTypeId }
+    });
 
     await this.prisma.roomType.delete({
       where: { id: roomTypeId }

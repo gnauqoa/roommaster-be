@@ -120,6 +120,44 @@ export class EmployeeBookingController {
     const result = await this.bookingService.cancelBooking(req.params.id);
     sendData(res, result);
   });
+
+  /**
+   * Change room for a checked-in booking
+   * POST /employee-api/v1/bookings/rooms/:bookingRoomId/change-room
+   */
+  changeRoom = catchAsync(async (req: Request, res: Response) => {
+    if (!req.employee?.id) {
+      throw new Error('Employee not authenticated');
+    }
+
+    const { bookingRoomId } = req.params;
+    const { newRoomId, reason } = req.body;
+
+    const result = await this.bookingService.changeRoom({
+      bookingRoomId,
+      newRoomId,
+      employeeId: req.employee.id,
+      reason
+    });
+
+    sendData(res, result);
+  });
+
+  /**
+   * Update customers for a specific booking room
+   * PUT /employee-api/v1/bookings/rooms/:bookingRoomId/customers
+   */
+  updateBookingRoomCustomers = catchAsync(async (req: Request, res: Response) => {
+    if (!req.employee?.id) {
+      throw new Error('Employee not authenticated');
+    }
+
+    const { bookingRoomId } = req.params;
+    const { customerIds } = req.body;
+
+    const result = await this.bookingService.updateBookingRoomCustomers(bookingRoomId, customerIds);
+    sendData(res, result);
+  });
 }
 
 export default EmployeeBookingController;

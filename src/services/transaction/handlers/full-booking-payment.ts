@@ -1,9 +1,11 @@
+import dayjs from 'dayjs';
 import { PrismaClient, Prisma, TransactionStatus, BookingStatus } from '@prisma/client';
 import httpStatus from 'http-status';
 import ApiError from '@/utils/ApiError';
 import { ActivityService } from '@/services/activity.service';
 import { UsageServiceService } from '@/services/usage-service.service';
 import { PromotionService } from '@/services/promotion.service';
+import EmailService from '@/services/email.service';
 import { CreateTransactionPayload, TransactionDetailData } from '@/services/transaction/types';
 import { validatePromotions } from '@/services/transaction/validators/promotion-validator';
 import {
@@ -25,13 +27,13 @@ export async function processFullBookingPayment(
   prisma: PrismaClient,
   activityService: ActivityService,
   usageServiceService: UsageServiceService,
-  promotionService: PromotionService
+  promotionService: PromotionService,
+  emailService: EmailService
 ) {
   const {
     bookingId,
     paymentMethod,
     transactionType,
-    transactionRef,
     description,
     employeeId,
     promotionApplications = []
@@ -40,8 +42,11 @@ export async function processFullBookingPayment(
   if (!bookingId) {
     throw new ApiError(httpStatus.BAD_REQUEST, 'Booking ID is required');
   }
-
-  return prisma.$transaction(async (tx) => {
+  const EmailConfirmationInfo = {
+    bookingId: '',
+    ShouldSendEmail: false
+  };
+  const result = await prisma.$transaction(async (tx) => {
     // STEP 1: Fetch booking with all rooms and services
     const booking = await tx.booking.findUnique({
       where: { id: bookingId },
@@ -64,29 +69,29 @@ export async function processFullBookingPayment(
     // STEP 2: Build transaction details
     const transactionDetails: TransactionDetailData[] = [];
 
-    for (const room of booking.bookingRooms) {
-      const roomBalance = new Prisma.Decimal(room.subtotalRoom).sub(room.totalPaid);
+    // Helper to calculate subtotalRoom
+    const getSubtotalRoom = (room: any) => {
+      const nights = dayjs(room.checkOutDate).diff(dayjs(room.checkInDate), 'day');
+      return new Prisma.Decimal(room.pricePerNight).mul(nights);
+    };
 
-      if (roomBalance.gt(0)) {
-        transactionDetails.push({
-          bookingRoomId: room.id,
-          baseAmount: roomBalance.toNumber(),
-          discountAmount: 0,
-          amount: roomBalance.toNumber()
-        });
-      }
+    // For non-DEPOSIT transactions, pay all rooms and services
+    for (const room of booking.bookingRooms) {
+      const subtotal = getSubtotalRoom(room);
+      transactionDetails.push({
+        bookingRoomId: room.id,
+        baseAmount: subtotal.toNumber(),
+        discountAmount: 0,
+        amount: subtotal.toNumber()
+      });
 
       for (const service of room.serviceUsages) {
-        const serviceBalance = new Prisma.Decimal(service.totalPrice).sub(service.totalPaid);
-
-        if (serviceBalance.gt(0)) {
-          transactionDetails.push({
-            serviceUsageId: service.id,
-            baseAmount: serviceBalance.toNumber(),
-            discountAmount: 0,
-            amount: serviceBalance.toNumber()
-          });
-        }
+        transactionDetails.push({
+          serviceUsageId: service.id,
+          baseAmount: service.totalPrice.toNumber(),
+          discountAmount: 0,
+          amount: service.totalPrice.toNumber()
+        });
       }
     }
 
@@ -118,7 +123,6 @@ export async function processFullBookingPayment(
         method: paymentMethod,
         status: TransactionStatus.COMPLETED,
         processedById: employeeId,
-        transactionRef,
         description: description || getDefaultDescription(transactionType, booking.bookingCode)
       }
     });
@@ -136,21 +140,7 @@ export async function processFullBookingPayment(
         }
       });
 
-      // Update room or service payment
-      if (detail.bookingRoomId) {
-        const room = booking.bookingRooms.find((r) => r.id === detail.bookingRoomId);
-        if (room) {
-          await tx.bookingRoom.update({
-            where: { id: detail.bookingRoomId },
-            data: {
-              totalPaid: new Prisma.Decimal(room.totalPaid).add(detail.amount),
-              balance: new Prisma.Decimal(room.totalAmount).sub(
-                new Prisma.Decimal(room.totalPaid).add(detail.amount)
-              )
-            }
-          });
-        }
-      }
+      // No need to update BookingRoom payment tracking
 
       if (detail.serviceUsageId) {
         await usageServiceService.updateServiceUsagePayment(
@@ -222,11 +212,13 @@ export async function processFullBookingPayment(
         where: { id: bookingId },
         data: { status: BookingStatus.CONFIRMED }
       });
-
       await tx.bookingRoom.updateMany({
         where: { bookingId, status: BookingStatus.PENDING },
         data: { status: BookingStatus.CONFIRMED }
       });
+      console.log('Booking status changed to CONFIRMED for bookingId:', bookingId);
+      EmailConfirmationInfo.ShouldSendEmail = true;
+      EmailConfirmationInfo.bookingId = bookingId;
     }
 
     // Create activity
@@ -256,4 +248,16 @@ export async function processFullBookingPayment(
       })
     };
   });
+
+  // Send email AFTER transaction commits so the email service sees updated data
+  if (EmailConfirmationInfo.ShouldSendEmail) {
+    console.log(
+      'Sending booking confirmation email for bookingId:',
+      EmailConfirmationInfo.bookingId
+    );
+    emailService.sendBookingConfirmation(EmailConfirmationInfo.bookingId).catch((error) => {
+      console.error('Failed to send booking confirmation email:', error);
+    });
+  }
+  return result;
 }

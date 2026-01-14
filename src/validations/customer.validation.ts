@@ -8,7 +8,8 @@ const createCustomer = {
     password: Joi.string().required().custom(password),
     email: Joi.string().email().optional(),
     idNumber: Joi.string().optional().max(20),
-    address: Joi.string().optional()
+    address: Joi.string().optional(),
+    isEmailVerified: Joi.boolean().optional()
   })
 };
 
@@ -37,7 +38,8 @@ const updateCustomer = {
       fullName: Joi.string().max(100),
       email: Joi.string().email(),
       idNumber: Joi.string().max(20),
-      address: Joi.string()
+      address: Joi.string().optional(),
+      isEmailVerified: Joi.boolean().optional()
     })
     .min(1)
 };
@@ -53,7 +55,7 @@ const register = {
     fullName: Joi.string().required().max(100),
     phone: Joi.string().required().max(20),
     password: Joi.string().required().custom(password),
-    email: Joi.string().email().optional(),
+    email: Joi.string().email().required(),
     idNumber: Joi.string().optional().max(20),
     address: Joi.string().optional()
   })
@@ -76,7 +78,7 @@ const updateProfile = {
   body: Joi.object()
     .keys({
       fullName: Joi.string().max(100),
-      email: Joi.string().email(),
+      //email: Joi.string().email(),
       idNumber: Joi.string().max(20),
       address: Joi.string()
     })

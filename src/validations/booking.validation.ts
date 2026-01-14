@@ -6,8 +6,7 @@ const createBooking = {
     rooms: Joi.array()
       .items(
         Joi.object().keys({
-          roomTypeId: Joi.string().required(),
-          count: Joi.number().integer().min(1).required()
+          roomId: Joi.string().required()
         })
       )
       .min(1)
@@ -65,7 +64,6 @@ const createTransaction = {
       .valid(...Object.values(PaymentMethod))
       .required(),
     bookingRoomId: Joi.string().optional(),
-    transactionRef: Joi.string().optional(),
     description: Joi.string().optional()
   })
 };
@@ -103,11 +101,10 @@ const updateBooking = {
     checkInDate: Joi.date().iso(),
     checkOutDate: Joi.date().iso().greater(Joi.ref('checkInDate')),
     totalGuests: Joi.number().integer().min(1),
-    status: Joi.string().valid(BookingStatus),
+    status: Joi.string().valid(...Object.values(BookingStatus)),
     rooms: Joi.array().items(
       Joi.object().keys({
-        roomTypeId: Joi.string().required(),
-        count: Joi.number().integer().min(1).required()
+        roomId: Joi.string().required()
       })
     )
   })
@@ -129,17 +126,39 @@ const createBookingEmployee = {
       rooms: Joi.array()
         .items(
           Joi.object().keys({
-            roomTypeId: Joi.string().required(),
-            count: Joi.number().integer().min(1).required()
+            roomId: Joi.string().required()
           })
         )
         .min(1)
         .required(),
       checkInDate: Joi.date().iso().required(),
       checkOutDate: Joi.date().iso().greater(Joi.ref('checkInDate')).required(),
-      totalGuests: Joi.number().integer().min(1).required()
+      totalGuests: Joi.number().integer().min(1).required(),
+      depositAmount: Joi.number().optional().min(0),
+      depositPaymentMethod: Joi.string()
+        .valid('CASH', 'CREDIT_CARD', 'BANK_TRANSFER', 'E_WALLET', 'DEBIT_CARD')
+        .optional()
     })
     .xor('customerId', 'customer')
+};
+
+const changeRoom = {
+  params: Joi.object().keys({
+    bookingRoomId: Joi.string().required()
+  }),
+  body: Joi.object().keys({
+    newRoomId: Joi.string().required(),
+    reason: Joi.string().max(500).optional()
+  })
+};
+
+const updateBookingRoomCustomers = {
+  params: Joi.object().keys({
+    bookingRoomId: Joi.string().required()
+  }),
+  body: Joi.object().keys({
+    customerIds: Joi.array().items(Joi.string()).min(1).required()
+  })
 };
 
 export default {
@@ -152,5 +171,7 @@ export default {
   getBooking,
   cancelBooking,
   updateBooking,
-  createBookingEmployee
+  createBookingEmployee,
+  changeRoom,
+  updateBookingRoomCustomers
 };

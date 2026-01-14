@@ -8,7 +8,8 @@ const createServiceUsage = {
     bookingId: Joi.string().optional(), // Optional for customers (auto-detected)
     bookingRoomId: Joi.string().optional(),
     serviceId: Joi.string().required(),
-    quantity: Joi.number().integer().min(1).required()
+    quantity: Joi.number().integer().min(1).required(),
+    note: Joi.string().max(500).optional() // Optional note for service usage
   })
 };
 
@@ -44,7 +45,6 @@ const createTransactionWithAllocation = {
       )
       .min(1)
       .required(),
-    transactionRef: Joi.string().optional(),
     description: Joi.string().optional()
   })
 };
@@ -68,10 +68,34 @@ const deleteServiceUsage = {
   })
 };
 
+// ==================== PENALTY AND SURCHARGE VALIDATIONS ====================
+
+const createPenalty = {
+  body: Joi.object().keys({
+    bookingId: Joi.string().optional(),
+    bookingRoomId: Joi.string().optional(),
+    customPrice: Joi.number().positive().required(),
+    quantity: Joi.number().integer().min(1).default(1),
+    reason: Joi.string().min(3).max(500).required()
+  })
+};
+
+const createSurcharge = {
+  body: Joi.object().keys({
+    bookingId: Joi.string().optional(),
+    bookingRoomId: Joi.string().optional(),
+    customPrice: Joi.number().positive().required(),
+    quantity: Joi.number().integer().min(1).default(1),
+    reason: Joi.string().min(3).max(500).required()
+  })
+};
+
 export default {
   createServiceUsage,
   updateServiceUsage,
   createTransactionWithAllocation,
   getServiceUsages,
-  deleteServiceUsage
+  deleteServiceUsage,
+  createPenalty,
+  createSurcharge
 };

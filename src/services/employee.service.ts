@@ -8,17 +8,17 @@ export interface CreateEmployeeData {
   name: string;
   username: string;
   password: string;
-  role?: string;
+  roleId: string;
 }
 
 export interface UpdateEmployeeData {
   name?: string;
-  role?: string;
+  roleId?: string;
 }
 
 export interface EmployeeFilters {
   search?: string;
-  role?: string;
+  roleId?: string;
 }
 
 export interface PaginationOptions {
@@ -47,6 +47,15 @@ export class EmployeeService {
       throw new ApiError(httpStatus.BAD_REQUEST, 'Username already exists');
     }
 
+    // Validate role exists
+    const roleExists = await this.prisma.role.findUnique({
+      where: { id: employeeData.roleId }
+    });
+
+    if (!roleExists) {
+      throw new ApiError(httpStatus.BAD_REQUEST, 'Role not found');
+    }
+
     // Hash password
     const hashedPassword = await encryptPassword(employeeData.password);
 
@@ -56,7 +65,16 @@ export class EmployeeService {
         name: employeeData.name,
         username: employeeData.username,
         password: hashedPassword,
-        role: employeeData.role || 'STAFF'
+        roleId: employeeData.roleId
+      },
+      include: {
+        roleRef: {
+          select: {
+            id: true,
+            name: true,
+            description: true
+          }
+        }
       }
     });
 
@@ -73,7 +91,7 @@ export class EmployeeService {
     filters: EmployeeFilters = {},
     options: PaginationOptions = {}
   ): Promise<{ data: any[]; total: number; page: number; limit: number }> {
-    const { search, role } = filters;
+    const { search, roleId } = filters;
     const { page = 1, limit = 10, sortBy = 'createdAt', sortOrder = 'desc' } = options;
 
     const where: Prisma.EmployeeWhereInput = {};
@@ -97,8 +115,8 @@ export class EmployeeService {
     }
 
     // Apply role filter
-    if (role) {
-      where.role = role;
+    if (roleId) {
+      where.roleId = roleId;
     }
 
     const skip = (page - 1) * limit;
@@ -113,7 +131,13 @@ export class EmployeeService {
           id: true,
           name: true,
           username: true,
-          role: true,
+          roleId: true,
+          roleRef: {
+            select: {
+              id: true,
+              name: true
+            }
+          },
           updatedAt: true
         }
       }),
@@ -164,6 +188,17 @@ export class EmployeeService {
    */
   async updateEmployee(employeeId: string, updateData: UpdateEmployeeData): Promise<Employee> {
     await this.getEmployeeById(employeeId);
+
+    // Validate role exists if roleId is being updated
+    if (updateData.roleId) {
+      const roleExists = await this.prisma.role.findUnique({
+        where: { id: updateData.roleId }
+      });
+
+      if (!roleExists) {
+        throw new ApiError(httpStatus.BAD_REQUEST, 'Role not found');
+      }
+    }
 
     const updatedEmployee = await this.prisma.employee.update({
       where: { id: employeeId },

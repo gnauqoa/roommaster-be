@@ -1,12 +1,22 @@
-import { PrismaClient, BookingStatus, RoomStatus } from '@prisma/client';
+import {
+  PrismaClient,
+  BookingStatus,
+  RoomStatus,
+  ActivityType,
+  TransactionType,
+  PaymentMethod
+} from '@prisma/client';
 import { Injectable } from '@/core/decorators';
 import httpStatus from 'http-status';
 import ApiError from '@/utils/ApiError';
 import dayjs from 'dayjs';
+import AppSettingService from './app-setting.service';
+import { encryptPassword } from '@/utils/encryption';
+import EmailService from './email.service';
+import { RoomService } from './room.service';
 
 export interface RoomRequest {
-  roomTypeId: string;
-  count: number;
+  roomId: string;
 }
 
 export interface CreateBookingPayload {
@@ -15,6 +25,8 @@ export interface CreateBookingPayload {
   checkOutDate: string;
   totalGuests: number;
   customerId: string;
+  depositAmount?: number;
+  depositPaymentMethod?: PaymentMethod;
 }
 
 export interface CheckInBooking {
@@ -32,13 +44,74 @@ export interface CheckOutPayload {
   employeeId: string;
 }
 
+export interface ChangeRoomPayload {
+  bookingRoomId: string;
+  newRoomId: string;
+  employeeId: string;
+  reason?: string;
+}
+
 @Injectable()
 export class BookingService {
   constructor(
     private readonly prisma: PrismaClient,
     private readonly transactionService: any,
-    private readonly activityService: any
+    private readonly activityService: any,
+    private readonly appSettingService: AppSettingService,
+    private readonly emailService: EmailService,
+    private readonly roomService: RoomService
   ) {}
+
+  /**
+   * Calculate the correct room status based on current bookings
+   * Used after checkout/cancel to determine if room should be AVAILABLE or RESERVED
+   * @param roomId - Room ID to check
+   * @param tx - Optional Prisma transaction client
+   * @returns The appropriate RoomStatus
+   */
+  private async calculateRoomStatus(roomId: string, tx?: any): Promise<RoomStatus> {
+    const prisma = tx || this.prisma;
+    const today = dayjs().startOf('day').toDate();
+    const tomorrow = dayjs().add(1, 'day').startOf('day').toDate();
+
+    // Check if there's an active booking for TODAY (should be OCCUPIED or RESERVED)
+    const activeBookingToday = await prisma.bookingRoom.findFirst({
+      where: {
+        roomId,
+        checkInDate: { lte: tomorrow },
+        checkOutDate: { gt: today },
+        status: {
+          in: [BookingStatus.CONFIRMED, BookingStatus.CHECKED_IN]
+        }
+      }
+    });
+
+    if (activeBookingToday) {
+      if (activeBookingToday.status === BookingStatus.CHECKED_IN) {
+        return RoomStatus.OCCUPIED;
+      }
+      // Has a confirmed booking for today but not checked in yet
+      return RoomStatus.RESERVED;
+    }
+
+    // No active booking for today - room is available
+    return RoomStatus.AVAILABLE;
+  }
+
+  /**
+   * Update room status for multiple rooms based on their current bookings
+   * @param roomIds - Array of room IDs to update
+   * @param tx - Prisma transaction client
+   */
+  private async updateRoomStatuses(roomIds: string[], tx: any): Promise<void> {
+    for (const roomId of roomIds) {
+      const newStatus = await this.calculateRoomStatus(roomId, tx);
+      await tx.room.update({
+        where: { id: roomId },
+        data: { status: newStatus }
+      });
+    }
+  }
 
   /**
    * Create a booking with automatic room allocation
@@ -56,71 +129,67 @@ export class BookingService {
       throw new ApiError(httpStatus.BAD_REQUEST, 'Check-out date must be after check-in date');
     }
 
-    // Validate all room types exist
-    const roomTypeIds = rooms.map((r) => r.roomTypeId);
-    const roomTypes = await this.prisma.roomType.findMany({
+    // Extract room IDs from requests
+    const roomIds = rooms.map((r) => r.roomId);
+
+    // Validate all rooms exist and fetch with their room types
+    const selectedRooms = await this.prisma.room.findMany({
       where: {
-        id: { in: roomTypeIds }
+        id: { in: roomIds }
+      },
+      include: {
+        roomType: true,
+        bookingRooms: {
+          where: {
+            AND: [
+              { checkInDate: { lte: checkOut.toDate() } },
+              { checkOutDate: { gte: checkIn.toDate() } },
+              {
+                status: {
+                  in: [BookingStatus.PENDING, BookingStatus.CONFIRMED, BookingStatus.CHECKED_IN]
+                }
+              }
+            ]
+          }
+        }
       }
     });
 
-    if (roomTypes.length !== roomTypeIds.length) {
-      throw new ApiError(httpStatus.NOT_FOUND, 'One or more room types not found');
+    // Check if all requested rooms were found
+    if (selectedRooms.length !== roomIds.length) {
+      const foundIds = selectedRooms.map((r) => r.id);
+      const missingIds = roomIds.filter((id) => !foundIds.includes(id));
+      throw new ApiError(httpStatus.NOT_FOUND, `Rooms not found: ${missingIds.join(', ')}`);
     }
 
-    // Create a map for quick lookup
-    const roomTypeMap = new Map(roomTypes.map((rt) => [rt.id, rt]));
-
-    // Find available rooms for each room type
-    const allocatedRooms: Array<{
-      room: any;
-      roomType: any;
-    }> = [];
-
-    for (const roomRequest of rooms) {
-      const roomType = roomTypeMap.get(roomRequest.roomTypeId);
-      if (!roomType) continue;
-
-      // Find available rooms of this type
-      const availableRooms = await this.prisma.room.findMany({
-        where: {
-          roomTypeId: roomRequest.roomTypeId,
-          status: RoomStatus.AVAILABLE,
-          // Exclude rooms with overlapping bookings
-          bookingRooms: {
-            none: {
-              AND: [
-                { checkInDate: { lte: checkOut.toDate() } },
-                { checkOutDate: { gte: checkIn.toDate() } },
-                {
-                  status: {
-                    in: [BookingStatus.PENDING, BookingStatus.CONFIRMED, BookingStatus.CHECKED_IN]
-                  }
-                }
-              ]
-            }
-          }
-        },
-        take: roomRequest.count,
-        include: {
-          roomType: true
-        }
-      });
-
-      if (availableRooms.length < roomRequest.count) {
+    // Validate room availability and no overlapping bookings
+    for (const room of selectedRooms) {
+      // Check if room is permanently unavailable (physical issues only)
+      // Note: OCCUPIED, RESERVED, CLEANING are temporary states and don't block future bookings
+      if (room.status === RoomStatus.OUT_OF_SERVICE || room.status === RoomStatus.MAINTENANCE) {
         throw new ApiError(
           httpStatus.CONFLICT,
-          `Not enough available rooms for room type: ${roomType.name}. Requested: ${roomRequest.count}, Available: ${availableRooms.length}`
+          `Room ${room.roomNumber} cannot be booked (current status: ${room.status})`
         );
       }
 
-      allocatedRooms.push(
-        ...availableRooms.map((room) => ({
-          room,
-          roomType: room.roomType
-        }))
-      );
+      // Check for overlapping bookings - this is the core availability check
+      if (room.bookingRooms.length > 0) {
+        const conflictingBooking = room.bookingRooms[0];
+        throw new ApiError(
+          httpStatus.CONFLICT,
+          `Room ${room.roomNumber} is already booked from ${dayjs(
+            conflictingBooking.checkInDate
+          ).format('YYYY-MM-DD')} to ${dayjs(conflictingBooking.checkOutDate).format('YYYY-MM-DD')}`
+        );
+      }
     }
+
+    // Prepare allocated rooms data
+    const allocatedRooms = selectedRooms.map((room) => ({
+      room,
+      roomType: room.roomType
+    }));
 
     // Generate unique booking code
     const bookingCode = `BK${Date.now()}${Math.random()
@@ -131,26 +200,30 @@ export class BookingService {
     // Calculate expiration time (15 minutes from now) using dayjs
     const expiresAt = dayjs().add(15, 'minute').toDate();
 
-    // Calculate total amount and deposit required
-    let totalAmount = 0;
-    let depositRequired = 0;
-    const bookingRoomsData = allocatedRooms.map(({ room, roomType }) => {
-      const subtotal = Number(roomType.pricePerNight) * nights;
-      totalAmount += subtotal;
-      depositRequired += Number(roomType.pricePerNight); // One night's price per room
+    // Get deposit percentage from settings (cached)
+    const depositPercentage = await this.appSettingService.getDepositPercentage();
 
+    // Calculate total amount first
+    let totalAmount = 0;
+    const bookingRoomsData = allocatedRooms.map(({ room, roomType }) => {
+      const subtotal = Number(roomType.basePrice) * nights;
+      totalAmount += subtotal;
+
+      // Note: 'balance' field was removed from BookingRoom schema
+      // Balance tracking is now handled at Booking level through transactions
+      // The initial balance would have been: subtotal (unpaid amount)
       return {
         roomId: room.id,
         roomTypeId: roomType.id,
         checkInDate: checkIn.toDate(),
         checkOutDate: checkOut.toDate(),
-        pricePerNight: roomType.pricePerNight,
-        subtotalRoom: subtotal,
-        totalAmount: subtotal,
-        balance: subtotal,
+        pricePerNight: roomType.basePrice,
         status: BookingStatus.PENDING
       };
     });
+
+    // Calculate deposit based on percentage of total booking amount
+    const depositRequired = Math.round(totalAmount * (depositPercentage / 100));
 
     // Create booking with transaction
     const booking = await this.prisma.$transaction(async (tx) => {
@@ -165,7 +238,6 @@ export class BookingService {
           totalGuests,
           totalAmount,
           depositRequired,
-          balance: totalAmount,
           bookingRooms: {
             create: bookingRoomsData
           }
@@ -188,17 +260,52 @@ export class BookingService {
         }
       });
 
-      // Update room statuses to RESERVED
-      await tx.room.updateMany({
-        where: {
-          id: { in: allocatedRooms.map((ar) => ar.room.id) }
-        },
-        data: {
-          status: RoomStatus.RESERVED
-        }
-      });
+      // Handle Deposit Transaction if provided
+      if (input.depositAmount && input.depositAmount > 0) {
+        await tx.transaction.create({
+          data: {
+            bookingId: newBooking.id,
+            type: TransactionType.DEPOSIT,
+            amount: input.depositAmount,
+            baseAmount: input.depositAmount,
+            discountAmount: 0,
+            method: input.depositPaymentMethod || PaymentMethod.CASH,
+            status: 'COMPLETED',
+            description: 'Đặt cọc khi tạo booking'
+          }
+        });
+
+        await tx.booking.update({
+          where: { id: newBooking.id },
+          data: {
+            status: BookingStatus.CONFIRMED
+          }
+        });
+
+        // Return updated booking with status CONFIRMED
+        return { ...newBooking, status: BookingStatus.CONFIRMED };
+      }
+
+      // The overlapping BookingRoom check prevents double-booking.
+      // Room.status will be updated to OCCUPIED at check-in time.
 
       return newBooking;
+    });
+
+    // Log booking creation activity
+    await this.activityService.createActivity({
+      type: ActivityType.CREATE_BOOKING,
+      description: `Booking created: ${booking.bookingCode}`,
+      customerId: booking.primaryCustomerId,
+      metadata: {
+        bookingId: booking.id,
+        bookingCode: booking.bookingCode,
+        totalAmount: booking.totalAmount.toString(),
+        totalGuests: booking.totalGuests,
+        depositRequired: depositRequired.toString(),
+        checkInDate: checkInDate,
+        checkOutDate: checkOutDate
+      }
     });
 
     return {
@@ -244,6 +351,20 @@ export class BookingService {
         `Cannot check in. All booking rooms must be CONFIRMED. Invalid rooms: ${invalidRooms
           .map((br) => br.room.roomNumber)
           .join(', ')}`
+      );
+    }
+
+    // Validate room availability status - rooms must be AVAILABLE or RESERVED to check in
+    const unavailableRooms = bookingRooms.filter(
+      (br) => br.room.status !== RoomStatus.AVAILABLE && br.room.status !== RoomStatus.RESERVED
+    );
+    if (unavailableRooms.length > 0) {
+      const roomDetails = unavailableRooms
+        .map((br) => `${br.room.roomNumber} (${br.room.status})`)
+        .join(', ');
+      throw new ApiError(
+        httpStatus.BAD_REQUEST,
+        `Cannot check in. The following rooms are not ready: ${roomDetails}`
       );
     }
 
@@ -425,6 +546,7 @@ export class BookingService {
     }
 
     const now = dayjs();
+    const roomIds = bookingRooms.map((br) => br.roomId);
 
     // Perform check-out transaction
     const result = await this.prisma.$transaction(async (tx) => {
@@ -439,16 +561,9 @@ export class BookingService {
         }
       });
 
-      // Update all rooms to AVAILABLE
-      const roomIds = bookingRooms.map((br) => br.roomId);
-      await tx.room.updateMany({
-        where: {
-          id: { in: roomIds }
-        },
-        data: {
-          status: RoomStatus.AVAILABLE
-        }
-      });
+      // check if each room has another booking
+      // for today before setting to AVAILABLE (might need to stay RESERVED)
+      await this.updateRoomStatuses(roomIds, tx);
 
       // Create CHECKED_OUT activity for each booking room
       const transactionPromises = bookingRooms.map((br) =>
@@ -520,8 +635,20 @@ export class BookingService {
       include: {
         bookingRooms: {
           include: {
-            room: true,
-            roomType: true,
+            room: {
+              include: {
+                images: {
+                  orderBy: { sortOrder: 'asc' }
+                }
+              }
+            },
+            roomType: {
+              include: {
+                images: {
+                  orderBy: { sortOrder: 'asc' }
+                }
+              }
+            },
             bookingCustomers: {
               include: {
                 customer: {
@@ -600,8 +727,20 @@ export class BookingService {
           },
           bookingRooms: {
             include: {
-              roomType: true,
-              room: true
+              roomType: {
+                include: {
+                  images: {
+                    orderBy: { sortOrder: 'asc' }
+                  }
+                }
+              },
+              room: {
+                include: {
+                  images: {
+                    orderBy: { sortOrder: 'asc' }
+                  }
+                }
+              }
             }
           }
         },
@@ -642,7 +781,9 @@ export class BookingService {
       throw new ApiError(httpStatus.BAD_REQUEST, 'Cannot cancel checked-in or checked-out booking');
     }
 
-    // Update booking status and release rooms
+    const roomIds = booking.bookingRooms.map((br: any) => br.roomId);
+
+    // Update booking status and recalculate room statuses
     await this.prisma.$transaction(async (tx) => {
       await tx.booking.update({
         where: { id },
@@ -659,14 +800,9 @@ export class BookingService {
         }
       });
 
-      // Release rooms
-      const roomIds = booking.bookingRooms.map((br: any) => br.roomId);
-      await tx.room.updateMany({
-        where: { id: { in: roomIds } },
-        data: {
-          status: RoomStatus.AVAILABLE
-        }
-      });
+      // Smart room status update: check if each room has other active bookings
+      // before setting to AVAILABLE (might need to be RESERVED for another booking)
+      await this.updateRoomStatuses(roomIds, tx);
     });
 
     return { message: 'Booking cancelled successfully' };
@@ -674,15 +810,76 @@ export class BookingService {
 
   /**
    * Update booking details
+   * Validates room availability if dates are changed
    */
   async updateBooking(id: string, updateBody: any) {
     const booking = await this.getBookingById(id);
+    const oldStatus = booking.status;
 
     if (
       booking.status === BookingStatus.CANCELLED ||
       booking.status === BookingStatus.CHECKED_OUT
     ) {
       throw new ApiError(httpStatus.BAD_REQUEST, 'Cannot update cancelled or checked-out booking');
+    }
+
+    // Check if dates are being changed
+    const datesChanged = updateBody.checkInDate || updateBody.checkOutDate;
+
+    if (datesChanged) {
+      // Determine the new date range
+      const newCheckIn = updateBody.checkInDate
+        ? dayjs(updateBody.checkInDate)
+        : dayjs(booking.checkInDate);
+      const newCheckOut = updateBody.checkOutDate
+        ? dayjs(updateBody.checkOutDate)
+        : dayjs(booking.checkOutDate);
+
+      // Validate date range
+      if (newCheckOut.isBefore(newCheckIn) || newCheckOut.isSame(newCheckIn)) {
+        throw new ApiError(httpStatus.BAD_REQUEST, 'Check-out date must be after check-in date');
+      }
+
+      // Validate room availability for each booking room in the new date range
+      for (const bookingRoom of booking.bookingRooms) {
+        const conflicts = await this.prisma.bookingRoom.findMany({
+          where: {
+            AND: [
+              { roomId: bookingRoom.roomId },
+              { id: { not: bookingRoom.id } }, // Exclude current booking room
+              {
+                status: {
+                  in: [BookingStatus.PENDING, BookingStatus.CONFIRMED, BookingStatus.CHECKED_IN]
+                }
+              },
+              { checkInDate: { lt: newCheckOut.toDate() } },
+              { checkOutDate: { gt: newCheckIn.toDate() } }
+            ]
+          },
+          include: {
+            room: true
+          }
+        });
+
+        if (conflicts.length > 0) {
+          const conflict = conflicts[0];
+          throw new ApiError(
+            httpStatus.CONFLICT,
+            `Room ${bookingRoom.room.roomNumber} is already booked from ${dayjs(
+              conflict.checkInDate
+            ).format('YYYY-MM-DD')} to ${dayjs(conflict.checkOutDate).format('YYYY-MM-DD')}`
+          );
+        }
+      }
+
+      // Update BookingRoom dates to match new Booking dates
+      await this.prisma.bookingRoom.updateMany({
+        where: { bookingId: id },
+        data: {
+          checkInDate: newCheckIn.toDate(),
+          checkOutDate: newCheckOut.toDate()
+        }
+      });
     }
 
     const updatedBooking = await this.prisma.booking.update({
@@ -692,6 +889,17 @@ export class BookingService {
         bookingRooms: true
       }
     });
+
+    // Trigger booking confirmation email if status changed to CONFIRMED
+    if (
+      oldStatus !== BookingStatus.CONFIRMED &&
+      updatedBooking.status === BookingStatus.CONFIRMED
+    ) {
+      // Send email asynchronously without blocking the response
+      this.emailService.sendBookingConfirmation(updatedBooking.id).catch((error) => {
+        console.error('Failed to send booking confirmation email:', error);
+      });
+    }
 
     return updatedBooking;
   }
@@ -714,7 +922,8 @@ export class BookingService {
         const newCustomer = await this.prisma.customer.create({
           data: {
             ...input.customer,
-            password: await import('bcryptjs').then((m) => m.hash('12345678', 8)) // Default password
+            password: await encryptPassword('12345678'), // Default password
+            isEmailVerified: true
           }
         });
         customerId = newCustomer.id;
@@ -729,6 +938,280 @@ export class BookingService {
       ...input,
       customerId
     });
+  }
+
+  /**
+   * Change room for a checked-in booking
+   * Transfers customer from current room to a new available room
+   * Validates availability for the remaining stay period
+   */
+  async changeRoom(input: ChangeRoomPayload) {
+    const { bookingRoomId, newRoomId, employeeId, reason } = input;
+
+    // 1. Fetch current booking room with details
+    const bookingRoom = await this.prisma.bookingRoom.findUnique({
+      where: { id: bookingRoomId },
+      include: {
+        room: true,
+        roomType: true,
+        booking: true,
+        bookingCustomers: true
+      }
+    });
+
+    if (!bookingRoom) {
+      throw new ApiError(httpStatus.NOT_FOUND, 'Booking room not found');
+    }
+
+    // 2. Validate booking room is CHECKED_IN
+    if (bookingRoom.status !== BookingStatus.CHECKED_IN) {
+      throw new ApiError(httpStatus.BAD_REQUEST, 'Can only change room for checked-in bookings');
+    }
+
+    // 3. Cannot change to the same room
+    if (bookingRoom.roomId === newRoomId) {
+      throw new ApiError(httpStatus.BAD_REQUEST, 'Cannot change to the same room');
+    }
+
+    // 4. Define the date range to check availability
+    // From: today (start of day for overlap check)
+    // To: original checkOutDate
+    const today = dayjs().startOf('day').toDate();
+    const checkFromDate = today;
+    const checkToDate = bookingRoom.checkOutDate;
+
+    // 5. Use RoomService to check new room availability
+    // Exclude current booking to avoid false conflicts
+    const availability = await this.roomService.isRoomAvailableForDates(
+      newRoomId,
+      checkFromDate,
+      checkToDate,
+      bookingRoom.bookingId // Exclude current booking from conflict check
+    );
+
+    if (!availability.available) {
+      const conflicts = availability.conflictingBookings;
+      if (conflicts.length > 0 && conflicts[0].reason) {
+        // Room status issue (OUT_OF_SERVICE, MAINTENANCE)
+        throw new ApiError(
+          httpStatus.CONFLICT,
+          `Room ${availability.room.roomNumber} is not available: ${conflicts[0].reason}`
+        );
+      }
+      // Has overlapping bookings
+      const conflictDetails = conflicts
+        .map(
+          (c: any) =>
+            `${dayjs(c.checkInDate).format('YYYY-MM-DD')} to ${dayjs(c.checkOutDate).format(
+              'YYYY-MM-DD'
+            )}`
+        )
+        .join(', ');
+      throw new ApiError(
+        httpStatus.CONFLICT,
+        `Room ${availability.room.roomNumber} is not available for the remaining stay. Conflicting bookings: ${conflictDetails}`
+      );
+    }
+
+    // 5b. Additional check: Room must be AVAILABLE for immediate occupancy
+    // CLEANING/OCCUPIED status means room is not ready even if no booking conflict
+    const currentRoomStatus = availability.room.status;
+    if (currentRoomStatus === RoomStatus.CLEANING) {
+      throw new ApiError(
+        httpStatus.CONFLICT,
+        `Room ${availability.room.roomNumber} is currently being cleaned. Please wait until cleaning is complete.`
+      );
+    }
+    if (currentRoomStatus === RoomStatus.OCCUPIED) {
+      // This shouldn't happen if data is consistent, but check as safety net
+      throw new ApiError(
+        httpStatus.CONFLICT,
+        `Room ${availability.room.roomNumber} is currently occupied.`
+      );
+    }
+    // 6. Calculate price adjustment for remaining nights
+    const remainingNights = Math.max(dayjs(checkToDate).diff(dayjs(), 'day'), 1);
+    const oldPricePerNight = Number(bookingRoom.pricePerNight);
+    const newPricePerNight = Number(availability.room.roomType.basePrice);
+    const priceDifference = (newPricePerNight - oldPricePerNight) * remainingNights;
+
+    const oldRoomId = bookingRoom.roomId;
+    const oldRoomNumber = bookingRoom.room.roomNumber;
+
+    // 7. Perform room change in transaction
+    await this.prisma.$transaction(async (tx) => {
+      // Update BookingRoom with new room
+      await tx.bookingRoom.update({
+        where: { id: bookingRoomId },
+        data: {
+          roomId: newRoomId,
+          roomTypeId: availability.room.roomType.id,
+          pricePerNight: newPricePerNight,
+          subtotalRoom: { increment: priceDifference },
+          totalAmount: { increment: priceDifference }
+        }
+      });
+
+      // Update old room status (AVAILABLE or RESERVED based on other bookings)
+      await this.updateRoomStatuses([oldRoomId], tx);
+
+      // Update new room to OCCUPIED
+      await tx.room.update({
+        where: { id: newRoomId },
+        data: { status: RoomStatus.OCCUPIED }
+      });
+
+      // Update booking total if price changed
+      if (priceDifference !== 0) {
+        await tx.booking.update({
+          where: { id: bookingRoom.bookingId },
+          data: { totalAmount: { increment: priceDifference } }
+        });
+      }
+    });
+
+    // 8. Log activity
+    await this.activityService.createActivity({
+      type: ActivityType.UPDATE_BOOKING_ROOM,
+      description: `Room changed: ${oldRoomNumber} → ${availability.room.roomNumber}`,
+      employeeId,
+      metadata: {
+        bookingRoomId,
+        bookingId: bookingRoom.bookingId,
+        oldRoomId,
+        newRoomId,
+        oldRoomNumber,
+        newRoomNumber: availability.room.roomNumber,
+        remainingNights,
+        priceDifference: priceDifference.toString(),
+        reason: reason || 'Not specified'
+      }
+    });
+
+    // 9. Return updated booking room with full details
+    const updatedBookingRoom = await this.prisma.bookingRoom.findUnique({
+      where: { id: bookingRoomId },
+      include: {
+        room: true,
+        roomType: true,
+        booking: {
+          include: {
+            primaryCustomer: {
+              select: {
+                id: true,
+                fullName: true,
+                phone: true,
+                email: true
+              }
+            }
+          }
+        },
+        bookingCustomers: {
+          include: {
+            customer: {
+              select: {
+                id: true,
+                fullName: true,
+                phone: true,
+                email: true
+              }
+            }
+          }
+        }
+      }
+    });
+
+    return {
+      bookingRoom: updatedBookingRoom,
+      priceAdjustment: {
+        oldPricePerNight,
+        newPricePerNight,
+        remainingNights,
+        priceDifference
+      }
+    };
+  }
+  /**
+   * Update customers for a specific booking room
+   * Replaces existing customers with the new list
+   */
+  async updateBookingRoomCustomers(bookingRoomId: string, customerIds: string[]) {
+    // 1. Verify booking room exists
+    const bookingRoom = await this.prisma.bookingRoom.findUnique({
+      where: { id: bookingRoomId },
+      include: {
+        room: true,
+        booking: true
+      }
+    });
+
+    if (!bookingRoom) {
+      throw new ApiError(httpStatus.NOT_FOUND, 'Booking room not found');
+    }
+
+    // 2. Verify all customers exist
+    if (customerIds.length > 0) {
+      const uniqueCustomerIds = [...new Set(customerIds)];
+      const customers = await this.prisma.customer.findMany({
+        where: {
+          id: { in: uniqueCustomerIds }
+        }
+      });
+
+      if (customers.length !== uniqueCustomerIds.length) {
+        throw new ApiError(httpStatus.NOT_FOUND, 'One or more customers not found');
+      }
+    }
+
+    // 3. Update customers in transaction
+    const result = await this.prisma.$transaction(async (tx) => {
+      // Remove existing customers for this room
+      // Note: We only remove "secondary" assignments tied to this specific room
+      await tx.bookingCustomer.deleteMany({
+        where: {
+          bookingRoomId
+        }
+      });
+
+      // Add new customers
+      if (customerIds.length > 0) {
+        const uniqueCustomerIds = [...new Set(customerIds)];
+        const bookingCustomerPromises = uniqueCustomerIds.map((customerId) =>
+          tx.bookingCustomer.upsert({
+            where: {
+              bookingId_customerId: {
+                bookingId: bookingRoom.bookingId,
+                customerId
+              }
+            },
+            create: {
+              bookingId: bookingRoom.bookingId,
+              customerId,
+              bookingRoomId,
+              isPrimary: false
+            },
+            update: {
+              bookingRoomId // Associate with this room
+            }
+          })
+        );
+        await Promise.all(bookingCustomerPromises);
+      }
+
+      // Fetch updated data
+      return tx.bookingRoom.findUnique({
+        where: { id: bookingRoomId },
+        include: {
+          bookingCustomers: {
+            include: {
+              customer: true
+            }
+          }
+        }
+      });
+    });
+
+    return result;
   }
 }
 

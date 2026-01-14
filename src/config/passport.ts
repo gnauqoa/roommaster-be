@@ -9,7 +9,6 @@ const jwtOptions = {
 
 const jwtVerify: VerifyCallback = async (payload, done) => {
   try {
-    console.log('123', payload);
     if (payload.type !== 'ACCESS') {
       throw new Error('Invalid token type');
     }
@@ -24,7 +23,8 @@ const jwtVerify: VerifyCallback = async (payload, done) => {
           email: true,
           phone: true,
           idNumber: true,
-          address: true
+          address: true,
+          isEmailVerified: true
         },
         where: { id: payload.sub }
       });
@@ -35,12 +35,18 @@ const jwtVerify: VerifyCallback = async (payload, done) => {
 
       done(null, customer);
     } else if (userType === 'employee') {
+      // Include roleId and role name for CASL authorization
       const employee = await prisma.employee.findUnique({
         select: {
           id: true,
           username: true,
           name: true,
-          role: true
+          roleId: true,
+          roleRef: {
+            select: {
+              name: true
+            }
+          }
         },
         where: { id: payload.sub }
       });
@@ -49,7 +55,16 @@ const jwtVerify: VerifyCallback = async (payload, done) => {
         return done(null, false);
       }
 
-      done(null, employee);
+      // Flatten role name for easier access
+      const employeeWithRole = {
+        id: employee.id,
+        username: employee.username,
+        name: employee.name,
+        roleId: employee.roleId,
+        roleName: employee.roleRef?.name
+      };
+
+      done(null, employeeWithRole);
     } else {
       return done(null, false);
     }

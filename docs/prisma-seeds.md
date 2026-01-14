@@ -58,13 +58,13 @@ Seeds customer data with 10 customers with realistic Vietnamese information:
 
 Seeds 5 room types with different configurations:
 
-| Room Type | Capacity | Price/Night (VND) | Key Amenities |
-|-----------|----------|-------------------|---------------|
-| Phòng Standard | 2 | 500,000 | WiFi, AC, TV |
-| Phòng Deluxe | 2 | 800,000 | WiFi, AC, TV, Minibar, Bathtub |
-| Phòng Superior | 3 | 1,200,000 | WiFi, AC, TV, Minibar, Balcony, City View |
-| Phòng Suite | 4 | 2,000,000 | All amenities + Jacuzzi, Living Room |
-| Phòng Family | 6 | 1,800,000 | All amenities + Extra Beds, Kitchenette |
+| Room Type      | Capacity | Price/Night (VND) | Key Amenities                             |
+| -------------- | -------- | ----------------- | ----------------------------------------- |
+| Phòng Standard | 2        | 500,000           | WiFi, AC, TV                              |
+| Phòng Deluxe   | 2        | 800,000           | WiFi, AC, TV, Minibar, Bathtub            |
+| Phòng Superior | 3        | 1,200,000         | WiFi, AC, TV, Minibar, Balcony, City View |
+| Phòng Suite    | 4        | 2,000,000         | All amenities + Jacuzzi, Living Room      |
+| Phòng Family   | 6        | 1,800,000         | All amenities + Extra Beds, Kitchenette   |
 
 ### `room.seed.ts`
 
@@ -80,20 +80,20 @@ Seeds 15 rooms across 3 floors:
 
 Seeds 12 hotel services:
 
-| Service | Price (VND) | Unit |
-|---------|-------------|------|
-| Giặt ủi | 50,000 | kg |
-| Minibar | 30,000 | lần |
-| Bữa sáng | 150,000 | phần |
-| Thuê xe máy | 200,000 | ngày |
-| Thuê xe ô tô | 800,000 | ngày |
-| Spa & Massage | 500,000 | giờ |
-| Phòng gym | 100,000 | lần |
-| Dịch vụ phòng | 50,000 | lần |
-| Đưa đón sân bay | 350,000 | lượt |
-| Bể bơi | 80,000 | lần |
-| Giữ hành lý | 20,000 | kiện/ngày |
-| Internet tốc độ cao | 100,000 | ngày (inactive) |
+| Service             | Price (VND) | Unit            |
+| ------------------- | ----------- | --------------- |
+| Giặt ủi             | 50,000      | kg              |
+| Minibar             | 30,000      | lần             |
+| Bữa sáng            | 150,000     | phần            |
+| Thuê xe máy         | 200,000     | ngày            |
+| Thuê xe ô tô        | 800,000     | ngày            |
+| Spa & Massage       | 500,000     | giờ             |
+| Phòng gym           | 100,000     | lần             |
+| Dịch vụ phòng       | 50,000      | lần             |
+| Đưa đón sân bay     | 350,000     | lượt            |
+| Bể bơi              | 80,000      | lần             |
+| Giữ hành lý         | 20,000      | kiện/ngày       |
+| Internet tốc độ cao | 100,000     | ngày (inactive) |
 
 ## Running Seeds
 

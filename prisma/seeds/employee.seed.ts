@@ -8,36 +8,46 @@ import { hashPassword } from './utils';
 export const seedEmployees = async (prisma: PrismaClient): Promise<void> => {
   console.log('Seeding employees...');
 
+  // Get roles from database (seeded by seedRBAC)
+  const roles = await prisma.role.findMany();
+  const roleMap = new Map(roles.map((r) => [r.name, r.id]));
+
   const employees = [
     {
       name: 'Nguyễn Văn Admin',
       username: 'admin',
       password: await hashPassword('password123'),
-      role: 'ADMIN'
+      roleId: roleMap.get('ADMIN')
+    },
+    {
+      name: 'Test Admin',
+      username: 'test-admin',
+      password: await hashPassword('password123'),
+      roleId: roleMap.get('ADMIN')
     },
     {
       name: 'Trần Thị Lan',
       username: 'receptionist1',
       password: await hashPassword('password123'),
-      role: 'RECEPTIONIST'
+      roleId: roleMap.get('RECEPTIONIST')
     },
     {
       name: 'Lê Văn Hùng',
       username: 'receptionist2',
       password: await hashPassword('password123'),
-      role: 'RECEPTIONIST'
+      roleId: roleMap.get('RECEPTIONIST')
     },
     {
       name: 'Phạm Thị Mai',
       username: 'housekeeping1',
       password: await hashPassword('password123'),
-      role: 'HOUSEKEEPING'
+      roleId: roleMap.get('HOUSEKEEPING')
     },
     {
       name: 'Hoàng Văn Tùng',
       username: 'staff1',
       password: await hashPassword('password123'),
-      role: 'STAFF'
+      roleId: roleMap.get('STAFF')
     }
   ];
 

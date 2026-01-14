@@ -20,13 +20,14 @@ export class EmployeeUsageServiceController {
       throw new Error('Employee not authenticated');
     }
 
-    const { bookingId, bookingRoomId, serviceId, quantity } = req.body;
+    const { bookingId, bookingRoomId, serviceId, quantity, note } = req.body;
 
     const result = await this.usageServiceService.createServiceUsage({
       bookingId,
       bookingRoomId,
       serviceId,
       quantity,
+      note,
       employeeId: req.employee.id
     });
 
@@ -82,6 +83,52 @@ export class EmployeeUsageServiceController {
 
     const result = await this.usageServiceService.deleteServiceUsage(req.params.id);
     sendData(res, result);
+  });
+
+  /**
+   * Create a penalty charge with custom price
+   * POST /employee-api/v1/service/penalty
+   */
+  createPenalty = catchAsync(async (req: Request, res: Response) => {
+    if (!req.employee?.id) {
+      throw new Error('Employee not authenticated');
+    }
+
+    const { bookingId, bookingRoomId, customPrice, quantity, reason } = req.body;
+
+    const result = await this.usageServiceService.createPenalty({
+      bookingId,
+      bookingRoomId,
+      customPrice,
+      quantity,
+      reason,
+      employeeId: req.employee.id
+    });
+
+    sendData(res, result, httpStatus.CREATED);
+  });
+
+  /**
+   * Create a surcharge fee with custom price
+   * POST /employee-api/v1/service/surcharge
+   */
+  createSurcharge = catchAsync(async (req: Request, res: Response) => {
+    if (!req.employee?.id) {
+      throw new Error('Employee not authenticated');
+    }
+
+    const { bookingId, bookingRoomId, customPrice, quantity, reason } = req.body;
+
+    const result = await this.usageServiceService.createSurcharge({
+      bookingId,
+      bookingRoomId,
+      customPrice,
+      quantity,
+      reason,
+      employeeId: req.employee.id
+    });
+
+    sendData(res, result, httpStatus.CREATED);
   });
 }
 

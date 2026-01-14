@@ -4,6 +4,7 @@ import ApiError from '@/utils/ApiError';
 
 /**
  * Update booking totals from all booking rooms
+ * Simplified for single-payment flow
  */
 export async function updateBookingTotals(
   bookingId: string,
@@ -14,8 +15,9 @@ export async function updateBookingTotals(
     where: { bookingId }
   });
 
-  const aggregatedTotalPaid = allBookingRooms.reduce(
-    (sum: Prisma.Decimal, br: { totalPaid: Prisma.Decimal }) => sum.add(br.totalPaid),
+  // Aggregate totalAmount from all booking rooms
+  const aggregatedTotalAmount = allBookingRooms.reduce(
+    (sum: Prisma.Decimal, br: { totalAmount: Prisma.Decimal }) => sum.add(br.totalAmount),
     new Prisma.Decimal(0)
   );
 
@@ -27,13 +29,11 @@ export async function updateBookingTotals(
     throw new ApiError(httpStatus.NOT_FOUND, 'Booking not found');
   }
 
-  const aggregatedBalance = new Prisma.Decimal(booking.totalAmount).sub(aggregatedTotalPaid);
-
+  // Only update totalAmount
   await tx.booking.update({
     where: { id: bookingId },
     data: {
-      totalPaid: aggregatedTotalPaid,
-      balance: aggregatedBalance
+      totalAmount: aggregatedTotalAmount
     }
   });
 }

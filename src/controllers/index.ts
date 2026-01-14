@@ -8,3 +8,4 @@ export { default as ServiceController } from './employee/employee.service.contro
 export { default as RoomController } from './employee/employee.room.controller';
 export { default as RoomTypeController } from './employee/employee.roomType.controller';
 export { default as CustomerManagementController } from './employee/employee.customerManagement.controller';
+export { default as ReportController } from './employee/employee.report.controller';

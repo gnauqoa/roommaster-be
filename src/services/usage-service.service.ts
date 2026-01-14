@@ -3,12 +3,23 @@ import { Injectable } from '@/core/decorators';
 import httpStatus from 'http-status';
 import ApiError from '@/utils/ApiError';
 import { ActivityService } from './activity.service';
+import { AppSettingService } from './app-setting.service';
 
 export interface CreateServiceUsagePayload {
   bookingId?: string; // Optional - for guest users or booking-level services
   bookingRoomId?: string; // Optional - for room-specific services
   serviceId: string;
   quantity: number;
+  note?: string; // Optional note for service usage
+  employeeId: string;
+}
+
+export interface CreatePenaltySurchargePayload {
+  bookingId?: string;
+  bookingRoomId?: string;
+  customPrice: number; // Required custom price for penalty/surcharge
+  quantity: number;
+  reason: string; // Description/reason for the penalty or surcharge
   employeeId: string;
 }
 
@@ -28,7 +39,8 @@ export interface UpdateServiceUsagePayload {
 export class UsageServiceService {
   constructor(
     private readonly prisma: PrismaClient,
-    private readonly activityService: ActivityService
+    private readonly activityService: ActivityService,
+    private readonly appSettingService: AppSettingService
   ) {}
 
   /**
@@ -39,7 +51,7 @@ export class UsageServiceService {
    * 3. Guest service (standalone, not tied to booking)
    */
   async createServiceUsage(payload: CreateServiceUsagePayload) {
-    const { bookingId, bookingRoomId, serviceId, quantity, employeeId } = payload;
+    const { bookingId, bookingRoomId, serviceId, quantity, note, employeeId } = payload;
 
     // Determine service usage scenario
     const isGuestService = !bookingId && !bookingRoomId;
@@ -99,6 +111,7 @@ export class UsageServiceService {
           unitPrice,
           totalPrice,
           totalPaid: 0,
+          ...(note && { note }), // Include note if provided
           status: ServiceUsageStatus.PENDING,
           employeeId
         },
@@ -133,6 +146,212 @@ export class UsageServiceService {
             unitPrice: unitPrice.toString(),
             totalPrice: totalPrice.toString(),
             scenario: isGuestService ? 'guest' : isBookingLevelService ? 'booking' : 'room'
+          }
+        },
+        tx
+      );
+
+      return created;
+    });
+
+    return serviceUsage;
+  }
+
+  /**
+   * Create a penalty service usage with custom price
+   * Penalty uses the hardcoded penalty service ID from app settings
+   */
+  async createPenalty(payload: CreatePenaltySurchargePayload) {
+    const { bookingId, bookingRoomId, customPrice, quantity, reason, employeeId } = payload;
+
+    // Get penalty service ID from app settings
+    const penaltyServiceId = await this.appSettingService.getPenaltyServiceId();
+
+    // Verify booking if provided
+    if (bookingId) {
+      const booking = await this.prisma.booking.findUnique({
+        where: { id: bookingId }
+      });
+      if (!booking) {
+        throw new ApiError(httpStatus.NOT_FOUND, 'Booking not found');
+      }
+    }
+
+    // Verify booking room if provided
+    if (bookingRoomId) {
+      const bookingRoom = await this.prisma.bookingRoom.findUnique({
+        where: { id: bookingRoomId }
+      });
+      if (!bookingRoom) {
+        throw new ApiError(httpStatus.NOT_FOUND, 'Booking room not found');
+      }
+      if (bookingId && bookingRoom.bookingId !== bookingId) {
+        throw new ApiError(
+          httpStatus.BAD_REQUEST,
+          'Booking room does not belong to the specified booking'
+        );
+      }
+    }
+
+    // Fetch service details
+    const service = await this.prisma.service.findUnique({
+      where: { id: penaltyServiceId }
+    });
+
+    if (!service) {
+      throw new ApiError(
+        httpStatus.NOT_FOUND,
+        'Penalty service not configured. Please set up penalty service in app settings.'
+      );
+    }
+
+    const unitPrice = new Prisma.Decimal(customPrice);
+    const totalPrice = unitPrice.mul(quantity);
+
+    // Create penalty service usage
+    const serviceUsage = await this.prisma.$transaction(async (tx) => {
+      const created = await tx.serviceUsage.create({
+        data: {
+          ...(bookingId && { bookingId }),
+          ...(bookingRoomId && { bookingRoomId }),
+          serviceId: penaltyServiceId,
+          quantity,
+          unitPrice: service.price, // Store original service price
+          customPrice: unitPrice, // Store custom penalty price
+          totalPrice,
+          totalPaid: 0,
+          note: reason, // Store reason for penalty
+          status: ServiceUsageStatus.PENDING,
+          employeeId
+        },
+        include: {
+          service: true,
+          booking: true,
+          bookingRoom: true,
+          employee: true
+        }
+      });
+
+      // Create activity log
+      const description = `Penalty applied: ${reason} (${customPrice} × ${quantity})`;
+
+      await this.activityService.createActivity(
+        {
+          type: ActivityType.CREATE_SERVICE_USAGE,
+          description,
+          serviceUsageId: created.id,
+          ...(bookingRoomId && { bookingRoomId }),
+          employeeId,
+          metadata: {
+            serviceName: service.name,
+            serviceType: 'penalty',
+            quantity,
+            customPrice: customPrice.toString(),
+            totalPrice: totalPrice.toString(),
+            reason
+          }
+        },
+        tx
+      );
+
+      return created;
+    });
+
+    return serviceUsage;
+  }
+
+  /**
+   * Create a surcharge service usage with custom price
+   * Surcharge uses the hardcoded surcharge service ID from app settings
+   */
+  async createSurcharge(payload: CreatePenaltySurchargePayload) {
+    const { bookingId, bookingRoomId, customPrice, quantity, reason, employeeId } = payload;
+
+    // Get surcharge service ID from app settings
+    const surchargeServiceId = await this.appSettingService.getSurchargeServiceId();
+
+    // Verify booking if provided
+    if (bookingId) {
+      const booking = await this.prisma.booking.findUnique({
+        where: { id: bookingId }
+      });
+      if (!booking) {
+        throw new ApiError(httpStatus.NOT_FOUND, 'Booking not found');
+      }
+    }
+
+    // Verify booking room if provided
+    if (bookingRoomId) {
+      const bookingRoom = await this.prisma.bookingRoom.findUnique({
+        where: { id: bookingRoomId }
+      });
+      if (!bookingRoom) {
+        throw new ApiError(httpStatus.NOT_FOUND, 'Booking room not found');
+      }
+      if (bookingId && bookingRoom.bookingId !== bookingId) {
+        throw new ApiError(
+          httpStatus.BAD_REQUEST,
+          'Booking room does not belong to the specified booking'
+        );
+      }
+    }
+
+    // Fetch service details
+    const service = await this.prisma.service.findUnique({
+      where: { id: surchargeServiceId }
+    });
+
+    if (!service) {
+      throw new ApiError(
+        httpStatus.NOT_FOUND,
+        'Surcharge service not configured. Please set up surcharge service in app settings.'
+      );
+    }
+
+    const unitPrice = new Prisma.Decimal(customPrice);
+    const totalPrice = unitPrice.mul(quantity);
+
+    // Create surcharge service usage
+    const serviceUsage = await this.prisma.$transaction(async (tx) => {
+      const created = await tx.serviceUsage.create({
+        data: {
+          ...(bookingId && { bookingId }),
+          ...(bookingRoomId && { bookingRoomId }),
+          serviceId: surchargeServiceId,
+          quantity,
+          unitPrice: service.price, // Store original service price
+          customPrice: unitPrice, // Store custom surcharge price
+          totalPrice,
+          totalPaid: 0,
+          note: reason, // Store reason for surcharge
+          status: ServiceUsageStatus.PENDING,
+          employeeId
+        },
+        include: {
+          service: true,
+          booking: true,
+          bookingRoom: true,
+          employee: true
+        }
+      });
+
+      // Create activity log
+      const description = `Surcharge applied: ${reason} (${customPrice} × ${quantity})`;
+
+      await this.activityService.createActivity(
+        {
+          type: ActivityType.CREATE_SERVICE_USAGE,
+          description,
+          serviceUsageId: created.id,
+          ...(bookingRoomId && { bookingRoomId }),
+          employeeId,
+          metadata: {
+            serviceName: service.name,
+            serviceType: 'surcharge',
+            quantity,
+            customPrice: customPrice.toString(),
+            totalPrice: totalPrice.toString(),
+            reason
           }
         },
         tx

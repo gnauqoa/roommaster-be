@@ -129,7 +129,28 @@ export const TOKENS = {
   TransactionService: Symbol('TransactionService'),
   TransactionDetailsService: Symbol('TransactionDetailsService'),
   ActivityService: Symbol('ActivityService'),
-  PromotionService: Symbol('PromotionService')
+  PromotionService: Symbol('PromotionService'),
+  AppSettingService: Symbol('AppSettingService'),
+  CaslService: Symbol('CaslService'),
+  TemplateService: Symbol('TemplateService'),
+  EmailService: Symbol('EmailService'),
+  PricingRuleService: Symbol('PricingRuleService'),
+  PricingCalculatorService: Symbol('PricingCalculatorService'),
+  CustomerRankService: Symbol('CustomerRankService'),
+  ImageService: Symbol('ImageService'),
+  RoleService: Symbol('RoleService'),
+  PermissionService: Symbol('PermissionService'),
+
+  // Report Services
+  RoomAvailabilityReportService: Symbol('RoomAvailabilityReportService'),
+  CustomerReportService: Symbol('CustomerReportService'),
+  EmployeeReportService: Symbol('EmployeeReportService'),
+  ServiceReportService: Symbol('ServiceReportService'),
+  RevenueReportService: Symbol('RevenueReportService'),
+
+  // Controllers
+  ReportController: Symbol('ReportController'),
+  CacheService: Symbol('CacheService')
 } as const;
 
 export type TokenKey = keyof typeof TOKENS;

@@ -141,6 +141,7 @@ const options = {
   // Path to the API routes - use source files for swagger-jsdoc to read JSDoc comments
   // JSDoc comments are not preserved in compiled JavaScript files
   apis: [
+    path.join(process.cwd(), 'src/app.ts'),
     path.join(process.cwd(), 'src/routes/**/*.ts'),
     path.join(process.cwd(), 'src/controllers/**/*.ts')
   ]

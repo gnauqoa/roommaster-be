@@ -5,15 +5,18 @@ import { Request, Response } from 'express';
 import httpStatus from 'http-status';
 import catchAsync from '@/utils/catchAsync';
 import { AuthService, EmployeeService, TokenService } from '@/services';
+import CaslService from '@/services/casl.service';
 import exclude from '@/utils/exclude';
 import { sendData, sendNoContent } from '@/utils/responseWrapper';
+import ApiError from '@/utils/ApiError';
 
 @Injectable()
 export class EmployeeController {
   constructor(
     private readonly authService: AuthService,
     private readonly employeeService: EmployeeService,
-    private readonly tokenService: TokenService
+    private readonly tokenService: TokenService,
+    private readonly caslService: CaslService
   ) {}
 
   login = catchAsync(async (req: Request, res: Response) => {
@@ -81,6 +84,20 @@ export class EmployeeController {
       req.body.newPassword
     );
     sendNoContent(res);
+  });
+
+  getMyPermissions = catchAsync(async (req: Request, res: Response) => {
+    if (!req.employee?.roleId) {
+      throw new ApiError(httpStatus.UNAUTHORIZED, 'No role assigned to this employee');
+    }
+
+    const permissions = await this.caslService.getPermissionsForRole(req.employee.roleId);
+
+    if (!permissions) {
+      throw new ApiError(httpStatus.NOT_FOUND, 'Role not found');
+    }
+
+    sendData(res, permissions);
   });
 }
 

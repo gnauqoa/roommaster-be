@@ -6,7 +6,7 @@ import config from '@/config/env';
 import httpStatus from 'http-status';
 import ApiError from '@/utils/ApiError';
 
-export type TokenType = 'ACCESS' | 'REFRESH' | 'RESET_PASSWORD';
+export type TokenType = 'ACCESS' | 'REFRESH' | 'RESET_PASSWORD' | 'VERIFY_EMAIL';
 export type UserType = 'customer' | 'employee';
 
 @Injectable()
@@ -107,6 +107,17 @@ export class TokenService {
     const resetPasswordToken = this.generateToken(user.id, userType, expires, 'RESET_PASSWORD');
 
     return resetPasswordToken;
+  }
+
+  /**
+   * Generate email verification token
+   * @param {string} userId - User ID
+   * @returns {string} Email verification token
+   */
+  generateEmailVerificationToken(userId: string): string {
+    const expires = moment().add(24, 'hours');
+    const verificationToken = this.generateToken(userId, 'customer', expires, 'VERIFY_EMAIL');
+    return verificationToken;
   }
 }
 

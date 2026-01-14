@@ -93,11 +93,11 @@ export const seedBookings = async (prisma: PrismaClient): Promise<void> => {
         where: { id: room.roomTypeId }
       });
       if (roomType) {
-        totalAmount += Number(roomType.pricePerNight) * nights;
+        totalAmount += Number(roomType.basePrice) * nights;
       }
     }
 
-    const depositRequired = totalAmount * 0.3; // 30% deposit
+    const depositRequired = totalAmount * 0.5; // 50% deposit
 
     // Create booking with rooms
     await prisma.booking.create({
@@ -105,22 +105,16 @@ export const seedBookings = async (prisma: PrismaClient): Promise<void> => {
         ...booking,
         totalAmount,
         depositRequired,
-        totalDeposit: 0,
-        totalPaid: 0,
-        balance: totalAmount,
         bookingRooms: {
           create: rooms.map((room) => ({
             roomId: room.id,
             roomTypeId: room.roomTypeId,
             checkInDate: booking.checkInDate,
             checkOutDate: booking.checkOutDate,
-            pricePerNight: 0, // Will be set by trigger or service
-            depositAmount: depositRequired / rooms.length,
+            pricePerNight: 0, // Will be calculated by pricing service
             subtotalRoom: totalAmount / rooms.length,
             subtotalService: 0,
             totalAmount: totalAmount / rooms.length,
-            totalPaid: 0,
-            balance: totalAmount / rooms.length,
             status: booking.status
           }))
         },
