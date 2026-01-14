@@ -85,10 +85,6 @@ export default function createProfileRoutes(): express.Router {
    *                 type: string
    *                 maxLength: 100
    *                 description: Customer full name
-   *               email:
-   *                 type: string
-   *                 format: email
-   *                 description: Customer email
    *               idNumber:
    *                 type: string
    *                 maxLength: 20

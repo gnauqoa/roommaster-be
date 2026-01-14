@@ -78,7 +78,7 @@ const updateProfile = {
   body: Joi.object()
     .keys({
       fullName: Joi.string().max(100),
-      email: Joi.string().email(),
+      //email: Joi.string().email(),
       idNumber: Joi.string().max(20),
       address: Joi.string()
     })
