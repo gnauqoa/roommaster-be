@@ -239,6 +239,98 @@ export class ImageController {
     const result = await this.imageService.setDefaultImage(imageId, 'room');
     sendData(res, result);
   });
+
+  // ==================== PAYMENT IMAGES ====================
+
+  uploadPaymentImage = catchAsync(async (req: Request, res: Response) => {
+    const { bookingId } = req.params;
+    const { isDefault, sortOrder, paymentMethod, description } = req.body;
+
+    if (!req.file) {
+      return res.status(httpStatus.BAD_REQUEST).json({ error: 'No file uploaded' });
+    }
+
+    const image = await this.imageService.uploadPaymentImage(bookingId, req.file, {
+      isDefault: isDefault === 'true',
+      sortOrder: parseInt(sortOrder) || 0,
+      paymentMethod,
+      description
+    });
+
+    await this.imageService.confirmUpload(image.cloudinaryId);
+    sendData(res, image, httpStatus.CREATED);
+  });
+
+  uploadPaymentImagesBatch = catchAsync(async (req: Request, res: Response) => {
+    const { bookingId } = req.params;
+    const files = req.files as Express.Multer.File[];
+
+    if (!files || files.length === 0) {
+      return res.status(httpStatus.BAD_REQUEST).json({ error: 'No files uploaded' });
+    }
+
+    const result = await this.imageService.uploadPaymentImagesBatch(bookingId, files);
+
+    await Promise.all(
+      result.successful.map((img) => this.imageService.confirmUpload(img.cloudinaryId))
+    );
+
+    if (result.failureCount > 0) {
+      return res.status(httpStatus.MULTI_STATUS).json({
+        message: `Uploaded ${result.successCount} of ${result.total} images`,
+        ...result
+      });
+    }
+
+    sendData(res, {
+      message: 'All payment images uploaded successfully',
+      ...result
+    });
+  });
+
+  getPaymentImages = catchAsync(async (req: Request, res: Response) => {
+    const { bookingId } = req.params;
+    const images = await this.imageService.getPaymentImages(bookingId);
+    sendData(res, images);
+  });
+
+  deletePaymentImage = catchAsync(async (req: Request, res: Response) => {
+    const { imageId } = req.params;
+    await this.imageService.deletePaymentImage(imageId);
+    sendNoContent(res);
+  });
+
+  reorderPaymentImages = catchAsync(async (req: Request, res: Response) => {
+    const { imageIds } = req.body;
+    const result = await this.imageService.reorderImages(imageIds, 'payment');
+    sendData(res, result);
+  });
+
+  setDefaultPaymentImage = catchAsync(async (req: Request, res: Response) => {
+    const { imageId } = req.params;
+    const result = await this.imageService.setDefaultImage(imageId, 'payment');
+    sendData(res, result);
+  });
+
+  getPaymentUploadSignature = catchAsync(async (req: Request, res: Response) => {
+    const signature = this.imageService.generateUploadSignature('hotel/payments');
+    sendData(res, signature);
+  });
+
+  savePaymentDirectUpload = catchAsync(async (req: Request, res: Response) => {
+    const { bookingId } = req.params;
+    const { cloudinaryId, url, secureUrl, width, height, format, isDefault, sortOrder } = req.body;
+
+    const image = await this.imageService.saveDirectUpload(
+      bookingId,
+      'payment',
+      { cloudinaryId, url, secureUrl, width, height, format },
+      { isDefault, sortOrder }
+    );
+
+    await this.imageService.confirmUpload(cloudinaryId);
+    sendData(res, image, httpStatus.CREATED);
+  });
 }
 
 export default ImageController;

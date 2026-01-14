@@ -56,3 +56,8 @@ export const uploadCustomerImage = multer({
   storage: createCloudinaryStorage(CLOUDINARY_FOLDERS.CUSTOMERS),
   limits: { fileSize: 5 * 1024 * 1024 }
 });
+
+export const uploadPaymentImage = multer({
+  storage: createCloudinaryStorage(CLOUDINARY_FOLDERS.PAYMENTS),
+  limits: { fileSize: 5 * 1024 * 1024 }
+});

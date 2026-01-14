@@ -335,6 +335,117 @@ export class ImageService {
     return { deletedCount: images.length };
   }
 
+  // ==================== PAYMENT IMAGES ====================
+
+  /**
+   * Upload payment proof image for a booking
+   */
+  async uploadPaymentImage(
+    bookingId: string,
+    file: Express.Multer.File,
+    options?: UploadOptions & { paymentMethod?: string; description?: string }
+  ): Promise<any> {
+    const cloudinaryFile = file as CloudinaryFile;
+
+    const publicId = cloudinaryFile.filename;
+    const secureUrl = cloudinaryFile.path;
+
+    return await this.prisma.paymentImage.create({
+      data: {
+        booking: { connect: { id: bookingId } },
+        cloudinaryId: publicId,
+        url: secureUrl,
+        secureUrl: secureUrl,
+        thumbnailUrl: this.generateThumbnailUrl(publicId),
+        isDefault: options?.isDefault ?? false,
+        sortOrder: options?.sortOrder ?? 0,
+        paymentMethod: options?.paymentMethod,
+        description: options?.description
+      }
+    });
+  }
+
+  /**
+   * Get all payment images for a booking
+   */
+  async getPaymentImages(bookingId: string): Promise<any[]> {
+    return this.prisma.paymentImage.findMany({
+      where: { bookingId },
+      orderBy: { sortOrder: 'asc' }
+    });
+  }
+
+  /**
+   * Delete payment image from BOTH Cloudinary AND database
+   */
+  async deletePaymentImage(imageId: string): Promise<{ success: boolean }> {
+    const image = await this.prisma.paymentImage.findUnique({
+      where: { id: imageId }
+    });
+
+    if (!image) {
+      throw new ApiError(httpStatus.NOT_FOUND, 'Payment image not found');
+    }
+
+    await cloudinary.uploader.destroy(image.cloudinaryId);
+    await this.prisma.paymentImage.delete({ where: { id: imageId } });
+
+    return { success: true };
+  }
+
+  /**
+   * Delete all payment images when Booking is deleted (cascade handled by DB)
+   */
+  async deletePaymentImages(bookingId: string): Promise<{ deletedCount: number }> {
+    const images = await this.prisma.paymentImage.findMany({
+      where: { bookingId },
+      select: { cloudinaryId: true }
+    });
+
+    if (images.length > 0) {
+      const cloudinaryIds = images.map((img) => img.cloudinaryId);
+      await cloudinary.api.delete_resources(cloudinaryIds, {
+        resource_type: 'image'
+      });
+    }
+
+    return { deletedCount: images.length };
+  }
+
+  /**
+   * Batch upload for payment images
+   */
+  async uploadPaymentImagesBatch(
+    bookingId: string,
+    files: Express.Multer.File[]
+  ): Promise<{
+    successful: any[];
+    failed: { error: string }[];
+    total: number;
+    successCount: number;
+    failureCount: number;
+  }> {
+    const results = await Promise.allSettled(
+      files.map((file, index) => this.uploadPaymentImage(bookingId, file, { sortOrder: index }))
+    );
+
+    const successful = results
+      .filter((r): r is PromiseFulfilledResult<any> => r.status === 'fulfilled')
+      .map((r) => r.value);
+
+    const failed = results
+      .filter((r): r is PromiseRejectedResult => r.status === 'rejected')
+      .map((r) => ({ error: r.reason.message }));
+
+    return {
+      successful,
+      failed,
+      total: files.length,
+      successCount: successful.length,
+      failureCount: failed.length
+    };
+  }
+
   // ==================== SHARED UTILITIES ====================
 
   /**
@@ -342,13 +453,15 @@ export class ImageService {
    */
   async reorderImages(
     imageIds: string[],
-    type: 'roomType' | 'service' | 'room'
+    type: 'roomType' | 'service' | 'room' | 'payment'
   ): Promise<{ success: boolean }> {
     const model =
       type === 'roomType'
         ? this.prisma.roomTypeImage
         : type === 'service'
         ? this.prisma.serviceImage
+        : type === 'payment'
+        ? this.prisma.paymentImage
         : this.prisma.roomImage;
 
     const updates = imageIds.map((id, index) =>
@@ -367,13 +480,15 @@ export class ImageService {
    */
   async setDefaultImage(
     imageId: string,
-    type: 'roomType' | 'service' | 'room'
+    type: 'roomType' | 'service' | 'room' | 'payment'
   ): Promise<{ success: boolean }> {
     const model =
       type === 'roomType'
         ? this.prisma.roomTypeImage
         : type === 'service'
         ? this.prisma.serviceImage
+        : type === 'payment'
+        ? this.prisma.paymentImage
         : this.prisma.roomImage;
 
     // Get the image to find its parent entity
@@ -383,7 +498,13 @@ export class ImageService {
     }
 
     const parentIdField =
-      type === 'roomType' ? 'roomTypeId' : type === 'service' ? 'serviceId' : 'roomId';
+      type === 'roomType'
+        ? 'roomTypeId'
+        : type === 'service'
+        ? 'serviceId'
+        : type === 'payment'
+        ? 'bookingId'
+        : 'roomId';
     const parentId = image[parentIdField];
 
     // Reset all images for this entity to not default
@@ -439,10 +560,10 @@ export class ImageService {
    */
   async saveDirectUpload(
     entityId: string,
-    type: 'roomType' | 'service' | 'room',
+    type: 'roomType' | 'service' | 'room' | 'payment',
     data: DirectUploadData,
     options?: UploadOptions
-  ): Promise<RoomTypeImage | ServiceImage | RoomImage> {
+  ): Promise<RoomTypeImage | ServiceImage | RoomImage | any> {
     const imageData = {
       cloudinaryId: data.cloudinaryId,
       url: data.url,
@@ -462,6 +583,10 @@ export class ImageService {
     } else if (type === 'service') {
       return this.prisma.serviceImage.create({
         data: { ...imageData, service: { connect: { id: entityId } } }
+      });
+    } else if (type === 'payment') {
+      return this.prisma.paymentImage.create({
+        data: { ...imageData, booking: { connect: { id: entityId } } }
       });
     } else {
       return this.prisma.roomImage.create({

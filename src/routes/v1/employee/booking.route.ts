@@ -2,17 +2,21 @@ import express from 'express';
 import validate from '@/middlewares/validate';
 import { bookingValidation } from '@/validations';
 import EmployeeBookingController from '@/controllers/employee/employee.booking.controller';
+import { ImageController } from '@/controllers/employee/employee.image.controller';
 import { container, TOKENS } from '@/core/container';
-import { BookingService } from '@/services/booking.service';
+import { BookingService, ImageService } from '@/services';
 import { authEmployee } from '@/middlewares/auth';
 import { attachAbilities, authorize, canAccessScreen } from '@/middlewares/casl.middleware';
+import { uploadPaymentImage } from '@/middlewares/upload.middleware';
 
 export default function createBookingRoutes(): express.Router {
   const router = express.Router();
 
   // Resolve dependencies from container
   const bookingService = container.resolve<BookingService>(TOKENS.BookingService);
+  const imageService = container.resolve<ImageService>(TOKENS.ImageService);
   const employeeBookingController = new EmployeeBookingController(bookingService);
+  const imageController = new ImageController(imageService);
 
   // Apply auth and CASL abilities to all routes
   // All routes require: 1) employee authentication, 2) CASL abilities, 3) Booking screen access
@@ -523,6 +527,218 @@ export default function createBookingRoutes(): express.Router {
     authorize('update', 'Booking'),
     validate(bookingValidation.updateBookingRoomCustomers),
     employeeBookingController.updateBookingRoomCustomers
+  );
+
+  // ==================== PAYMENT IMAGE ROUTES ====================
+
+  /**
+   * @swagger
+   * /employee/bookings/{bookingId}/payment-images:
+   *   post:
+   *     summary: Upload payment proof image
+   *     description: Upload a single payment proof image for a booking
+   *     tags: [Employee Bookings]
+   *     security:
+   *       - bearerAuth: []
+   *     parameters:
+   *       - in: path
+   *         name: bookingId
+   *         required: true
+   *         schema:
+   *           type: string
+   *         description: Booking ID
+   *     requestBody:
+   *       required: true
+   *       content:
+   *         multipart/form-data:
+   *           schema:
+   *             type: object
+   *             required:
+   *               - image
+   *             properties:
+   *               image:
+   *                 type: string
+   *                 format: binary
+   *               paymentMethod:
+   *                 type: string
+   *                 description: Payment method (e.g., bank_transfer, cash, credit_card)
+   *               description:
+   *                 type: string
+   *                 description: Notes about this payment proof
+   *     responses:
+   *       201:
+   *         description: Image uploaded successfully
+   *       400:
+   *         description: No file uploaded or validation error
+   */
+  router.post(
+    '/:bookingId/payment-images',
+    authorize('update', 'Booking'),
+    uploadPaymentImage.single('image'),
+    imageController.uploadPaymentImage
+  );
+
+  /**
+   * @swagger
+   * /employee/bookings/{bookingId}/payment-images/batch:
+   *   post:
+   *     summary: Upload multiple payment proof images
+   *     description: Upload multiple payment proof images for a booking
+   *     tags: [Employee Bookings]
+   *     security:
+   *       - bearerAuth: []
+   *     parameters:
+   *       - in: path
+   *         name: bookingId
+   *         required: true
+   *         schema:
+   *           type: string
+   *         description: Booking ID
+   *     requestBody:
+   *       required: true
+   *       content:
+   *         multipart/form-data:
+   *           schema:
+   *             type: object
+   *             required:
+   *               - images
+   *             properties:
+   *               images:
+   *                 type: array
+   *                 items:
+   *                   type: string
+   *                   format: binary
+   *     responses:
+   *       200:
+   *         description: Images uploaded successfully
+   *       207:
+   *         description: Partial success (some images failed)
+   */
+  router.post(
+    '/:bookingId/payment-images/batch',
+    authorize('update', 'Booking'),
+    uploadPaymentImage.array('images', 10),
+    imageController.uploadPaymentImagesBatch
+  );
+
+  /**
+   * @swagger
+   * /employee/bookings/{bookingId}/payment-images:
+   *   get:
+   *     summary: Get all payment images for a booking
+   *     description: Retrieve all payment proof images for a specific booking
+   *     tags: [Employee Bookings]
+   *     security:
+   *       - bearerAuth: []
+   *     parameters:
+   *       - in: path
+   *         name: bookingId
+   *         required: true
+   *         schema:
+   *           type: string
+   *         description: Booking ID
+   *     responses:
+   *       200:
+   *         description: List of payment images
+   */
+  router.get(
+    '/:bookingId/payment-images',
+    authorize('read', 'Booking'),
+    imageController.getPaymentImages
+  );
+
+  /**
+   * @swagger
+   * /employee/bookings/payment-images/{imageId}:
+   *   delete:
+   *     summary: Delete a payment image
+   *     description: Delete a payment proof image from both Cloudinary and database
+   *     tags: [Employee Bookings]
+   *     security:
+   *       - bearerAuth: []
+   *     parameters:
+   *       - in: path
+   *         name: imageId
+   *         required: true
+   *         schema:
+   *           type: string
+   *         description: Payment image ID
+   *     responses:
+   *       204:
+   *         description: Image deleted successfully
+   *       404:
+   *         description: Image not found
+   */
+  router.delete(
+    '/payment-images/:imageId',
+    authorize('update', 'Booking'),
+    imageController.deletePaymentImage
+  );
+
+  /**
+   * @swagger
+   * /employee/bookings/{bookingId}/payment-images/reorder:
+   *   put:
+   *     summary: Reorder payment images
+   *     description: Update the sort order of payment images
+   *     tags: [Employee Bookings]
+   *     security:
+   *       - bearerAuth: []
+   *     parameters:
+   *       - in: path
+   *         name: bookingId
+   *         required: true
+   *         schema:
+   *           type: string
+   *         description: Booking ID
+   *     requestBody:
+   *       required: true
+   *       content:
+   *         application/json:
+   *           schema:
+   *             type: object
+   *             required:
+   *               - imageIds
+   *             properties:
+   *               imageIds:
+   *                 type: array
+   *                 items:
+   *                   type: string
+   *                 description: Array of image IDs in desired order
+   *     responses:
+   *       200:
+   *         description: Images reordered successfully
+   */
+  router.put(
+    '/:bookingId/payment-images/reorder',
+    authorize('update', 'Booking'),
+    imageController.reorderPaymentImages
+  );
+
+  /**
+   * @swagger
+   * /employee/bookings/payment-images/{imageId}/default:
+   *   put:
+   *     summary: Set default payment image
+   *     description: Set a payment image as the default for the booking
+   *     tags: [Employee Bookings]
+   *     security:
+   *       - bearerAuth: []
+   *     parameters:
+   *       - in: path
+   *         name: imageId
+   *         required: true
+   *         schema:
+   *           type: string
+   *         description: Payment image ID
+   *     responses:
+   *       200:
+   *         description: Default image set successfully
+   */
+  router.put(
+    '/payment-images/:imageId/default',
+    authorize('update', 'Booking'),
+    imageController.setDefaultPaymentImage
   );
 
   return router;

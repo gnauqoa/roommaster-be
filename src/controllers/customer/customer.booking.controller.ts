@@ -5,14 +5,19 @@ import { Request, Response } from 'express';
 import httpStatus from 'http-status';
 import catchAsync from '@/utils/catchAsync';
 import { BookingService } from '@/services/booking.service';
+import { ImageService } from '@/services';
 import { sendData } from '@/utils/responseWrapper';
 
 @Injectable()
 export class CustomerBookingController {
-  constructor(private readonly bookingService: BookingService) {}
+  constructor(
+    private readonly bookingService: BookingService,
+    private readonly imageService?: ImageService
+  ) {}
 
   /**
    * Create a booking with automatic room allocation
+   * Supports both JSON and multipart/form-data (for optional payment images)
    * POST /customer-api/v1/bookings
    */
   createBooking = catchAsync(async (req: Request, res: Response) => {
@@ -20,8 +25,21 @@ export class CustomerBookingController {
       throw new Error('Customer not authenticated');
     }
 
-    const { rooms, checkInDate, checkOutDate, totalGuests } = req.body;
+    // Handle both JSON and multipart/form-data
+    let rooms, checkInDate, checkOutDate, totalGuests;
 
+    if (req.is('multipart/form-data')) {
+      // Parse data from form fields
+      rooms = typeof req.body.rooms === 'string' ? JSON.parse(req.body.rooms) : req.body.rooms;
+      checkInDate = req.body.checkInDate;
+      checkOutDate = req.body.checkOutDate;
+      totalGuests = parseInt(req.body.totalGuests);
+    } else {
+      // Parse data from JSON body
+      ({ rooms, checkInDate, checkOutDate, totalGuests } = req.body);
+    }
+
+    // Create the booking
     const result = await this.bookingService.createBooking({
       rooms,
       checkInDate: checkInDate,
@@ -30,17 +48,39 @@ export class CustomerBookingController {
       customerId: req.customer.id
     });
 
-    sendData(
-      res,
-      {
-        bookingId: result.bookingId,
-        bookingCode: result.bookingCode,
-        expiresAt: result.expiresAt,
-        totalAmount: result.totalAmount,
-        booking: result.booking
-      },
-      httpStatus.CREATED
-    );
+    // Upload payment images if provided (only for multipart requests)
+    const files = req.files as Express.Multer.File[];
+    let uploadedImages: any[] = [];
+
+    if (files && files.length > 0 && this.imageService) {
+      const uploadResult = await this.imageService.uploadPaymentImagesBatch(
+        result.bookingId,
+        files
+      );
+
+      // Confirm all successful uploads
+      await Promise.all(
+        uploadResult.successful.map((img) => this.imageService!.confirmUpload(img.cloudinaryId))
+      );
+
+      uploadedImages = uploadResult.successful;
+    }
+
+    const responseData: any = {
+      bookingId: result.bookingId,
+      bookingCode: result.bookingCode,
+      expiresAt: result.expiresAt,
+      totalAmount: result.totalAmount,
+      booking: result.booking
+    };
+
+    // Include payment images info if any were uploaded
+    if (uploadedImages.length > 0) {
+      responseData.paymentImages = uploadedImages;
+      responseData.paymentImagesCount = uploadedImages.length;
+    }
+
+    sendData(res, responseData, httpStatus.CREATED);
   });
 
   /**

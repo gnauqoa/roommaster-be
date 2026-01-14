@@ -670,6 +670,9 @@ export class BookingService {
             phone: true,
             email: true
           }
+        },
+        paymentImages: {
+          orderBy: { sortOrder: 'asc' }
         }
       }
     });
@@ -742,6 +745,9 @@ export class BookingService {
                 }
               }
             }
+          },
+          paymentImages: {
+            orderBy: { sortOrder: 'asc' }
           }
         },
         orderBy: {

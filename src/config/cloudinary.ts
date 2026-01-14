@@ -10,7 +10,8 @@ export const CLOUDINARY_FOLDERS = {
   ROOM_TYPES: 'hotel/room-types',
   ROOMS: 'hotel/rooms',
   SERVICES: 'hotel/services',
-  CUSTOMERS: 'hotel/customers'
+  CUSTOMERS: 'hotel/customers',
+  PAYMENTS: 'hotel/payments'
 } as const;
 
 export default cloudinary;
