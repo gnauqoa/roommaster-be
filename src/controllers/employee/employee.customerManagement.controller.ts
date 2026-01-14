@@ -5,7 +5,7 @@ import { Request, Response } from 'express';
 import httpStatus from 'http-status';
 import catchAsync from '@/utils/catchAsync';
 import { CustomerService } from '@/services';
-import { sendData, sendNoContent } from '@/utils/responseWrapper';
+import { sendData, sendNoContent, sendPaginatedData } from '@/utils/responseWrapper';
 import exclude from '@/utils/exclude';
 import pick from '@/utils/pick';
 
@@ -28,7 +28,16 @@ export class CustomerManagementController {
     if (options.limit) options.limit = Number(options.limit);
 
     const result = await this.customerService.getAllCustomers(filters, options);
-    sendData(res, result);
+
+    // Use sendPaginatedData to avoid double data nesting and standardize response
+    const pagination = {
+      totalItems: result.total,
+      perPage: result.limit,
+      currentPage: result.page,
+      totalPages: Math.ceil(result.total / result.limit)
+    };
+
+    sendPaginatedData(res, result.data, pagination);
   });
 
   getCustomer = catchAsync(async (req: Request, res: Response) => {
