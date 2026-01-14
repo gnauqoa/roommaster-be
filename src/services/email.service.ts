@@ -79,6 +79,11 @@ export class EmailService {
               room: true,
               roomType: true
             }
+          },
+          transactions: {
+            where: {
+              status: 'COMPLETED'
+            }
           }
         }
       });
@@ -99,6 +104,14 @@ export class EmailService {
         const roomPrice = br.pricePerNight.mul(nights);
         return sum.add(roomPrice);
       }, new Prisma.Decimal(0));
+
+      // Calculate total paid from completed transactions
+      const totalPaid = booking.transactions.reduce((sum, transaction) => {
+        return sum.add(transaction.amount);
+      }, new Prisma.Decimal(0));
+
+      // Calculate balance
+      const balance = totalAmount.sub(totalPaid);
 
       // Prepare template data
       const templateData: BookingConfirmationData = {
@@ -132,7 +145,9 @@ export class EmailService {
           };
         }),
         totalAmount: totalAmount.toString(),
-        depositRequired: totalAmount.toString(), // Single payment means 100% deposit/payment
+        depositRequired: booking.depositRequired.toString(),
+        totalPaid: totalPaid.toString(),
+        balance: balance.toString(),
         isPaid: booking.status === 'CONFIRMED'
       };
 
