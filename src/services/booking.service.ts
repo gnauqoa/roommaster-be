@@ -123,65 +123,6 @@ export class BookingService {
     // Extract room IDs from requests
     const roomIds = rooms.map((r) => r.roomId);
 
-    // Validate all rooms exist and fetch with their room types
-    const selectedRooms = await this.prisma.room.findMany({
-      where: {
-        id: { in: roomIds }
-      },
-      include: {
-        roomType: true,
-        bookingRooms: {
-          where: {
-            AND: [
-              { checkInDate: { lte: checkOut.toDate() } },
-              { checkOutDate: { gte: checkIn.toDate() } },
-              {
-                status: {
-                  in: [BookingStatus.PENDING, BookingStatus.CONFIRMED, BookingStatus.CHECKED_IN]
-                }
-              }
-            ]
-          }
-        }
-      }
-    });
-
-    // Check if all requested rooms were found
-    if (selectedRooms.length !== roomIds.length) {
-      const foundIds = selectedRooms.map((r) => r.id);
-      const missingIds = roomIds.filter((id) => !foundIds.includes(id));
-      throw new ApiError(httpStatus.NOT_FOUND, `Rooms not found: ${missingIds.join(', ')}`);
-    }
-
-    // Validate room availability and no overlapping bookings
-    for (const room of selectedRooms) {
-      // Check if room is permanently unavailable (physical issues only)
-      // Note: OCCUPIED, RESERVED, CLEANING are temporary states and don't block future bookings
-      if (room.status === RoomStatus.OUT_OF_SERVICE || room.status === RoomStatus.MAINTENANCE) {
-        throw new ApiError(
-          httpStatus.CONFLICT,
-          `Room ${room.roomNumber} cannot be booked (current status: ${room.status})`
-        );
-      }
-
-      // Check for overlapping bookings - this is the core availability check
-      if (room.bookingRooms.length > 0) {
-        const conflictingBooking = room.bookingRooms[0];
-        throw new ApiError(
-          httpStatus.CONFLICT,
-          `Room ${room.roomNumber} is already booked from ${dayjs(
-            conflictingBooking.checkInDate
-          ).format('YYYY-MM-DD')} to ${dayjs(conflictingBooking.checkOutDate).format('YYYY-MM-DD')}`
-        );
-      }
-    }
-
-    // Prepare allocated rooms data
-    const allocatedRooms = selectedRooms.map((room) => ({
-      room,
-      roomType: room.roomType
-    }));
-
     // Generate unique booking code
     const bookingCode = `BK${Date.now()}${Math.random()
       .toString(36)
@@ -194,31 +135,104 @@ export class BookingService {
     // Get deposit percentage from settings (cached)
     const depositPercentage = await this.appSettingService.getDepositPercentage();
 
-    // Calculate total amount first
-    let totalAmount = 0;
-    const bookingRoomsData = allocatedRooms.map(({ room, roomType }) => {
-      const subtotal = Number(roomType.basePrice) * nights;
-      totalAmount += subtotal;
-
-      // Note: 'balance' field was removed from BookingRoom schema
-      // Balance tracking is now handled at Booking level through transactions
-      // The initial balance would have been: subtotal (unpaid amount)
-      return {
-        roomId: room.id,
-        roomTypeId: roomType.id,
-        checkInDate: checkIn.toDate(),
-        checkOutDate: checkOut.toDate(),
-        pricePerNight: roomType.basePrice,
-        status: BookingStatus.PENDING
-      };
-    });
-
-    // Calculate deposit based on percentage of total booking amount
-    const depositRequired = Math.round(totalAmount * (depositPercentage / 100));
-
-    // Create booking with transaction
+    // Create booking with transaction - ALL validation inside transaction with locks
     const booking = await this.prisma.$transaction(async (tx) => {
-      // Create booking
+      // CRITICAL FIX: Lock rooms first using FOR UPDATE to prevent race conditions
+      // This ensures no other transaction can read/modify these rooms until we commit
+      const lockedRooms = await tx.$queryRaw<
+        Array<{ id: string; roomNumber: string; status: string; roomTypeId: string }>
+      >`
+        SELECT id, "roomNumber", status, "roomTypeId"
+        FROM "Room"
+        WHERE id = ANY(${roomIds}::text[])
+        FOR UPDATE
+      `;
+
+      // Check if all requested rooms were found
+      if (lockedRooms.length !== roomIds.length) {
+        const foundIds = lockedRooms.map((r) => r.id);
+        const missingIds = roomIds.filter((id) => !foundIds.includes(id));
+        throw new ApiError(httpStatus.NOT_FOUND, `Rooms not found: ${missingIds.join(', ')}`);
+      }
+
+      // Validate room status (permanent unavailability)
+      for (const room of lockedRooms) {
+        if (room.status === RoomStatus.OUT_OF_SERVICE || room.status === RoomStatus.MAINTENANCE) {
+          throw new ApiError(
+            httpStatus.CONFLICT,
+            `Room ${room.roomNumber} cannot be booked (current status: ${room.status})`
+          );
+        }
+      }
+
+      // Check for overlapping bookings with the locked rooms
+      const overlappingBookings = await tx.bookingRoom.findMany({
+        where: {
+          roomId: { in: roomIds },
+          AND: [
+            { checkInDate: { lt: checkOut.toDate() } },
+            { checkOutDate: { gt: checkIn.toDate() } },
+            {
+              status: {
+                in: [BookingStatus.PENDING, BookingStatus.CONFIRMED, BookingStatus.CHECKED_IN]
+              }
+            }
+          ]
+        },
+        include: {
+          room: {
+            select: { roomNumber: true }
+          }
+        }
+      });
+
+      if (overlappingBookings.length > 0) {
+        const conflictingBooking = overlappingBookings[0];
+        throw new ApiError(
+          httpStatus.CONFLICT,
+          `Room ${conflictingBooking.room.roomNumber} is already booked from ${dayjs(
+            conflictingBooking.checkInDate
+          ).format('YYYY-MM-DD')} to ${dayjs(conflictingBooking.checkOutDate).format('YYYY-MM-DD')}`
+        );
+      }
+
+      // Fetch room types for pricing
+      const roomTypes = await tx.roomType.findMany({
+        where: {
+          id: { in: lockedRooms.map((r) => r.roomTypeId) }
+        }
+      });
+
+      const roomTypeMap = new Map(roomTypes.map((rt) => [rt.id, rt]));
+
+      // Calculate total amount and prepare booking rooms data
+      let totalAmount = 0;
+      const bookingRoomsData = lockedRooms.map((room) => {
+        const roomType = roomTypeMap.get(room.roomTypeId);
+        if (!roomType) {
+          throw new ApiError(
+            httpStatus.NOT_FOUND,
+            `Room type not found for room ${room.roomNumber}`
+          );
+        }
+
+        const subtotal = Number(roomType.basePrice) * nights;
+        totalAmount += subtotal;
+
+        return {
+          roomId: room.id,
+          roomTypeId: roomType.id,
+          checkInDate: checkIn.toDate(),
+          checkOutDate: checkOut.toDate(),
+          pricePerNight: roomType.basePrice,
+          status: BookingStatus.PENDING
+        };
+      });
+
+      // Calculate deposit based on percentage of total booking amount
+      const depositRequired = Math.round(totalAmount * (depositPercentage / 100));
+
+      // Create booking with all validation passed
       const newBooking = await tx.booking.create({
         data: {
           bookingCode,
@@ -250,9 +264,6 @@ export class BookingService {
           }
         }
       });
-
-      // The overlapping BookingRoom check prevents double-booking.
-      // Room.status will be updated to OCCUPIED at check-in time.
 
       return newBooking;
     });
