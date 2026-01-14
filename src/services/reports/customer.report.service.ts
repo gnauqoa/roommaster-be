@@ -346,7 +346,8 @@ export class CustomerReportService {
       customersWithCLV.length === 0
         ? 0
         : Math.round(
-            (customersWithCLV.reduce((sum, c) => sum + c.clvScore, 0) / customersWithCLV.length) * 100
+            (customersWithCLV.reduce((sum, c) => sum + c.clvScore, 0) / customersWithCLV.length) *
+              100
           ) / 100;
 
     return {

@@ -34,7 +34,7 @@ import {
   ServiceReportService,
   RevenueReportService
 } from '@/services/reports';
-import { ReportController } from '@/controllers/employee/reports';
+import { ReportController } from '@/controllers/employee/employee.report.controller';
 import PricingRuleService from '@/services/pricing-rule.service';
 import PricingCalculatorService from '@/services/pricing-calculator.service';
 import CaslService from '@/services/casl.service';

@@ -1,6 +1,6 @@
 import express from 'express';
 import { container, TOKENS } from '@/core/container';
-import { ReportController } from '@/controllers/employee/reports';
+import { ReportController } from '@/controllers/employee/employee.report.controller';
 import { authEmployee } from '@/middlewares/auth';
 import { attachAbilities, canAccessScreen } from '@/middlewares/casl.middleware';
 import validate from '@/middlewares/validate';

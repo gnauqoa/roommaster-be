@@ -4,7 +4,7 @@ import validate from '@/middlewares/validate';
 import roleValidation from '@/validations/role.validation';
 import { container, TOKENS } from '@/core/container';
 import { RoleService } from '@/services';
-import { RoleController } from '@/controllers/employee/role.controller';
+import { RoleController } from '@/controllers/employee/employee.role.controller';
 
 export default function createRoleRoutes(): express.Router {
   const roleRoute = express.Router();

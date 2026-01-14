@@ -285,3 +285,5 @@ export class ReportController {
     sendData(res, result);
   });
 }
+
+export default ReportController;

@@ -4,7 +4,7 @@ import validate from '@/middlewares/validate';
 import permissionValidation from '@/validations/permission.validation';
 import { container, TOKENS } from '@/core/container';
 import { PermissionService } from '@/services';
-import { PermissionController } from '@/controllers/employee/permission.controller';
+import { PermissionController } from '@/controllers/employee/employee.permission.controller';
 
 export default function createPermissionRoutes(): express.Router {
   const permissionRoute = express.Router();
