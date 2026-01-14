@@ -149,7 +149,8 @@ export const TOKENS = {
   RevenueReportService: Symbol('RevenueReportService'),
 
   // Controllers
-  ReportController: Symbol('ReportController')
+  ReportController: Symbol('ReportController'),
+  CacheService: Symbol('CacheService')
 } as const;
 
 export type TokenKey = keyof typeof TOKENS;

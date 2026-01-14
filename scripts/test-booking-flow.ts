@@ -147,8 +147,9 @@ async function runBookingFlowTest() {
       {
         customerId,
         rooms: [
-          { roomTypeId: roomTypes[0].id, count: 2 },
-          { roomTypeId: roomTypes[1]?.id || roomTypes[0].id, count: 1 }
+          { roomId: roomTypes[0].rooms[0].id },
+          { roomId: roomTypes[0].rooms[1].id },
+          { roomId: roomTypes[1]?.rooms[0]?.id || roomTypes[0].rooms[2].id }
         ],
         checkInDate,
         checkOutDate,
@@ -219,7 +220,7 @@ async function runBookingFlowTest() {
     log('STEP 6', 'Checking in all rooms...');
 
     const checkInResponse = await apiRequest(
-      `/employee/bookings/${bookingId}/check-in`,
+      '/employee/bookings/check-in',
       'POST',
       {
         checkInInfo: bookingRoomIds.map((brId) => ({
@@ -297,19 +298,6 @@ async function runBookingFlowTest() {
       amount: partialPaymentResponse.data.transaction.amount
     });
 
-    // Check remaining balance
-    const bookingAfterPartial = await prisma.booking.findUnique({
-      where: { id: bookingId },
-      include: { bookingRooms: true }
-    });
-
-    log('STEP 8', 'Remaining balance:', {
-      totalBalance: bookingAfterPartial!.balance,
-      room1Balance: bookingAfterPartial!.bookingRooms[0].balance,
-      room2Balance: bookingAfterPartial!.bookingRooms[1].balance,
-      room3Balance: bookingAfterPartial!.bookingRooms[2].balance
-    });
-
     // ==================== STEP 9: Pay Service ====================
     log('STEP 9', 'Paying for service usage...');
 
@@ -348,25 +336,11 @@ async function runBookingFlowTest() {
       `Full payment completed: ${fullPaymentResponse.data.transaction.amount} VND`
     );
 
-    // Verify all balances are zero
-    const bookingAfterFull = await prisma.booking.findUnique({
-      where: { id: bookingId },
-      include: { bookingRooms: true, serviceUsages: true }
-    });
-
-    log('STEP 10', 'Final balances:', {
-      bookingBalance: bookingAfterFull!.balance,
-      allRoomsPaid: bookingAfterFull!.bookingRooms.every((br) => Number(br.balance) === 0),
-      allServicesPaid: bookingAfterFull!.serviceUsages.every(
-        (su) => Number(su.totalPrice) === Number(su.totalPaid)
-      )
-    });
-
     // ==================== STEP 11: Check-out All Rooms ====================
     log('STEP 11', 'Checking out all rooms...');
 
     const checkOutResponse = await apiRequest(
-      `/employee/bookings/${bookingId}/check-out`,
+      '/employee/bookings/check-out',
       'POST',
       {
         bookingRoomIds
@@ -400,8 +374,7 @@ async function runBookingFlowTest() {
     console.log(`  Booking Code: ${finalBooking!.bookingCode}`);
     console.log(`  Status: ${finalBooking!.status}`);
     console.log(`  Total Amount: ${finalBooking!.totalAmount} VND`);
-    console.log(`  Total Paid: ${finalBooking!.totalPaid} VND`);
-    console.log(`  Balance: ${finalBooking!.balance} VND`);
+    console.log(`  Total Amount: ${finalBooking!.totalAmount} VND`);
     console.log(`  Rooms: ${finalBooking!.bookingRooms.length}`);
     console.log(`  Services: ${finalBooking!.serviceUsages.length}`);
     console.log(`  Transactions: ${finalBooking!.transactions.length}`);

@@ -1,5 +1,5 @@
 import dayjs from 'dayjs';
-import { PrismaClient, TransactionStatus, BookingStatus, Prisma } from '@prisma/client';
+import { PrismaClient, TransactionStatus, Prisma } from '@prisma/client';
 import httpStatus from 'http-status';
 import ApiError from '@/utils/ApiError';
 import { ActivityService } from '@/services/activity.service';
@@ -203,26 +203,6 @@ export async function processSplitRoomPayment(
 
     // Update booking totals
     await updateBookingTotals(bookingId, tx);
-
-    // Apply state transition for DEPOSIT
-    if (transactionType === 'DEPOSIT') {
-      await tx.booking.update({
-        where: { id: bookingId },
-        data: { status: BookingStatus.CONFIRMED }
-      });
-
-      await tx.bookingRoom.updateMany({
-        where: {
-          id: { in: bookingRoomIds },
-          status: BookingStatus.PENDING
-        },
-        data: { status: BookingStatus.CONFIRMED }
-      });
-
-      // Send booking confirmation email after successful status update
-      EmailConfirmationInfo.ShouldSendEmail = true;
-      EmailConfirmationInfo.bookingId = bookingId;
-    }
 
     // Create activity
     await activityService.createTransactionActivity(

@@ -1,8 +1,13 @@
-import { PrismaClient, Prisma } from '@prisma/client';
+import { PrismaClient, Prisma, TransactionType } from '@prisma/client';
 import { Injectable } from '@/core/decorators';
 import httpStatus from 'http-status';
 import ApiError from '@/utils/ApiError';
-import { PromotionService, ActivityService, UsageServiceService } from '@/services';
+import {
+  PromotionService,
+  ActivityService,
+  UsageServiceService,
+  AppSettingService
+} from '@/services';
 import EmailService from '@/services/email.service';
 
 import {
@@ -16,6 +21,7 @@ import { processFullBookingPayment } from '@/services/transaction/handlers/full-
 import { processSplitRoomPayment } from '@/services/transaction/handlers/split-room-payment';
 import { processBookingServicePayment } from '@/services/transaction/handlers/booking-service-payment';
 import { processGuestServicePayment } from '@/services/transaction/handlers/guest-service-payment';
+import { processDepositPayment } from '@/services/transaction/handlers/deposit-payment';
 
 /**
  * Transaction Service
@@ -45,7 +51,8 @@ export class TransactionService {
     private readonly activityService: ActivityService,
     private readonly usageServiceService: UsageServiceService,
     private readonly promotionService: PromotionService,
-    private readonly emailService: EmailService
+    private readonly emailService: EmailService,
+    private readonly appSettingService: AppSettingService
   ) {}
 
   /**
@@ -59,6 +66,16 @@ export class TransactionService {
     const hasRooms = bookingRoomIds && bookingRoomIds.length > 0;
     const hasService = !!serviceUsageId;
 
+    // New Scenario: Deposit Payment
+    if (payload.transactionType === TransactionType.DEPOSIT) {
+      return processDepositPayment(
+        payload,
+        this.prisma,
+        this.activityService,
+        this.emailService,
+        this.appSettingService
+      );
+    }
     // Scenario 4: Guest service payment (no booking, no transaction entity)
     if (hasService && !hasBooking) {
       return processGuestServicePayment(

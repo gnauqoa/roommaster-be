@@ -1,6 +1,7 @@
 // eslint-disable-next-line @typescript-eslint/triple-slash-reference
 /// <reference path="../../types/express.d.ts" />
 
+import { TransactionType, PaymentMethod } from '@prisma/client';
 import { Injectable } from '@/core/decorators';
 import { Request, Response } from 'express';
 import httpStatus from 'http-status';
@@ -22,6 +23,7 @@ export class EmployeeTransactionController {
    * 2. Split room payment: { bookingId, bookingRoomIds }
    * 3. Service payment (booking): { bookingId, serviceUsageId }
    * 4. Service payment (standalone): { serviceUsageId }
+   * 5. Deposit payment: { bookingId, transactionType: 'DEPOSIT' } (optional bookingRoomIds)
    *
    * Promotion Applications:
    * - Transaction-level: { customerPromotionId }
@@ -47,8 +49,8 @@ export class EmployeeTransactionController {
       bookingId,
       bookingRoomIds,
       serviceUsageId,
-      paymentMethod,
-      transactionType,
+      paymentMethod: paymentMethod as PaymentMethod,
+      transactionType: transactionType as TransactionType,
       description,
       promotionApplications,
       employeeId: req.employee.id

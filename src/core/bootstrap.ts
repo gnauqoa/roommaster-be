@@ -24,7 +24,8 @@ import {
   AppSettingService,
   ImageService,
   RoleService,
-  PermissionService
+  PermissionService,
+  CacheService
 } from '@/services';
 import {
   RoomAvailabilityReportService,
@@ -47,6 +48,13 @@ import CustomerRankService from '@/services/customer-rank.service';
 export function bootstrap(): void {
   // Register PrismaClient
   container.registerValue(TOKENS.PrismaClient, prisma);
+
+  // Register CacheService (dependency on PrismaClient)
+  container.registerFactory(
+    TOKENS.CacheService,
+    (...args: unknown[]) => new CacheService(args[0] as PrismaClient),
+    [TOKENS.PrismaClient]
+  );
 
   // Register Services with proper dependency injection
   container.registerFactory(
@@ -112,14 +120,16 @@ export function bootstrap(): void {
         args[1] as ActivityService,
         args[2] as UsageServiceService,
         args[3] as PromotionService,
-        args[4] as EmailService
+        args[4] as EmailService,
+        args[5] as AppSettingService
       ),
     [
       TOKENS.PrismaClient,
       TOKENS.ActivityService,
       TOKENS.UsageServiceService,
       TOKENS.PromotionService,
-      TOKENS.EmailService
+      TOKENS.EmailService,
+      TOKENS.AppSettingService
     ]
   );
 
@@ -154,8 +164,8 @@ export function bootstrap(): void {
 
   container.registerFactory(
     TOKENS.AppSettingService,
-    (...args: unknown[]) => new AppSettingService(args[0] as PrismaClient),
-    [TOKENS.PrismaClient]
+    (...args: unknown[]) => new AppSettingService(args[0] as PrismaClient, args[1] as CacheService),
+    [TOKENS.PrismaClient, TOKENS.CacheService]
   );
 
   container.registerFactory(
@@ -297,12 +307,10 @@ export function bootstrap(): void {
     ]
   );
 
-  // Initialize default configurations
-  const appSettingService = container.resolve<AppSettingService>(TOKENS.AppSettingService);
-  appSettingService.initializeDefaults().catch((error) => {
-    // Note: logger not available yet during bootstrap, will be caught by main error handler
-    console.error('Failed to initialize default configurations:', error);
-  });
+  // Initialize default configurations and cache
+  const cacheService = container.resolve<CacheService>(TOKENS.CacheService);
+
+  cacheService.initAppSettings();
 }
 
 export default bootstrap;

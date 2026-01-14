@@ -19,6 +19,7 @@ export { RoleService } from './role.service';
 export { PermissionService } from './permission.service';
 export { default as TemplateService } from './template.service';
 export { default as EmailService } from './email.service';
+export { CacheService } from './cache.service';
 
 // Re-export getters from bootstrap for convenience
 export {} from '@/core/bootstrap';

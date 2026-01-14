@@ -1,9 +1,7 @@
 import { PrismaClient } from '@prisma/client';
 import { APP_SETTING_KEYS } from '../../src/constants/app-settings.constant';
 
-const prisma = new PrismaClient();
-
-async function seedAppSettings() {
+export async function seedAppSettings(prisma: PrismaClient) {
   console.log('Seeding app settings...');
 
   // First, get the penalty and surcharge service IDs
@@ -81,24 +79,7 @@ async function seedAppSettings() {
         description: setting.description
       }
     });
-    console.log(`✓ Seeded app setting: ${setting.key}`);
   }
 
-  console.log('App settings seeded successfully!');
+  console.log('  ✓ App settings seeded');
 }
-
-async function main() {
-  try {
-    await seedAppSettings();
-  } catch (error) {
-    console.error('Error seeding database:', error);
-    throw error;
-  } finally {
-    await prisma.$disconnect();
-  }
-}
-
-main().catch((error) => {
-  console.error(error);
-  process.exit(1);
-});
