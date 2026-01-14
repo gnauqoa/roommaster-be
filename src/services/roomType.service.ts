@@ -139,6 +139,11 @@ export class RoomTypeService {
               roomTag: true
             }
           },
+          images: {
+            orderBy: {
+              sortOrder: 'asc'
+            }
+          },
           _count: {
             select: {
               rooms: true,
@@ -170,6 +175,11 @@ export class RoomTypeService {
         roomTypeTags: {
           include: {
             roomTag: true
+          }
+        },
+        images: {
+          orderBy: {
+            sortOrder: 'asc'
           }
         },
         _count: {
@@ -233,6 +243,11 @@ export class RoomTypeService {
         roomTypeTags: {
           include: {
             roomTag: true
+          }
+        },
+        images: {
+          orderBy: {
+            sortOrder: 'asc'
           }
         }
       }

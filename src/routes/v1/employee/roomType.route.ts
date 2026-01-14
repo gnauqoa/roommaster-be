@@ -204,6 +204,23 @@ export default function createRoomTypeRoutes(): express.Router {
    *                             type: string
    *                           amenities:
    *                             type: object
+   *                           images:
+   *                             type: array
+   *                             items:
+   *                               type: object
+   *                               properties:
+   *                                 id:
+   *                                   type: string
+   *                                 url:
+   *                                   type: string
+   *                                 secureUrl:
+   *                                   type: string
+   *                                 thumbnailUrl:
+   *                                   type: string
+   *                                 isDefault:
+   *                                   type: boolean
+   *                                 sortOrder:
+   *                                   type: integer
    *                           createdAt:
    *                             type: string
    *                             format: date-time
@@ -279,6 +296,23 @@ export default function createRoomTypeRoutes(): express.Router {
    *                       example: "1500000"
    *                     amenities:
    *                       type: object
+   *                     images:
+   *                       type: array
+   *                       items:
+   *                         type: object
+   *                         properties:
+   *                           id:
+   *                             type: string
+   *                           url:
+   *                             type: string
+   *                           secureUrl:
+   *                             type: string
+   *                           thumbnailUrl:
+   *                             type: string
+   *                           isDefault:
+   *                             type: boolean
+   *                           sortOrder:
+   *                             type: integer
    *                     createdAt:
    *                       type: string
    *                       format: date-time
