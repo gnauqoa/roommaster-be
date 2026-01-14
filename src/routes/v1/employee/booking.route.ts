@@ -573,7 +573,6 @@ export default function createBookingRoutes(): express.Router {
    */
   router.post(
     '/:bookingId/payment-images',
-    authorize('update', 'Booking'),
     uploadPaymentImage.single('image'),
     imageController.uploadPaymentImage
   );
