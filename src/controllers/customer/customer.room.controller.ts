@@ -136,7 +136,7 @@ export class CustomerRoomController {
    * GET /customer-api/v1/rooms/:roomId
    */
   getRoomDetails = catchAsync(async (req: Request, res: Response) => {
-    const room = await this.roomService.getRoomById(req.params.roomId);
+    const room = await this.roomService.getCustomerRoomById(req.params.roomId);
     sendData(res, room);
   });
 }

@@ -188,6 +188,59 @@ export class RoomService {
   }
 
   /**
+   * Get room details for customer
+   * Includes room tags and sanitized image structure
+   * @param {string} roomId - Room ID
+   * @returns {Promise<any>} Room with tags and images
+   */
+  async getCustomerRoomById(roomId: string): Promise<any> {
+    const room = await this.prisma.room.findUnique({
+      where: { id: roomId },
+      include: {
+        roomType: {
+          include: {
+            images: {
+              orderBy: { sortOrder: 'asc' }
+            },
+            roomTypeTags: {
+              include: {
+                roomTag: true
+              }
+            }
+          }
+        },
+        images: {
+          orderBy: { sortOrder: 'asc' }
+        },
+        _count: {
+          select: {
+            bookingRooms: true
+          }
+        }
+      }
+    });
+
+    if (!room) {
+      throw new ApiError(httpStatus.NOT_FOUND, 'Room not found');
+    }
+
+    // Prepare response object
+    const response: any = { ...room };
+
+    // Consolidate images: Use room-specific images if available, otherwise fallback to room type images
+    if (!response.images || response.images.length === 0) {
+      response.images = response.roomType?.images || [];
+    }
+
+    // Remove duplicates: Remove images from roomType since they are now available at the root level
+    if (response.roomType && response.roomType.images) {
+      delete response.roomType.images;
+    }
+
+    return response;
+  }
+
+  /**
    * Update room by ID
    * @param {string} roomId - Room ID
    * @param {UpdateRoomData} updateData - Update data
