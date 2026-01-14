@@ -35,5 +35,6 @@ export interface ServiceIdConfig {
   serviceId: string;
 }
 
-export type PenaltyServiceIdConfig = ServiceIdConfig;
-export type SurchargeServiceIdConfig = ServiceIdConfig;
+export interface PaymentQrCodeConfig {
+  base64: string;
+}

@@ -9,8 +9,7 @@ import {
   CheckInTimeConfig,
   CheckOutTimeConfig,
   DepositPercentageConfig,
-  PenaltyServiceIdConfig,
-  SurchargeServiceIdConfig
+  PaymentQrCodeConfig
 } from './app-setting.types';
 
 @Injectable()
@@ -129,41 +128,11 @@ export class AppSettingService {
   }
 
   /**
-   * Get penalty service ID (cached)
+   * Get payment QR code configuration (cached)
    */
-  async getPenaltyServiceId(): Promise<string> {
-    const config = await this.getConfig(ConfigKey.PENALTY_SERVICE_ID);
-    return (config as PenaltyServiceIdConfig).serviceId;
-  }
-
-  /**
-   * Get surcharge service ID (cached)
-   */
-  async getSurchargeServiceId(): Promise<string> {
-    const config = await this.getConfig(ConfigKey.SURCHARGE_SERVICE_ID);
-    return (config as SurchargeServiceIdConfig).serviceId;
-  }
-
-  /**
-   * Set penalty service ID
-   */
-  async setPenaltyServiceId(serviceId: string): Promise<void> {
-    await this.setConfig(
-      ConfigKey.PENALTY_SERVICE_ID,
-      { serviceId },
-      'Penalty service ID for custom penalty charges'
-    );
-  }
-
-  /**
-   * Set surcharge service ID
-   */
-  async setSurchargeServiceId(serviceId: string): Promise<void> {
-    await this.setConfig(
-      ConfigKey.SURCHARGE_SERVICE_ID,
-      { serviceId },
-      'Surcharge service ID for custom surcharge fees'
-    );
+  async getPaymentQrCode(): Promise<PaymentQrCodeConfig> {
+    const config = await this.getConfig(ConfigKey.PAYMENT_QR_CODE);
+    return config as PaymentQrCodeConfig;
   }
 }
 
