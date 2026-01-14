@@ -1,4 +1,11 @@
-import { PrismaClient, BookingStatus, RoomStatus, ActivityType } from '@prisma/client';
+import {
+  PrismaClient,
+  BookingStatus,
+  RoomStatus,
+  ActivityType,
+  TransactionType,
+  PaymentMethod
+} from '@prisma/client';
 import { Injectable } from '@/core/decorators';
 import httpStatus from 'http-status';
 import ApiError from '@/utils/ApiError';
@@ -18,6 +25,8 @@ export interface CreateBookingPayload {
   checkOutDate: string;
   totalGuests: number;
   customerId: string;
+  depositAmount?: number;
+  depositPaymentMethod?: PaymentMethod;
 }
 
 export interface CheckInBooking {
@@ -250,6 +259,32 @@ export class BookingService {
           }
         }
       });
+
+      // Handle Deposit Transaction if provided
+      if (input.depositAmount && input.depositAmount > 0) {
+        await tx.transaction.create({
+          data: {
+            bookingId: newBooking.id,
+            type: TransactionType.DEPOSIT,
+            amount: input.depositAmount,
+            baseAmount: input.depositAmount,
+            discountAmount: 0,
+            method: input.depositPaymentMethod || PaymentMethod.CASH,
+            status: 'COMPLETED',
+            description: 'Đặt cọc khi tạo booking'
+          }
+        });
+
+        await tx.booking.update({
+          where: { id: newBooking.id },
+          data: {
+            status: BookingStatus.CONFIRMED
+          }
+        });
+
+        // Return updated booking with status CONFIRMED
+        return { ...newBooking, status: BookingStatus.CONFIRMED };
+      }
 
       // The overlapping BookingRoom check prevents double-booking.
       // Room.status will be updated to OCCUPIED at check-in time.
@@ -1095,6 +1130,88 @@ export class BookingService {
         priceDifference
       }
     };
+  }
+  /**
+   * Update customers for a specific booking room
+   * Replaces existing customers with the new list
+   */
+  async updateBookingRoomCustomers(bookingRoomId: string, customerIds: string[]) {
+    // 1. Verify booking room exists
+    const bookingRoom = await this.prisma.bookingRoom.findUnique({
+      where: { id: bookingRoomId },
+      include: {
+        room: true,
+        booking: true
+      }
+    });
+
+    if (!bookingRoom) {
+      throw new ApiError(httpStatus.NOT_FOUND, 'Booking room not found');
+    }
+
+    // 2. Verify all customers exist
+    if (customerIds.length > 0) {
+      const uniqueCustomerIds = [...new Set(customerIds)];
+      const customers = await this.prisma.customer.findMany({
+        where: {
+          id: { in: uniqueCustomerIds }
+        }
+      });
+
+      if (customers.length !== uniqueCustomerIds.length) {
+        throw new ApiError(httpStatus.NOT_FOUND, 'One or more customers not found');
+      }
+    }
+
+    // 3. Update customers in transaction
+    const result = await this.prisma.$transaction(async (tx) => {
+      // Remove existing customers for this room
+      // Note: We only remove "secondary" assignments tied to this specific room
+      await tx.bookingCustomer.deleteMany({
+        where: {
+          bookingRoomId
+        }
+      });
+
+      // Add new customers
+      if (customerIds.length > 0) {
+        const uniqueCustomerIds = [...new Set(customerIds)];
+        const bookingCustomerPromises = uniqueCustomerIds.map((customerId) =>
+          tx.bookingCustomer.upsert({
+            where: {
+              bookingId_customerId: {
+                bookingId: bookingRoom.bookingId,
+                customerId
+              }
+            },
+            create: {
+              bookingId: bookingRoom.bookingId,
+              customerId,
+              bookingRoomId,
+              isPrimary: false
+            },
+            update: {
+              bookingRoomId // Associate with this room
+            }
+          })
+        );
+        await Promise.all(bookingCustomerPromises);
+      }
+
+      // Fetch updated data
+      return tx.bookingRoom.findUnique({
+        where: { id: bookingRoomId },
+        include: {
+          bookingCustomers: {
+            include: {
+              customer: true
+            }
+          }
+        }
+      });
+    });
+
+    return result;
   }
 }
 

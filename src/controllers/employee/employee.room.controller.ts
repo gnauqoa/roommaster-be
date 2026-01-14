@@ -18,11 +18,11 @@ export class RoomController {
   });
 
   getRooms = catchAsync(async (req: Request, res: Response) => {
-    const filters = pick(req.query, ['search', 'status', 'floor', 'roomTypeId']);
+    const filters = pick(req.query, ['search', 'status', 'roomTypeId']);
     const options = pick(req.query, ['page', 'limit', 'sortBy', 'sortOrder']);
 
     // Convert string query params to numbers
-    if (filters.floor) filters.floor = Number(filters.floor);
+
     if (options.page) options.page = Number(options.page);
     if (options.limit) options.limit = Number(options.limit);
 
@@ -55,7 +55,7 @@ export class RoomController {
       checkInDate,
       checkOutDate,
       search,
-      floor,
+
       roomTypeId,
       minCapacity,
       maxCapacity,
@@ -71,7 +71,7 @@ export class RoomController {
       checkInDate: checkInDate as string,
       checkOutDate: checkOutDate as string,
       search: search as string,
-      floor: floor ? parseInt(floor as string) : undefined,
+
       roomTypeId: roomTypeId as string,
       minCapacity: minCapacity ? parseInt(minCapacity as string) : undefined,
       maxCapacity: maxCapacity ? parseInt(maxCapacity as string) : undefined,

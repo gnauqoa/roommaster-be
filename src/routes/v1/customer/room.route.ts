@@ -36,11 +36,6 @@ export default function createRoomRoutes(): express.Router {
    *           type: string
    *         description: Search by room number
    *       - in: query
-   *         name: floor
-   *         schema:
-   *           type: integer
-   *         description: Filter by floor number
-   *       - in: query
    *         name: roomTypeId
    *         schema:
    *           type: string
@@ -96,11 +91,6 @@ export default function createRoomRoutes(): express.Router {
    *         schema:
    *           type: string
    *         description: Filter by room type ID
-   *       - in: query
-   *         name: floor
-   *         schema:
-   *           type: integer
-   *         description: Filter by floor number
    *       - in: query
    *         name: minCapacity
    *         schema:

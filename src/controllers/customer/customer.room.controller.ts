@@ -17,7 +17,7 @@ export class CustomerRoomController {
   searchRooms = catchAsync(async (req: Request, res: Response) => {
     const {
       search,
-      floor,
+
       roomTypeId,
       minCapacity,
       maxCapacity,
@@ -33,7 +33,7 @@ export class CustomerRoomController {
     const filters = {
       search: search as string,
       status: RoomStatus.AVAILABLE,
-      floor: floor ? parseInt(floor as string) : undefined,
+
       roomTypeId: roomTypeId as string,
       minCapacity: minCapacity ? parseInt(minCapacity as string) : undefined,
       maxCapacity: maxCapacity ? parseInt(maxCapacity as string) : undefined,
@@ -62,7 +62,7 @@ export class CustomerRoomController {
       checkInDate,
       checkOutDate,
       search,
-      floor,
+
       roomTypeId,
       minCapacity,
       maxCapacity,
@@ -78,7 +78,7 @@ export class CustomerRoomController {
       checkInDate: checkInDate as string,
       checkOutDate: checkOutDate as string,
       search: search as string,
-      floor: floor ? parseInt(floor as string) : undefined,
+
       roomTypeId: roomTypeId as string,
       minCapacity: minCapacity ? parseInt(minCapacity as string) : undefined,
       maxCapacity: maxCapacity ? parseInt(maxCapacity as string) : undefined,

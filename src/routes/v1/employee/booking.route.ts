@@ -479,5 +479,51 @@ export default function createBookingRoutes(): express.Router {
     employeeBookingController.changeRoom
   );
 
+  /**
+   * @swagger
+   * /employee/bookings/rooms/{bookingRoomId}/customers:
+   *   put:
+   *     summary: Update customers for a booking room
+   *     description: Replace the list of customers for a specific booking room
+   *     tags: [Employee Bookings]
+   *     security:
+   *       - bearerAuth: []
+   *     parameters:
+   *       - in: path
+   *         name: bookingRoomId
+   *         required: true
+   *         schema:
+   *           type: string
+   *         description: Booking room ID
+   *     requestBody:
+   *       required: true
+   *       content:
+   *         application/json:
+   *           schema:
+   *             type: object
+   *             required:
+   *               - customerIds
+   *             properties:
+   *               customerIds:
+   *                 type: array
+   *                 items:
+   *                   type: string
+   *                 minItems: 1
+   *                 description: List of customer IDs
+   *     responses:
+   *       200:
+   *         description: Customers updated successfully
+   *       400:
+   *         description: Validation error
+   *       404:
+   *         description: Booking room or customer not found
+   */
+  router.put(
+    '/rooms/:bookingRoomId/customers',
+    authorize('update', 'Booking'),
+    validate(bookingValidation.updateBookingRoomCustomers),
+    employeeBookingController.updateBookingRoomCustomers
+  );
+
   return router;
 }

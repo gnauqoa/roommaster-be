@@ -138,11 +138,6 @@ export default function createRoomRoutes(): express.Router {
    *           enum: [AVAILABLE, RESERVED, OCCUPIED, CLEANING, MAINTENANCE, OUT_OF_SERVICE]
    *         description: Filter by status
    *       - in: query
-   *         name: floor
-   *         schema:
-   *           type: integer
-   *         description: Filter by floor number
-   *       - in: query
    *         name: roomTypeId
    *         schema:
    *           type: string
@@ -166,7 +161,7 @@ export default function createRoomRoutes(): express.Router {
    *         name: sortBy
    *         schema:
    *           type: string
-   *           enum: [roomNumber, floor, status, createdAt, updatedAt]
+   *           enum: [roomNumber, status, createdAt, updatedAt]
    *           default: roomNumber
    *         description: Field to sort by
    *       - in: query
@@ -275,11 +270,6 @@ export default function createRoomRoutes(): express.Router {
    *         schema:
    *           type: string
    *         description: Filter by room type ID
-   *       - in: query
-   *         name: floor
-   *         schema:
-   *           type: integer
-   *         description: Filter by floor number
    *       - in: query
    *         name: minCapacity
    *         schema:

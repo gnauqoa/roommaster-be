@@ -19,7 +19,6 @@ const getRooms = {
     status: Joi.string()
       .valid(...Object.values(RoomStatus))
       .optional(),
-    floor: Joi.number().integer().optional(),
     roomTypeId: Joi.string().optional(),
     page: Joi.number().integer().min(1).optional(),
     limit: Joi.number().integer().min(1).max(100).optional(),
@@ -60,7 +59,6 @@ const deleteRoom = {
 const searchRooms = {
   query: Joi.object().keys({
     search: Joi.string().optional(),
-    floor: Joi.number().integer().optional(),
     roomTypeId: Joi.string().optional(),
     minCapacity: Joi.number().integer().min(1).optional(),
     maxCapacity: Joi.number().integer().min(1).optional(),
@@ -88,7 +86,6 @@ const searchAvailableRoomsByDate = {
       'date.greater': 'Check-out date must be after check-in date'
     }),
     search: Joi.string().optional(),
-    floor: Joi.number().integer().optional(),
     roomTypeId: Joi.string().optional(),
     minCapacity: Joi.number().integer().min(1).optional(),
     maxCapacity: Joi.number().integer().min(1).optional(),

@@ -133,7 +133,11 @@ const createBookingEmployee = {
         .required(),
       checkInDate: Joi.date().iso().required(),
       checkOutDate: Joi.date().iso().greater(Joi.ref('checkInDate')).required(),
-      totalGuests: Joi.number().integer().min(1).required()
+      totalGuests: Joi.number().integer().min(1).required(),
+      depositAmount: Joi.number().optional().min(0),
+      depositPaymentMethod: Joi.string()
+        .valid('CASH', 'CREDIT_CARD', 'BANK_TRANSFER', 'E_WALLET', 'DEBIT_CARD')
+        .optional()
     })
     .xor('customerId', 'customer')
 };
@@ -148,6 +152,15 @@ const changeRoom = {
   })
 };
 
+const updateBookingRoomCustomers = {
+  params: Joi.object().keys({
+    bookingRoomId: Joi.string().required()
+  }),
+  body: Joi.object().keys({
+    customerIds: Joi.array().items(Joi.string()).min(1).required()
+  })
+};
+
 export default {
   createBooking,
   checkIn,
@@ -159,5 +172,6 @@ export default {
   cancelBooking,
   updateBooking,
   createBookingEmployee,
-  changeRoom
+  changeRoom,
+  updateBookingRoomCustomers
 };

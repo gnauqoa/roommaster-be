@@ -23,7 +23,6 @@ export interface UpdateRoomData {
 export interface RoomFilters {
   search?: string;
   status?: RoomStatus;
-  floor?: number;
   roomTypeId?: string;
   minCapacity?: number;
   maxCapacity?: number;
@@ -97,7 +96,7 @@ export class RoomService {
     filters: RoomFilters = {},
     options: PaginationOptions = {}
   ): Promise<{ data: Room[]; total: number; page: number; limit: number }> {
-    const { search, status, floor, roomTypeId } = filters;
+    const { search, status, roomTypeId } = filters;
     const { page = 1, limit = 10, sortBy = 'roomNumber', sortOrder = 'asc' } = options;
 
     const where: Prisma.RoomWhereInput = {};
@@ -113,11 +112,6 @@ export class RoomService {
     // Apply status filter
     if (status) {
       where.status = status;
-    }
-
-    // Apply floor filter
-    if (floor !== undefined) {
-      where.floor = floor;
     }
 
     // Apply room type filter
@@ -320,8 +314,7 @@ export class RoomService {
     filters: RoomFilters = {},
     options: PaginationOptions = {}
   ): Promise<{ data: Room[]; total: number; page: number; limit: number }> {
-    const { search, status, floor, roomTypeId, minCapacity, maxCapacity, minPrice, maxPrice } =
-      filters;
+    const { search, status, roomTypeId, minCapacity, maxCapacity, minPrice, maxPrice } = filters;
     const { page = 1, limit = 10, sortBy = 'roomNumber', sortOrder = 'asc' } = options;
 
     const where: Prisma.RoomWhereInput = {};
@@ -346,11 +339,6 @@ export class RoomService {
 
     // Apply status filter (default to AVAILABLE for customer searches)
     where.status = status || RoomStatus.AVAILABLE;
-
-    // Apply floor filter
-    if (floor !== undefined) {
-      where.floor = floor;
-    }
 
     // Apply room type filter
     if (roomTypeId) {
@@ -454,7 +442,6 @@ export class RoomService {
       checkInDate,
       checkOutDate,
       search,
-      floor,
       roomTypeId,
       minCapacity,
       maxCapacity,
@@ -489,11 +476,6 @@ export class RoomService {
         { roomNumber: { contains: search, mode: 'insensitive' } },
         { code: { contains: search, mode: 'insensitive' } }
       ];
-    }
-
-    // Apply floor filter
-    if (floor !== undefined) {
-      where.floor = floor;
     }
 
     // Apply room type filter
