@@ -48,7 +48,6 @@ if (error) {
 
 export default {
   env: envVars.NODE_ENV,
-  databaseUrlReadOnly: envVars.DATABASE_URL_READONLY,
   apiUrl: envVars.APP_URL,
   port: envVars.PORT,
   jwt: {

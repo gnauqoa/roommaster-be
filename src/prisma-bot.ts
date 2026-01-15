@@ -1,17 +1,18 @@
 import { PrismaClient } from '@prisma/client';
 import config from './config/env';
 
-declare global {
-  var prismaBot: PrismaClient | undefined;
+// add prismaBot to the NodeJS global type
+interface CustomNodeJsGlobal extends Global {
+  prismaBot: PrismaClient;
 }
 
-const prismaBot =
+// Prevent multiple instances of Prisma Client in development
+declare const global: CustomNodeJsGlobal;
+
+export const prismaBot =
   global.prismaBot ||
   new PrismaClient({
-    // @ts-ignore
-    datasources: { db: { url: config.databaseUrlReadOnly } }
+    datasources: { db: { url: process.env.DATABASE_URL_READONLY } }
   });
 
 if (config.env === 'development') global.prismaBot = prismaBot;
-
-export default prismaBot;
