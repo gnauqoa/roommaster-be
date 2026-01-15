@@ -4,7 +4,7 @@ import { prismaBot } from '../prisma-bot';
 import fs from 'fs';
 import path from 'path';
 import { google, GoogleGenerativeAIProviderOptions } from '@ai-sdk/google';
-
+import { ollama } from 'ai-sdk-ollama';
 export const sqlQueryTool = tool({
   description: 'Execute a raw SQL query against the database',
   inputSchema: z.object({
@@ -88,11 +88,12 @@ export const askDatabaseTool = tool({
       const schemaContext = fs.readFileSync(schemaPath, 'utf-8');
       // 2. Use generateText with tools to let the AI plan and execute the query
       const { text } = await generateText({
-        model: google('gemini-3-flash'),
+        // model: google('gemini-2.5-flash'),
+        model: ollama('qwen3:4b'),
         tools: {
           sqlQuery: sqlQueryTool
         },
-        stopWhen: stepCountIs(10), // Allow up to 5 steps (think -> tool call -> tool result -> think -> response)
+        stopWhen: stepCountIs(5), // Allow up to 5 steps (think -> tool call -> tool result -> think -> response)
         system: `You are a SQL expert and database assistant.
 Your goal is to answer the user's question by querying the database.
 Database Schema Summary:
@@ -107,13 +108,15 @@ Rules:
 - If the query fails, try to fix it and run again.
 `,
         prompt: question,
-        providerOptions: {
-          google: {
-            thinkingConfig: {
-              thinkingLevel: 'high'
-            }
-          } satisfies GoogleGenerativeAIProviderOptions
-        }
+        providerOptions: { ollama: { think: true } }
+
+        // providerOptions: {
+        //   google: {
+        //     thinkingConfig: {
+        //       thinkingLevel: 'high'
+        //     }
+        //   } satisfies GoogleGenerativeAIProviderOptions
+        // }
       });
       return text;
     } catch (error) {

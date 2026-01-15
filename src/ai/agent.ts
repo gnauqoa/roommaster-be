@@ -1,13 +1,15 @@
 import { stepCountIs, streamText } from 'ai';
 import { google } from '@ai-sdk/google';
 import { askDatabaseTool } from './tools';
+import { ollama } from 'ai-sdk-ollama';
 
 export async function runMasterAgent(userPrompt: string) {
   console.log(`[Master Agent] Received prompt: ${userPrompt}`);
 
   // streamText returns a StreamTextResult immediately
   const result = streamText({
-    model: google('gemini-3-flash'),
+    // model: google('gemini-2.5-flash'),
+    model: ollama('qwen3:4b'),
     tools: {
       askDatabase: askDatabaseTool
     },
