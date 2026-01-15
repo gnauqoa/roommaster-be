@@ -8,6 +8,7 @@ import createRoomRoute from './room.route';
 import createCustomerRankRoutes from './rank.route';
 import createCustomerImageRoutes from './image.route';
 import createCustomerAppSettingRoutes from './app-setting.route';
+import createAIChatRoutes from './ai-chat.route';
 
 export default function createCustomerRoutes(): express.Router {
   const router = express.Router();
@@ -20,6 +21,7 @@ export default function createCustomerRoutes(): express.Router {
   router.use('/rooms', createRoomRoute());
   router.use('/ranks', createCustomerRankRoutes());
   router.use('/app-settings', createCustomerAppSettingRoutes());
+  router.use('/ai', createAIChatRoutes()); // AI chat routes
   router.use('/', createCustomerImageRoutes()); // Images are nested under /rooms/:roomId/images and /room-types/:roomTypeId/images
 
   return router;

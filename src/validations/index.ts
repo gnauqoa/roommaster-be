@@ -15,3 +15,4 @@ export { default as roomTagValidation } from './roomTag.validation';
 export { default as roleValidation } from './role.validation';
 export { default as permissionValidation } from './permission.validation';
 export { default as reportValidation } from './report.validation';
+export { default as aiChatValidation } from './ai-chat.validation';
