@@ -46,13 +46,8 @@ export class CustomerAIChatController {
 
       // Iterate over the stream and send chunks as Server-Sent Events
       for await (const textPart of result.textStream) {
-        // Handle potentially multi-line chunks by prefixing each line with "data: "
-        // This ensures strictly valid SSE format even if the chunk contains newlines
-        const lines = textPart.split('\n');
-        for (const line of lines) {
-          res.write(`data: ${line}\n`);
-        }
-        res.write('\n'); // End of message
+        // Send as JSON-encoded string to preserve newlines and special characters
+        res.write(`data: ${JSON.stringify(textPart)}\n\n`);
       }
 
       // Signal completion
