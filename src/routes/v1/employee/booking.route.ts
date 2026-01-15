@@ -18,7 +18,29 @@ export default function createBookingRoutes(): express.Router {
   const employeeBookingController = new EmployeeBookingController(bookingService);
   const imageController = new ImageController(imageService);
 
-  // Apply auth and CASL abilities to all routes
+  // ==================== PUBLIC ROUTES (NO AUTH) ====================
+  /**
+   * @swagger
+   * /employee/bookings/{bookingId}/payment-images:
+   *   get:
+   *     summary: Get all payment images for a booking (Public)
+   *     description: Retrieve all payment proof images for a specific booking. This route is public to allow image display in img tags.
+   *     tags: [Employee Bookings]
+   *     parameters:
+   *       - in: path
+   *         name: bookingId
+   *         required: true
+   *         schema:
+   *           type: string
+   *         description: Booking ID
+   *     responses:
+   *       200:
+   *         description: List of payment images
+   */
+  router.get('/:bookingId/payment-images', imageController.getPaymentImages);
+
+  // ==================== AUTHENTICATED ROUTES ====================
+  // Apply auth and CASL abilities to all routes below
   // All routes require: 1) employee authentication, 2) CASL abilities, 3) Booking screen access
   router.use(authEmployee, attachAbilities, canAccessScreen('Booking'));
 
@@ -618,32 +640,6 @@ export default function createBookingRoutes(): express.Router {
     authorize('update', 'Booking'),
     uploadPaymentImage.array('images', 10),
     imageController.uploadPaymentImagesBatch
-  );
-
-  /**
-   * @swagger
-   * /employee/bookings/{bookingId}/payment-images:
-   *   get:
-   *     summary: Get all payment images for a booking
-   *     description: Retrieve all payment proof images for a specific booking
-   *     tags: [Employee Bookings]
-   *     security:
-   *       - bearerAuth: []
-   *     parameters:
-   *       - in: path
-   *         name: bookingId
-   *         required: true
-   *         schema:
-   *           type: string
-   *         description: Booking ID
-   *     responses:
-   *       200:
-   *         description: List of payment images
-   */
-  router.get(
-    '/:bookingId/payment-images',
-    authorize('read', 'Booking'),
-    imageController.getPaymentImages
   );
 
   /**
