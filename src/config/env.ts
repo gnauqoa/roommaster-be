@@ -9,6 +9,7 @@ const envVarsSchema = Joi.object()
     NODE_ENV: Joi.string().valid('production', 'development', 'test').required(),
     APP_URL: Joi.string().uri().description('Application base URL for Swagger and external links'),
     DATABASE_URL: Joi.string().required().description('Database connection URL'),
+    DATABASE_URL_READONLY: Joi.string().required().description('Read-only Database connection URL'),
     PORT: Joi.number().default(3000),
     JWT_SECRET: Joi.string().required().description('JWT secret key'),
     JWT_ACCESS_EXPIRATION_MINUTES: Joi.number()
@@ -47,6 +48,7 @@ if (error) {
 
 export default {
   env: envVars.NODE_ENV,
+  databaseUrlReadOnly: envVars.DATABASE_URL_READONLY,
   apiUrl: envVars.APP_URL,
   port: envVars.PORT,
   jwt: {
