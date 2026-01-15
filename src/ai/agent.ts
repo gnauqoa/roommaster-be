@@ -2,7 +2,7 @@ import { stepCountIs, streamText } from 'ai';
 import { google } from '@ai-sdk/google';
 import { askDatabaseTool } from './tools';
 
-export function runMasterAgent(userPrompt: string) {
+export async function runMasterAgent(userPrompt: string) {
   console.log(`[Master Agent] Received prompt: ${userPrompt}`);
 
   // streamText returns a StreamTextResult immediately
@@ -26,5 +26,8 @@ Do not make up data. Always rely on the tool for facts.
     prompt: userPrompt
   });
 
-  return result;
+  for await (const textPart of result.textStream) {
+    console.log(textPart);
+  }
+  return result.text;
 }
