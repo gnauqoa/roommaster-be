@@ -39,11 +39,25 @@ export class CustomerAIChatController {
       // The AI generation happens in the background and streams data over time
       const result = streamAgentResponse(messages, customerId);
 
-      // pipeTextStreamToResponse() connects the AI's text stream to the HTTP response
-      // Each text chunk from the AI is immediately written to the response
-      // The client receives chunks in real-time via chunked transfer encoding
-      // This method handles all the HTTP headers and streaming logic automatically
-      result.pipeTextStreamToResponse(res);
+      // Set headers for Server-Sent Events
+      res.setHeader('Content-Type', 'text/event-stream');
+      res.setHeader('Cache-Control', 'no-cache');
+      res.setHeader('Connection', 'keep-alive');
+
+      // Iterate over the stream and send chunks as Server-Sent Events
+      for await (const textPart of result.textStream) {
+        // Handle potentially multi-line chunks by prefixing each line with "data: "
+        // This ensures strictly valid SSE format even if the chunk contains newlines
+        const lines = textPart.split('\n');
+        for (const line of lines) {
+          res.write(`data: ${line}\n`);
+        }
+        res.write('\n'); // End of message
+      }
+
+      // Signal completion
+      res.write('data: [DONE]\n\n');
+      res.end();
     } catch (error) {
       console.error('[AI Chat Error]', error);
 

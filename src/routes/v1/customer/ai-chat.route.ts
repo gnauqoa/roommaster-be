@@ -22,15 +22,18 @@ export default function createAIChatRoutes(): express.Router {
    *   post:
    *     summary: Chat with AI assistant
    *     description: |
-   *       Send a message to the AI assistant and receive a streaming text response.
-   *       The response is streamed as text/plain with chunked transfer encoding.
+   *       Send a message to the AI assistant and receive a streaming response via Server-Sent Events (SSE).
+   *       The response follows the standard SSE format.
    *
    *       **Streaming Response Format:**
-   *       The response is sent as a stream of text chunks. Clients should handle
-   *       the response as a readable stream and process chunks as they arrive.
+   *       Each chunk is sent as an event prefixed with `data: ` and suffixed with `\n\n`.
+   *       Example:
+   *       `data: Hello\n\n`
+   *       `data: World\n\n`
+   *       `data: [DONE]\n\n` (when finished)
    *
    *       **React Native Implementation:**
-   *       Use fetch with streaming support or EventSource-like libraries to consume the stream.
+   *       Use an EventSource client or handle the raw stream parsing manually by looking for `data:` prefixes.
    *     tags: [Customer AI Chat]
    *     security:
    *       - bearerAuth: []
@@ -59,12 +62,12 @@ export default function createAIChatRoutes(): express.Router {
    *                     content: "What rooms are available?"
    *     responses:
    *       200:
-   *         description: Streaming AI response
+   *         description: Streaming AI response (Server-Sent Events)
    *         content:
-   *           text/plain:
+   *           text/event-stream:
    *             schema:
    *               type: string
-   *               description: Streaming text response from the AI
+   *               description: SSE stream of text chunks
    *       400:
    *         $ref: '#/components/responses/ValidationError'
    *       401:

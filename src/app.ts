@@ -45,7 +45,19 @@ app.use(xss());
 // uses v4). Prefer upgrading TypeScript and/or aligning @types packages in
 // package.json/resolutions to fully fix; for now, use a narrow cast to keep
 // the middleware typing compatible with app.use.
-app.use(compression() as unknown as express.RequestHandler);
+app.use(
+  compression({
+    filter: (req, res) => {
+      if (
+        req.headers['accept'] === 'text/event-stream' ||
+        res.getHeader('Content-Type') === 'text/event-stream'
+      ) {
+        return false;
+      }
+      return compression.filter(req, res);
+    }
+  }) as unknown as express.RequestHandler
+);
 
 // enable cors
 app.use(cors());
