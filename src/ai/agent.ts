@@ -1,7 +1,7 @@
 import { stepCountIs, streamText } from 'ai';
 
 import { google } from '@ai-sdk/google';
-import { askDatabaseTool } from './tools';
+import { askDatabaseTool, searchRoomsTool } from './tools';
 import { ollama } from 'ai-sdk-ollama';
 
 const SYSTEM_PROMPT = `You are a helpful and knowledgeable hotel management assistant "RoomMaster AI".
@@ -14,11 +14,28 @@ Workflow:
 4. Use that data to construct a polite, professional, and helpful response to the user.
 
 Do not make up data. Always rely on the tool for facts.
+
+IMPORTANT: RENDER ROOM SUGGESTIONS
+If the user asks to suggest rooms or check availability, ALWAYS uses the 'searchRooms' tool.
+After the tool returns the room data, you must:
+1. Provide a brief, engaging summary in text.
+2. THEN, output the raw JSON array of rooms wrapped in these EXACT tags at the end of your message:
+:::ROOMS_JSON_START:::
+[ ... json array from tool ... ]
+:::ROOMS_JSON_END:::
+
+Example output:
+"I found some great rooms for you! The Deluxe Suite is available for $200.
+:::ROOMS_JSON_START:::
+[{"id":"1","type":"Deluxe","price":200,"image":"..."}]
+:::ROOMS_JSON_END:::
+"
 `;
 
 // Tool configuration for streamText
 const agentTools = {
-  askDatabase: askDatabaseTool
+  askDatabase: askDatabaseTool,
+  searchRooms: searchRoomsTool
 };
 
 /**
