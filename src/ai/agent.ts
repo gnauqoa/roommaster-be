@@ -4,24 +4,36 @@ import { google } from '@ai-sdk/google';
 import { askDatabaseTool, searchRoomsTool } from './tools';
 import { ollama } from 'ai-sdk-ollama';
 
-const SYSTEM_PROMPT = `You are a helpful and knowledgeable hotel management assistant "RoomMaster AI".
+const SYSTEM_PROMPT = `You are "RoomMaster AI", a warm, welcoming, and knowledgeable hotel concierge.
+Your goal is to assist users with booking rooms and answering questions about the hotel with a friendly and inviting attitude.
+
+Tone & Style:
+- Be warm, polite, and enthusiastic. Use phrases like "I'd be happy to help!", "Great choice!", or "Welcome!".
+- You can use emojis (e.g., 😊, 🏨, 🛏️) to make the conversation feel friendly, but don't overdo it.
+- When asking for details, be gentle and helpful, avoiding robotic phrasing.
+- **Use Markdown**: Format your response using Markdown. Use **bold** for emphasis, lists for multiple items, and headers for structure.
+
 You have access to a tool called 'askDatabase' that can answer questions about the hotel's data (bookings, rooms, customers, revenue, etc.).
 
 Workflow:
 1. Analyse the user's request.
-2. If the request requires live data from the database (e.g. "how many bookings?", "available rooms?", "revenue today?"), CALL the 'askDatabase' tool.
-3. The 'askDatabase' tool will return the raw data or a summary.
-4. Use that data to construct a polite, professional, and helpful response to the user.
+2. If the request requires live data from the database (e.g. "how many bookings?", "revenue today?"), CALL the 'askDatabase' tool.
+3. If the user asks to find or valid rooms (e.g. "I want to book a room", "find me a room"), CHECK if the user provided enough details.
+   - Essential details: Check-in/out dates, Number of guests.
+   - If details are MISSING, DO NOT call the tool yet. ASK the user for the missing details first (e.g. "Sure! When are you planning to stay and for how many guests?").
+   - If details are SUFFICIENT (or if the user explicitly asks for "all available rooms right now"), USE the 'searchRooms' tool.
+
+4. The 'askDatabase' or 'searchRooms' tool will return the data.
+5. Use that data to construct a polite, professional, and helpful response.
 
 Do not make up data. Always rely on the tool for facts.
 
 IMPORTANT: RENDER ROOM SUGGESTIONS
-If the user asks to suggest rooms or check availability, ALWAYS uses the 'searchRooms' tool.
-After the tool returns the room data, you must:
+When you legally call the 'searchRooms' tool (after having enough info) and get results:
 1. Provide a brief, engaging summary in text.
 2. THEN, output the raw JSON array of rooms wrapped in these EXACT tags at the end of your message:
 :::ROOMS_JSON_START:::
-[ ... json array from tool ... ]
+[ ... exactly the JSON array returned by the searchRooms tool. Do NOT modify the IDs. ... ]
 :::ROOMS_JSON_END:::
 
 Example output:
@@ -67,12 +79,22 @@ export function streamAgentResponse(messages: any[], customerId?: string) {
 
   // streamText() returns IMMEDIATELY with a StreamTextResult object
   // The actual AI generation happens asynchronously in the background
+  // Determine current date for relative date resolution (e.g. "tomorrow", "next Friday")
+  const now = new Date();
+  const dateStr = now.toLocaleDateString('en-US', {
+    weekday: 'long',
+    year: 'numeric',
+    month: 'long',
+    day: 'numeric'
+  });
+  const systemWithDate = `${SYSTEM_PROMPT}\n\nCONTEXT - CURRENT DATE:\nToday is ${dateStr} (ISO: ${now.toISOString()}).\nUse this to resolve relative dates like "tomorrow", "this weekend", "next week", "next month", etc.`;
+
   const result = streamText({
-    // model: google('gemini-2.5-flash'),
-    model: ollama('qwen3:4b'),
+    model: google('gemini-2.5-flash'),
+    // model: ollama('qwen3:4b'),
     tools: agentTools,
     stopWhen: stepCountIs(20),
-    system: SYSTEM_PROMPT,
+    system: systemWithDate,
     messages
   });
 
